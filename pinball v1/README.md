@@ -6,18 +6,33 @@ Browser pinball built with vanilla JavaScript, HTML5 Canvas, and the Web Audio A
 
 ## Controls
 
+In-game **legend** slides from the **right**: press **L**, or on mobile **swipe right to left fast**. **[X] Close** is bottom-left of the drawer.
+
+### Desktop
+
 | Input | Action |
 |--------|--------|
-| **← Left Arrow** | Left flipper |
-| **→ Right Arrow** | Right flipper |
-| **Left click / tap** | Left flipper |
-| **Right click** | Right flipper |
-| **Space** (hold) | Charge plunger |
-| **Space** (release) | Launch ball |
-| **R** (during play) | Tilt / nudge table (2 warnings, 3rd tilt loses the ball) |
+| **← / →** | Left / right flipper |
+| **Left click / Right click** | Left / right flipper |
+| **Space** hold / release | Charge / launch plunger |
+| **R** (during play) | Tilt / nudge (2 warnings, 3rd loses ball) |
 | **R** (game over) | Restart game |
+| **L** | Toggle controls legend |
+| **Esc** | Close legend |
 
-Audio unlocks on the first key press or click (browser requirement).
+### Mobile / touch
+
+| Control | Action |
+|--------|--------|
+| **L Flip / R Flip** | Hold bottom dock pads |
+| **Table half** | Hold left or right side of the table |
+| **Launch** | Hold to charge · release to fire |
+| **Tilt** | Nudge · restart on game over |
+| **Swipe right → left fast** | Open legend |
+| Green **`#00ff00`** dock line | *swipe right to left fast to see the legend* |
+| **[X] Close** | Bottom-left of legend |
+
+Audio unlocks on the first key, click, or touch.
 
 ## Quick Start
 
@@ -115,6 +130,14 @@ node verify-browser.js
 ---
 
 ## Version History
+
+**71026 3:30:07:67 PM CST**
+
+- Legend slide-drawer (**L** / swipe / **[X] Close**); mobile dock + green swipe hint; Controls section at top of README.
+
+**71026 2:49:40:70 PM CST**
+
+- `update .mds`: device-aware touch UI; hub batch via `start-all.ps1`.
 
 **71026 1:41:17:74 PM CST**
 

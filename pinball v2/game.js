@@ -1,6 +1,6 @@
 /**
- * Main game loop, input wiring, and browser bootstrap.
- * Device-aware: scales table to viewport; touch half-screen + on-screen buttons.
+ * Main game loop, input wiring, browser bootstrap.
+ * Device-aware fit + touch dock + legend drawer (L / swipe).
  */
 (function () {
   'use strict';
@@ -12,11 +12,16 @@
   var Device = window.DeviceProfile;
 
   var canvas = document.getElementById('pinball-canvas');
+  var legendDrawer = document.getElementById('legend-drawer');
+  var legendBackdrop = document.getElementById('legend-backdrop');
+  var legendClose = document.getElementById('legend-close');
   var state = Sim.createInitialState();
   var lastTime = 0;
   var keys = { left: false, right: false, launch: false };
   var soundPrev = Audio.createPrev();
   var activePointers = Object.create(null);
+  var legendOpen = false;
+  var swipeTrack = null;
 
   if (Assets && Assets.preloadTheme) {
     Assets.preloadTheme();
@@ -31,14 +36,32 @@
     return !!(p && (p.isTouch || p.isPhone || p.isTablet));
   }
 
+  function setLegendOpen(open) {
+    legendOpen = !!open;
+    if (legendDrawer) {
+      legendDrawer.classList.toggle('open', legendOpen);
+      legendDrawer.setAttribute('aria-hidden', legendOpen ? 'false' : 'true');
+    }
+    if (legendBackdrop) {
+      legendBackdrop.classList.toggle('open', legendOpen);
+      legendBackdrop.setAttribute('aria-hidden', legendOpen ? 'false' : 'true');
+    }
+  }
+
+  function toggleLegend() {
+    setLegendOpen(!legendOpen);
+  }
+
   function resizeCanvas() {
     var targetW = 520;
     var targetH = 980;
     canvas.width = targetW;
     canvas.height = targetH;
+    // Extra chrome for dock + green swipe hint
+    var chrome = isTouchProfile() ? 120 : 0;
     if (Device && Device.fitCanvas) {
       Device.fitCanvas(canvas, {
-        touchChrome: isTouchProfile() ? 72 : 0,
+        touchChrome: chrome,
         pad: 8,
         allowUpscale: false
       });
@@ -102,6 +125,15 @@
 
   function handleKeyDown(e) {
     unlockAudio();
+    if (e.code === 'KeyL') {
+      e.preventDefault();
+      toggleLegend();
+      return;
+    }
+    if (legendOpen && e.code === 'Escape') {
+      setLegendOpen(false);
+      return;
+    }
     if (e.code === 'ArrowLeft') setLeftFlipper(true);
     if (e.code === 'ArrowRight') setRightFlipper(true);
     if (e.code === 'Space') {
@@ -123,24 +155,25 @@
     var rect = canvas.getBoundingClientRect();
     var x = e.clientX;
     if (x < rect.left || x > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
-      // off-canvas: use full viewport half for coarse touch
       return e.clientX < window.innerWidth * 0.5 ? 'left' : 'right';
     }
     var mid = rect.left + rect.width * 0.5;
     return x < mid ? 'left' : 'right';
   }
 
-  function isOnTouchChrome(e) {
-    var ui = document.getElementById('touch-ui');
-    if (!ui || ui.style.display === 'none') return false;
-    return !!(e.target && e.target.closest && e.target.closest('#touch-ui'));
+  function isUiChrome(e) {
+    return !!(e.target && e.target.closest && (
+      e.target.closest('#touch-ui') ||
+      e.target.closest('#legend-drawer') ||
+      e.target.closest('#legend-backdrop')
+    ));
   }
 
   function handlePointerDown(e) {
     unlockAudio();
-    if (isOnTouchChrome(e)) return;
+    if (isUiChrome(e)) return;
+    if (legendOpen) return;
 
-    // Mouse / pen: left click = left flipper, right click = right (desktop)
     if (e.pointerType === 'mouse' || e.pointerType === 'pen') {
       if (e.button === 0) {
         e.preventDefault();
@@ -152,7 +185,6 @@
         activePointers[e.pointerId] = 'right';
       }
     } else {
-      // Touch: half-screen flippers (multi-touch OK)
       e.preventDefault();
       var side = sideFromEvent(e);
       activePointers[e.pointerId] = side;
@@ -168,7 +200,6 @@
     var side = activePointers[e.pointerId];
     delete activePointers[e.pointerId];
     if (side === 'left') {
-      // release left only if no other pointer still holds left
       var stillLeft = false;
       for (var id in activePointers) {
         if (activePointers[id] === 'left') stillLeft = true;
@@ -233,19 +264,57 @@
     });
     bindHoldButton(document.getElementById('btn-launch'), beginLaunchCharge, endLaunchCharge);
     bindTapButton(document.getElementById('btn-tilt'), doTiltOrRestart);
+    bindTapButton(document.getElementById('btn-theme'), cycleTheme);
+  }
 
-    // long-press tilt button corners unused — double-tap theme: second button row not needed;
-    // theme: hold tilt 600ms cycles on touch devices
-    var tiltBtn = document.getElementById('btn-tilt');
-    if (tiltBtn) {
-      var pressT = 0;
-      tiltBtn.addEventListener('pointerdown', function () {
-        pressT = Date.now();
+  function wireLegend() {
+    if (legendClose) {
+      legendClose.addEventListener('click', function (e) {
+        e.preventDefault();
+        setLegendOpen(false);
       });
-      tiltBtn.addEventListener('pointerup', function () {
-        if (Date.now() - pressT > 550) cycleTheme();
+      legendClose.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        setLegendOpen(false);
       });
     }
+    if (legendBackdrop) {
+      legendBackdrop.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        setLegendOpen(false);
+      });
+    }
+
+    // Fast swipe right-to-left (finger moves left) opens legend
+    document.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (isUiChrome(e) && !e.target.closest('#stage')) return;
+      if (legendOpen) return;
+      swipeTrack = {
+        id: e.pointerId,
+        x: e.clientX,
+        y: e.clientY,
+        t: Date.now()
+      };
+    }, { capture: true, passive: true });
+
+    document.addEventListener('pointerup', function (e) {
+      if (!swipeTrack || swipeTrack.id !== e.pointerId) return;
+      var dx = e.clientX - swipeTrack.x;
+      var dy = e.clientY - swipeTrack.y;
+      var dt = Date.now() - swipeTrack.t;
+      swipeTrack = null;
+      // right-to-left: negative dx, fast, mostly horizontal
+      if (dt > 0 && dt < 420 && dx < -72 && Math.abs(dx) > Math.abs(dy) * 1.25) {
+        unlockAudio();
+        setLegendOpen(true);
+      }
+    }, { capture: true, passive: true });
+
+    document.addEventListener('pointercancel', function () {
+      swipeTrack = null;
+    }, { capture: true, passive: true });
   }
 
   function blockContextMenu(e) {
@@ -269,6 +338,7 @@
 
   resizeCanvas();
   wireTouchUi();
+  wireLegend();
   if (Device && Device.onChange) Device.onChange(resizeCanvas);
 
   window.addEventListener('keydown', handleKeyDown);
@@ -303,7 +373,9 @@
     },
     getThemeId: function () {
       return Assets && Assets.getThemeId ? Assets.getThemeId() : null;
-    }
+    },
+    toggleLegend: toggleLegend,
+    setLegendOpen: setLegendOpen
   };
 
   requestAnimationFrame(gameLoop);

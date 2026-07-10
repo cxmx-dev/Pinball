@@ -1,6 +1,6 @@
 /**
- * Main game loop, input wiring, and browser bootstrap.
- * Device-aware: scales table to viewport; touch half-screen + on-screen buttons.
+ * Main game loop, input wiring, browser bootstrap.
+ * Device-aware fit + touch dock + legend drawer (L / swipe).
  */
 (function () {
   'use strict';
@@ -11,11 +11,16 @@
   var Device = window.DeviceProfile;
 
   var canvas = document.getElementById('pinball-canvas');
+  var legendDrawer = document.getElementById('legend-drawer');
+  var legendBackdrop = document.getElementById('legend-backdrop');
+  var legendClose = document.getElementById('legend-close');
   var state = Sim.createInitialState();
   var lastTime = 0;
   var keys = { left: false, right: false, launch: false };
   var soundPrev = Audio.createPrev();
   var activePointers = Object.create(null);
+  var legendOpen = false;
+  var swipeTrack = null;
 
   function unlockAudio() {
     Audio.unlock();
@@ -26,14 +31,31 @@
     return !!(p && (p.isTouch || p.isPhone || p.isTablet));
   }
 
+  function setLegendOpen(open) {
+    legendOpen = !!open;
+    if (legendDrawer) {
+      legendDrawer.classList.toggle('open', legendOpen);
+      legendDrawer.setAttribute('aria-hidden', legendOpen ? 'false' : 'true');
+    }
+    if (legendBackdrop) {
+      legendBackdrop.classList.toggle('open', legendOpen);
+      legendBackdrop.setAttribute('aria-hidden', legendOpen ? 'false' : 'true');
+    }
+  }
+
+  function toggleLegend() {
+    setLegendOpen(!legendOpen);
+  }
+
   function resizeCanvas() {
     var targetW = 520;
     var targetH = 980;
     canvas.width = targetW;
     canvas.height = targetH;
+    var chrome = isTouchProfile() ? 120 : 0;
     if (Device && Device.fitCanvas) {
       Device.fitCanvas(canvas, {
-        touchChrome: isTouchProfile() ? 72 : 0,
+        touchChrome: chrome,
         pad: 8,
         allowUpscale: false
       });
@@ -88,6 +110,15 @@
 
   function handleKeyDown(e) {
     unlockAudio();
+    if (e.code === 'KeyL') {
+      e.preventDefault();
+      toggleLegend();
+      return;
+    }
+    if (legendOpen && e.code === 'Escape') {
+      setLegendOpen(false);
+      return;
+    }
     if (e.code === 'ArrowLeft') setLeftFlipper(true);
     if (e.code === 'ArrowRight') setRightFlipper(true);
     if (e.code === 'Space') {
@@ -114,13 +145,18 @@
     return x < mid ? 'left' : 'right';
   }
 
-  function isOnTouchChrome(e) {
-    return !!(e.target && e.target.closest && e.target.closest('#touch-ui'));
+  function isUiChrome(e) {
+    return !!(e.target && e.target.closest && (
+      e.target.closest('#touch-ui') ||
+      e.target.closest('#legend-drawer') ||
+      e.target.closest('#legend-backdrop')
+    ));
   }
 
   function handlePointerDown(e) {
     unlockAudio();
-    if (isOnTouchChrome(e)) return;
+    if (isUiChrome(e)) return;
+    if (legendOpen) return;
 
     if (e.pointerType === 'mouse' || e.pointerType === 'pen') {
       if (e.button === 0) {
@@ -214,6 +250,53 @@
     bindTapButton(document.getElementById('btn-tilt'), doTiltOrRestart);
   }
 
+  function wireLegend() {
+    if (legendClose) {
+      legendClose.addEventListener('click', function (e) {
+        e.preventDefault();
+        setLegendOpen(false);
+      });
+      legendClose.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        setLegendOpen(false);
+      });
+    }
+    if (legendBackdrop) {
+      legendBackdrop.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        setLegendOpen(false);
+      });
+    }
+
+    document.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (legendOpen) return;
+      swipeTrack = {
+        id: e.pointerId,
+        x: e.clientX,
+        y: e.clientY,
+        t: Date.now()
+      };
+    }, { capture: true, passive: true });
+
+    document.addEventListener('pointerup', function (e) {
+      if (!swipeTrack || swipeTrack.id !== e.pointerId) return;
+      var dx = e.clientX - swipeTrack.x;
+      var dy = e.clientY - swipeTrack.y;
+      var dt = Date.now() - swipeTrack.t;
+      swipeTrack = null;
+      if (dt > 0 && dt < 420 && dx < -72 && Math.abs(dx) > Math.abs(dy) * 1.25) {
+        unlockAudio();
+        setLegendOpen(true);
+      }
+    }, { capture: true, passive: true });
+
+    document.addEventListener('pointercancel', function () {
+      swipeTrack = null;
+    }, { capture: true, passive: true });
+  }
+
   function blockContextMenu(e) {
     e.preventDefault();
   }
@@ -235,6 +318,7 @@
 
   resizeCanvas();
   wireTouchUi();
+  wireLegend();
   if (Device && Device.onChange) Device.onChange(resizeCanvas);
 
   window.addEventListener('keydown', handleKeyDown);
@@ -262,7 +346,9 @@
       state = Sim.createInitialState();
       soundPrev = Audio.createPrev();
     },
-    gameLoop: gameLoop
+    gameLoop: gameLoop,
+    toggleLegend: toggleLegend,
+    setLegendOpen: setLegendOpen
   };
 
   requestAnimationFrame(gameLoop);

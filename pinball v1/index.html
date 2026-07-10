@@ -35,6 +35,7 @@
       gap: 8px;
       max-width: 100%;
       max-height: 100%;
+      z-index: 2;
     }
     #game-wrap {
       position: relative;
@@ -62,12 +63,12 @@
       gap: 8px;
       z-index: 5;
       padding: 0 4px 4px;
+      grid-template-columns: 1fr 1fr 1fr;
     }
     html.input-touch #touch-ui,
     html.device-phone #touch-ui,
     html.device-tablet #touch-ui {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr;
     }
     #touch-ui button {
       font-family: inherit;
@@ -89,6 +90,23 @@
       border-color: #a8b4ff;
       color: #fff;
     }
+    #swipe-legend-hint {
+      display: none;
+      grid-column: 1 / -1;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #00ff00;
+      text-shadow: 0 0 8px rgba(0, 255, 0, 0.45);
+      padding: 6px 4px 2px;
+      line-height: 1.35;
+    }
+    html.input-touch #swipe-legend-hint,
+    html.device-phone #swipe-legend-hint,
+    html.device-tablet #swipe-legend-hint {
+      display: block;
+    }
     #touch-hint {
       display: none;
       position: fixed;
@@ -104,22 +122,183 @@
       white-space: nowrap;
     }
     html.input-touch #touch-hint { display: block; }
+
+    #legend-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(4, 2, 12, 0.55);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.28s ease;
+    }
+    #legend-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #legend-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      z-index: 50;
+      width: min(320px, 88vw);
+      height: 100%;
+      max-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background:
+        linear-gradient(165deg, rgba(18, 12, 40, 0.98) 0%, rgba(6, 4, 16, 0.98) 100%);
+      border-left: 1px solid rgba(120, 140, 255, 0.45);
+      box-shadow: -12px 0 40px rgba(0, 0, 0, 0.65), 0 0 24px rgba(80, 100, 255, 0.15);
+      transform: translateX(105%);
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+      padding:
+        max(12px, env(safe-area-inset-top))
+        max(14px, env(safe-area-inset-right))
+        max(12px, env(safe-area-inset-bottom))
+        14px;
+    }
+    #legend-drawer.open { transform: translateX(0); }
+    #legend-drawer h2 {
+      font-size: 0.95rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #a8b4ff;
+      text-shadow: 0 0 12px rgba(120, 140, 255, 0.4);
+      margin: 0 0 4px;
+      flex-shrink: 0;
+    }
+    #legend-drawer .legend-sub {
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(160, 140, 255, 0.85);
+      margin-bottom: 14px;
+      flex-shrink: 0;
+    }
+    #legend-drawer .legend-scroll {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      padding-right: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    #legend-drawer table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72rem;
+      line-height: 1.35;
+    }
+    #legend-drawer th {
+      text-align: left;
+      color: rgba(160, 170, 255, 0.75);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-size: 0.62rem;
+      padding: 10px 0 6px;
+      border-bottom: 1px solid rgba(120, 140, 255, 0.25);
+    }
+    #legend-drawer td {
+      padding: 7px 6px 7px 0;
+      vertical-align: top;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #d0d8ff;
+    }
+    #legend-drawer td:first-child {
+      color: #b8c4ff;
+      font-weight: 700;
+      white-space: nowrap;
+      width: 42%;
+      padding-right: 8px;
+    }
+    #legend-drawer .legend-foot {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(120, 140, 255, 0.2);
+    }
+    #legend-close {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #c8c0ff;
+      background: rgba(30, 20, 50, 0.9);
+      border: 1px solid rgba(140, 120, 255, 0.5);
+      border-radius: 8px;
+      min-height: 44px;
+      min-width: 88px;
+      padding: 8px 14px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #legend-close:active {
+      background: rgba(100, 90, 220, 0.3);
+      color: #fff;
+    }
+    #legend-drawer .legend-l {
+      font-size: 0.62rem;
+      color: rgba(180, 190, 255, 0.55);
+      letter-spacing: 0.06em;
+    }
   </style>
 </head>
 <body oncontextmenu="return false">
-  <div id="touch-hint">Tap left / right of table for flippers</div>
+  <div id="touch-hint">Hold L / R pads · Launch · swipe legend</div>
   <div id="stage">
     <div id="game-wrap">
       <canvas id="pinball-canvas" width="520" height="980"></canvas>
     </div>
     <div id="touch-ui" aria-label="Touch controls">
-      <button type="button" id="btn-left" data-flip="left">Left</button>
+      <button type="button" id="btn-left" data-flip="left">L Flip</button>
       <button type="button" id="btn-launch" data-action="launch">Launch</button>
-      <button type="button" id="btn-tilt" data-action="tilt">Tilt / R</button>
-      <button type="button" id="btn-right" data-flip="right">Right</button>
+      <button type="button" id="btn-right" data-flip="right">R Flip</button>
+      <button type="button" id="btn-tilt" data-action="tilt">Tilt</button>
+      <div id="swipe-legend-hint">swipe right to left fast to see the legend</div>
     </div>
   </div>
   <div class="vignette"></div>
+
+  <div id="legend-backdrop" aria-hidden="true"></div>
+  <aside id="legend-drawer" aria-label="Controls legend" aria-hidden="true">
+    <h2>Controls</h2>
+    <div class="legend-sub">NEON NEXUS · legend</div>
+    <div class="legend-scroll">
+      <table>
+        <thead><tr><th colspan="2">Desktop</th></tr></thead>
+        <tbody>
+          <tr><td>← / →</td><td>Left / right flipper</td></tr>
+          <tr><td>LMB / RMB</td><td>Left / right flipper</td></tr>
+          <tr><td>Space hold</td><td>Charge plunger</td></tr>
+          <tr><td>Space release</td><td>Launch ball</td></tr>
+          <tr><td>R</td><td>Tilt (×3 drain) · restart if game over</td></tr>
+          <tr><td>L</td><td>Toggle this legend</td></tr>
+        </tbody>
+      </table>
+      <table>
+        <thead><tr><th colspan="2">Mobile / touch</th></tr></thead>
+        <tbody>
+          <tr><td>L Flip / R Flip</td><td>Hold flipper pads</td></tr>
+          <tr><td>Table half</td><td>Tap/hold left or right side of table</td></tr>
+          <tr><td>Launch</td><td>Hold to charge · release to fire</td></tr>
+          <tr><td>Tilt</td><td>Nudge · restart on game over</td></tr>
+          <tr><td>Swipe ← fast</td><td>Open legend (from right edge)</td></tr>
+          <tr><td>[X] Close</td><td>Dismiss legend</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend-foot">
+      <button type="button" id="legend-close">[X] Close</button>
+      <span class="legend-l">L toggles · audio unlocks on first input</span>
+    </div>
+  </aside>
+
   <script src="device.js"></script>
   <script src="simulation.js"></script>
   <script src="renderer.js"></script>

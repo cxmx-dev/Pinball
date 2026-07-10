@@ -36,10 +36,23 @@ Long capture session showed multi-mode HUD (skill shot, jackpot, high combos), c
 - Static Pages: root `index.html` launcher → v1 / v2.  
 - OPSEC: test/verify scratch defaults use `os.tmpdir()/pinball-scratch` (no profile paths).  
 - Live: https://github.com/cxmx-dev/Pinball · https://cxmx-dev.github.io/Pinball/
+- Device-aware: `device.js`, CSS-fit table, touch half-flippers + on-screen Launch/Tilt.  
+- Batch push: hub `.\scripts\start-all.ps1` (Pinball uses `-NoPreview`).
+
+### Legend + mobile (71026 PM)
+
+- Right **slide-drawer legend** (VOID PULSE cyan/magenta · NEON purple).  
+- Toggle **L**; mobile **fast swipe right-to-left**; **[X] Close** bottom-left.  
+- Mobile dock: L Flip · Launch · R Flip · Tilt · Theme (v2) + **`#00ff00`** swipe hint.  
+- Public READMEs: **Controls at top**.
 
 ---
 
 ## Version History
+
+**71026 3:30:07:67 PM CST** — legend drawer + mobile scheme + controls-first docs.
+
+**71026 2:49:40:70 PM CST** — `update .mds`: device-aware + start-all documented.
 
 **71026 1:41:17:74 PM CST** — hub co-locate + first Pages deploy wiring; portable SCRATCH defaults.
 
