@@ -31,6 +31,9 @@ In-game **legend** slides from the **right**: press **L**, or on mobile **swipe 
 | **Swipe right → left fast** | Open legend |
 | Green **`#00ff00`** dock line | *swipe right to left fast to see the legend* |
 | **[X] Close** | Bottom-left of legend |
+| **Game over** | **Press here to Restart** — tap the **spinning / shining pinball** |
+
+Desktop: **R** to restart. Mobile: press the animated pinball.
 
 Audio unlocks on the first key, click, or touch.
 
@@ -130,6 +133,14 @@ node verify-browser.js
 ---
 
 ## Version History
+
+**71026 3:45:44:35 PM CST**
+
+- **`update .mds`:** Controls-first README complete (legend + mobile dock + game-over pinball restart).
+
+**71026 3:43:05:78 PM CST**
+
+- Mobile game over: **Press here to Restart** + spinning/shining pinball button.
 
 **71026 3:30:07:67 PM CST**
 

@@ -45,10 +45,15 @@ Long capture session showed multi-mode HUD (skill shot, jackpot, high combos), c
 - Toggle **L**; mobile **fast swipe right-to-left**; **[X] Close** bottom-left.  
 - Mobile dock: L Flip · Launch · R Flip · Tilt · Theme (v2) + **`#00ff00`** swipe hint.  
 - Public READMEs: **Controls at top**.
+- **Game over (mobile):** **Press here to Restart** + spinning/shining pinball button (must press).
 
 ---
 
 ## Version History
+
+**71026 3:45:44:35 PM CST** — **`update .mds`:** all Pinball public `.md` controls tables + session notes aligned to legend / mobile dock / game-over pinball restart.
+
+**71026 3:43:05:78 PM CST** — mobile game-over pinball restart control.
 
 **71026 3:30:07:67 PM CST** — legend drawer + mobile scheme + controls-first docs.
 

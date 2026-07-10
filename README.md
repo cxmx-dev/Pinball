@@ -30,6 +30,7 @@ Legend drawer slides in from the **right** on **v1** and **v2**.
 | **Swipe right → left fast** | Open legend from the right |
 | **`#00ff00` dock hint** | Reminds you to swipe for legend |
 | **[X] Close** | Bottom-left of legend drawer |
+| **Game over** | **Press here to Restart** — tap the **spinning / shining pinball** (mobile) |
 
 Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / desktop (`device.js`).
 
@@ -65,6 +66,14 @@ Machine-local paths → `USER-NOTES.md` (local only, gitignored).
 ---
 
 ## Version History
+
+**71026 3:45:44:35 PM CST**
+
+- **`update .mds`:** full public control docs synced — legend drawer, mobile dock, green swipe hint, game-over spinning pinball restart; **Controls always first** on root + v1 + v2 READMEs.
+
+**71026 3:43:05:78 PM CST**
+
+- Mobile **game over**: **Press here to Restart** + animated spinning/shining pinball button (must press). Desktop still uses **R**.
 
 **71026 3:30:07:67 PM CST**
 

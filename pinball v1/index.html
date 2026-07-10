@@ -247,10 +247,104 @@
       color: rgba(180, 190, 255, 0.55);
       letter-spacing: 0.06em;
     }
+
+    #gameover-restart {
+      display: none;
+      position: fixed;
+      left: 50%;
+      top: 48%;
+      transform: translate(-50%, -50%);
+      z-index: 30;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      pointer-events: none;
+    }
+    #gameover-restart.show {
+      display: flex;
+      pointer-events: auto;
+    }
+    #gameover-restart .restart-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #e8eaff;
+      text-shadow: 0 0 10px rgba(120, 140, 255, 0.55), 0 0 22px rgba(160, 100, 255, 0.3);
+      text-align: center;
+      max-width: 16rem;
+      line-height: 1.4;
+    }
+    #btn-restart-ball {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      border: none;
+      padding: 0;
+      border-radius: 50%;
+      background: transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      filter: drop-shadow(0 0 18px rgba(120, 140, 255, 0.5));
+    }
+    #btn-restart-ball:active { transform: scale(0.94); }
+    #btn-restart-ball .pinball-orb {
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 32% 28%, #ffffff 0%, #e8ecff 12%, #a8b4ff 28%, #5060e0 52%, #202060 72%, #060618 100%);
+      box-shadow:
+        inset -10px -12px 22px rgba(0, 0, 0, 0.45),
+        inset 6px 8px 14px rgba(255, 255, 255, 0.25),
+        0 0 20px rgba(120, 140, 255, 0.55);
+      animation: pinball-spin 2.2s linear infinite;
+    }
+    #btn-restart-ball .pinball-shine {
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        rgba(255, 255, 255, 0.55) 28deg,
+        transparent 70deg,
+        transparent 180deg,
+        rgba(160, 170, 255, 0.4) 210deg,
+        transparent 260deg
+      );
+      mix-blend-mode: screen;
+      animation: pinball-spin 2.2s linear infinite, pinball-pulse 1.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    #btn-restart-ball .pinball-rim {
+      position: absolute;
+      inset: 2px;
+      border-radius: 50%;
+      border: 2px solid rgba(160, 170, 255, 0.55);
+      box-shadow: 0 0 12px rgba(120, 140, 255, 0.4);
+      animation: pinball-pulse 1.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes pinball-spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes pinball-pulse {
+      0%, 100% { opacity: 0.75; filter: brightness(1); }
+      50% { opacity: 1; filter: brightness(1.25); }
+    }
   </style>
 </head>
 <body oncontextmenu="return false">
   <div id="touch-hint">Hold L / R pads · Launch · swipe legend</div>
+  <div id="gameover-restart" aria-hidden="true">
+    <div class="restart-label">Press here to Restart</div>
+    <button type="button" id="btn-restart-ball" aria-label="Press here to Restart">
+      <span class="pinball-rim" aria-hidden="true"></span>
+      <span class="pinball-orb" aria-hidden="true"></span>
+      <span class="pinball-shine" aria-hidden="true"></span>
+    </button>
+  </div>
   <div id="stage">
     <div id="game-wrap">
       <canvas id="pinball-canvas" width="520" height="980"></canvas>
@@ -290,6 +384,7 @@
           <tr><td>Tilt</td><td>Nudge · restart on game over</td></tr>
           <tr><td>Swipe ← fast</td><td>Open legend (from right edge)</td></tr>
           <tr><td>[X] Close</td><td>Dismiss legend</td></tr>
+          <tr><td>Game over</td><td>Press here to Restart — spin the pinball</td></tr>
         </tbody>
       </table>
     </div>

@@ -31,6 +31,9 @@ In-game **legend** slides from the **right**: press **L**, or on mobile **swipe 
 | **Swipe right → left fast** | Open legend drawer from the right |
 | Green **`#00ff00`** line under dock | *swipe right to left fast to see the legend* |
 | **[X] Close** | Bottom-left of legend |
+| **Game over** | **Press here to Restart** — tap the **spinning / shining pinball** (required on mobile) |
+
+Desktop game over: **R** to play again. Mobile: press the animated pinball (not R-only).
 
 Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / desktop (`device.js`).
 
@@ -96,6 +99,14 @@ Machine-local capture paths: see `USER-NOTES.md` (not published).
 ---
 
 ## Version History
+
+**71026 3:45:44:35 PM CST**
+
+- **`update .mds`:** Controls-first README complete (desktop + mobile legend + game-over pinball restart).
+
+**71026 3:43:05:78 PM CST**
+
+- Mobile game over: **Press here to Restart** with spinning/shining pinball control.
 
 **71026 3:30:07:67 PM CST**
 

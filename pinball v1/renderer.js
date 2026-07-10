@@ -648,7 +648,16 @@
       ctx.font = '18px Orbitron, sans-serif';
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
       ctx.shadowBlur = 0;
-      ctx.fillText('Press R to play again', canvas.width / 2, canvas.height * 0.38 + 44);
+      var touchGo = false;
+      try {
+        var dp = typeof window !== 'undefined' && window.DeviceProfile && window.DeviceProfile.get && window.DeviceProfile.get();
+        touchGo = !!(dp && (dp.isTouch || dp.isPhone || dp.isTablet));
+      } catch (e) { /* ignore */ }
+      if (touchGo) {
+        ctx.fillText('Press here to Restart', canvas.width / 2, canvas.height * 0.38 + 44);
+      } else {
+        ctx.fillText('Press R to play again', canvas.width / 2, canvas.height * 0.38 + 44);
+      }
       ctx.fillText('Final: ' + formatScore(state.score), canvas.width / 2, canvas.height * 0.38 + 76);
     }
     ctx.restore();

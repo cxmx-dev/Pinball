@@ -15,6 +15,8 @@
   var legendDrawer = document.getElementById('legend-drawer');
   var legendBackdrop = document.getElementById('legend-backdrop');
   var legendClose = document.getElementById('legend-close');
+  var gameOverUi = document.getElementById('gameover-restart');
+  var btnRestartBall = document.getElementById('btn-restart-ball');
   var state = Sim.createInitialState();
   var lastTime = 0;
   var keys = { left: false, right: false, launch: false };
@@ -22,6 +24,7 @@
   var activePointers = Object.create(null);
   var legendOpen = false;
   var swipeTrack = null;
+  var lastPhase = state.phase;
 
   if (Assets && Assets.preloadTheme) {
     Assets.preloadTheme();
@@ -105,13 +108,27 @@
     }
   }
 
+  function restartGame() {
+    state = Sim.createInitialState();
+    soundPrev = Audio.createPrev();
+    lastPhase = state.phase;
+    updateGameOverUi();
+  }
+
   function doTiltOrRestart() {
     if (state.phase === 'game_over') {
-      state = Sim.createInitialState();
-      soundPrev = Audio.createPrev();
+      restartGame();
     } else if (state.ball.inPlay) {
       Sim.tilt(state);
     }
+  }
+
+  function updateGameOverUi() {
+    if (!gameOverUi) return;
+    // Mobile / touch: show spinning pinball restart
+    var show = state.phase === 'game_over' && isTouchProfile();
+    gameOverUi.classList.toggle('show', show);
+    gameOverUi.setAttribute('aria-hidden', show ? 'false' : 'true');
   }
 
   function cycleTheme() {
@@ -165,7 +182,8 @@
     return !!(e.target && e.target.closest && (
       e.target.closest('#touch-ui') ||
       e.target.closest('#legend-drawer') ||
-      e.target.closest('#legend-backdrop')
+      e.target.closest('#legend-backdrop') ||
+      e.target.closest('#gameover-restart')
     ));
   }
 
@@ -265,6 +283,17 @@
     bindHoldButton(document.getElementById('btn-launch'), beginLaunchCharge, endLaunchCharge);
     bindTapButton(document.getElementById('btn-tilt'), doTiltOrRestart);
     bindTapButton(document.getElementById('btn-theme'), cycleTheme);
+
+    if (btnRestartBall) {
+      function pressRestart(ev) {
+        unlockAudio();
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (state.phase === 'game_over') restartGame();
+      }
+      btnRestartBall.addEventListener('pointerdown', pressRestart);
+      btnRestartBall.addEventListener('click', pressRestart);
+    }
   }
 
   function wireLegend() {
@@ -333,13 +362,24 @@
     soundPrev = Audio.processState(state, soundPrev);
     Render.render(canvas, state, dt);
 
+    if (state.phase !== lastPhase) {
+      lastPhase = state.phase;
+      updateGameOverUi();
+    }
+
     requestAnimationFrame(gameLoop);
   }
 
   resizeCanvas();
   wireTouchUi();
   wireLegend();
-  if (Device && Device.onChange) Device.onChange(resizeCanvas);
+  updateGameOverUi();
+  if (Device && Device.onChange) {
+    Device.onChange(function () {
+      resizeCanvas();
+      updateGameOverUi();
+    });
+  }
 
   window.addEventListener('keydown', handleKeyDown);
   window.addEventListener('keyup', handleKeyUp);
