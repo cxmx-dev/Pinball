@@ -47,9 +47,18 @@ Long capture session showed multi-mode HUD (skill shot, jackpot, high combos), c
 - Public READMEs: **Controls at top**.
 - **Game over (mobile):** **Press here to Restart** + spinning/shining pinball button (must press).
 
+### Local vs live (User cheat sheet)
+
+- **Internet out / no GitHub:** `cd` Pinball repo → `npx --yes serve .` → localhost or LAN IP. Play is fully local.  
+- **Push after Grok edits:** hub `.\scripts\start.ps1 -Repo Pinball` (needs net).  
+- **Friends online:** github.io only. LAN `192.168.x.x:3000` only while serve runs.  
+- Firewall helper `allow-lan-preview.ps1` stays local/untracked.
+
 ---
 
 ## Version History
+
+**71026 4:42:24:18 PM CST** — **`update .mds`:** offline local host confirmed + documented (internet-out play); push vs LAN vs github.io split.
 
 **71026 3:45:44:35 PM CST** — **`update .mds`:** all Pinball public `.md` controls tables + session notes aligned to legend / mobile dock / game-over pinball restart.
 

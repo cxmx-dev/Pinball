@@ -111,16 +111,18 @@ console.log('=============================');
   console.log('PASS: medium launch exits lane without drain');
 })();
 
-(function testChargeLaunchCyclesMeter() {
+(function testChargeLaunchHoldsAtMax() {
   var state = fresh();
   state.launchCharging = true;
-  sim.chargeLaunch(state, 1.5);
-  assert(state.launchPower >= 0 && state.launchPower < 1, 'meter stays in 0-1 range');
-  var wrapped = fresh();
-  wrapped.launchCharging = true;
-  sim.chargeLaunch(wrapped, 3);
-  assert(wrapped.launchPower >= 0 && wrapped.launchPower < 1, 'meter wraps instead of clamping');
-  console.log('PASS: charge launch cycles power meter');
+  sim.chargeLaunch(state, 0.5);
+  assert(state.launchPower >= 0 && state.launchPower <= 1, 'meter stays in 0-1 range');
+  var held = fresh();
+  held.launchCharging = true;
+  sim.chargeLaunch(held, 3);
+  assert(held.launchPower === 1, 'meter clamps at full power (no wrap)');
+  var p = sim.meterToLaunchPower(held.launchPower);
+  assert(p >= 1300, 'full meter maps to strong launch, got ' + p);
+  console.log('PASS: charge launch holds at max power');
 })();
 
 (function testLeftOutlaneShelfBlocksUpperIntrusion() {

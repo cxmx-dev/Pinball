@@ -50,17 +50,28 @@ Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / d
 - **v2 (current):** open `pinball v2/index.html` or serve path `/pinball%20v2/`
 - **v1:** open `pinball v1/index.html` or `/pinball%20v1/`
 
-### Local serve (dev / phone on same Wi‑Fi)
+### Local serve (dev / phone on same Wi‑Fi / **internet out**)
+
+**Yes — you can play with no GitHub and no internet**, as long as Node + `serve` are already on the PC (after a prior `npx` install, the package stays cached).
 
 ```bash
 # from this repo root only — not the hub parent folder
 npx --yes serve .
 ```
 
+| Goal | Do this |
+|------|---------|
+| PC only | `http://localhost:3000/pinball%20v2/` |
+| Phone on same LAN | Network URL serve prints → `http://192.168.x.x:3000/pinball%20v2/` |
+| Internet / GitHub down | Same local serve — **no** github.io needed |
+| Friends anytime online | https://cxmx-dev.github.io/Pinball/ (no `serve`) |
+
 Open **`/pinball%20v2/`** (trailing slash) or **`/pinball%20v2/index.html`**.  
 Without the slash/`index.html`, browsers load scripts from the wrong folder and the table stays blank (404).
 
-Phone: use the **Network** URL `serve` prints (e.g. `http://192.168.x.x:3000/pinball%20v2/`), PC and phone on the same Wi‑Fi, leave serve running.
+Leave the terminal running while you play. Phone LAN needs Private Wi‑Fi + firewall once (`allow-lan-preview.ps1` on this machine — local only).
+
+**Push after Grok edits** (needs internet): hub `.\scripts\start.ps1 -Repo Pinball` — not required for local play.
 
 Each version folder has its own `README.md` (controls at top).
 
@@ -78,6 +89,10 @@ Machine-local paths → `USER-NOTES.md` (local only, gitignored).
 ---
 
 ## Version History
+
+**71026 4:42:24:18 PM CST**
+
+- **`update .mds`:** documented **offline / internet-out local play** (`npx serve` from repo root, no GitHub required); LAN phone vs github.io summary; push habit separate from local host.
 
 **71026 3:45:44:35 PM CST**
 

@@ -203,7 +203,8 @@
       { x1: FLIPPER_INLANE_X, y1: LEFT_INLANE_POST_TOP, x2: FLIPPER_INLANE_X, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' },
       { x1: FLIPPER_INLANE_X, y1: FLIPPER_ROW_Y - 20, x2: FLIPPER_INLANE_X, y2: chuteBottom, kind: 'chute' },
       { x1: 36, y1: 540, x2: FLIPPER_INLANE_X + 6, y2: LEFT_INLANE_POST_TOP + 20, kind: 'chute' },
-      { x1: 36, y1: 210, x2: 92, y2: 145, kind: 'chute' },
+      // Upper-left deflector: keep OFF the left rail so ball diameter fits (old 36,210→92,145 wedged).
+      { x1: 78, y1: 195, x2: 128, y2: 118, kind: 'chute' },
       { x1: rightInlaneX, y1: FLIPPER_ROW_Y - 20, x2: rightInlaneX, y2: chuteBottom, kind: 'chute' },
       { x1: bounds.centerLeft, y1: FLIPPER_ROW_Y, x2: bounds.centerLeft, y2: chuteBottom, kind: 'chute' },
       { x1: bounds.centerRight, y1: FLIPPER_ROW_Y, x2: bounds.centerRight, y2: chuteBottom, kind: 'chute' },
@@ -646,19 +647,47 @@
     var speed = ballSpeed(ball);
     if (speed > BUMPER_UNSTICK_SPEED) return;
     state.bumpers.forEach(function (bumper) {
-      if (!bumper.saver) return;
       var dx = ball.x - bumper.x;
       var dy = ball.y - bumper.y;
       var dist = vecLen(dx, dy);
       var minDist = ball.radius + bumper.radius;
-      if (dist >= minDist - 0.5) return;
-      var n = normalize(dx, dy);
-      ball.x = bumper.x + n.x * (minDist + 3);
-      ball.y = bumper.y + n.y * (minDist + 3);
-      ball.vx = n.x * 200 + 80;
-      ball.vy = n.y * 200 - 50;
+      // Saver: always free if overlapping. Other bumpers: free if slow + very close.
+      var sticky = bumper.saver
+        ? dist < minDist - 0.5
+        : dist < minDist + 4;
+      if (!sticky) return;
+      var n = normalize(dx || 0.2, dy || -1);
+      ball.x = bumper.x + n.x * (minDist + 4);
+      ball.y = bumper.y + n.y * (minDist + 4);
+      var kick = bumper.saver ? 200 : 160;
+      ball.vx = n.x * kick + (bumper.saver ? 80 : 40);
+      ball.vy = n.y * kick - 60;
       bumper.hitCooldown = HIT_COOLDOWN_BUMPER;
     });
+  }
+
+  /** Free ball wedged in upper-left rail corner / narrow side pockets. */
+  function unstickFromCorners(state) {
+    var ball = state.ball;
+    if (!ball.inPlay || !state.exitedLaunchLane) return;
+    var speed = ballSpeed(ball);
+    if (speed > 55) return;
+    var r = ball.radius;
+    // Top-left pocket: near left rail + upper third of table
+    var nearLeft = ball.x - r < 36 + 22;
+    var upper = ball.y < 280;
+    if (nearLeft && upper) {
+      ball.x = Math.max(ball.x, 36 + r + 10);
+      ball.vx = Math.max(ball.vx, 140);
+      ball.vy = Math.min(ball.vy, -40);
+    }
+    // Symmetric top-right (inside playfield, not launch lane)
+    var nearRightPlay = ball.x + r > LAUNCH_LANE_LEFT - 22 && ball.x < LAUNCH_LANE_LEFT - 4;
+    if (nearRightPlay && upper && speed < 55) {
+      ball.x = Math.min(ball.x, LAUNCH_LANE_LEFT - r - 10);
+      ball.vx = Math.min(ball.vx, -120);
+      ball.vy = Math.min(ball.vy, -30);
+    }
   }
 
   function resolveKickerCollisions(state) {
@@ -947,6 +976,7 @@
     resolveSlingshotCollisions(state);
     resolveBumperCollisions(state);
     unstickFromBumpers(state);
+    unstickFromCorners(state);
     resolveKickerCollisions(state);
     resolveTargetCollisions(state);
     resolveRolloverCollisions(state);
