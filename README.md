@@ -20,6 +20,8 @@ Vanilla browser pinball prototypes (HTML5 Canvas + Web Audio). No frameworks.
 - **v2 (current):** open `pinball v2/index.html`
 - **v1:** open `pinball v1/index.html`
 
+**Device-aware:** phone / tablet / desktop auto-detected (`device.js`). Table scales to the viewport; touch gets half-screen flippers + on-screen Launch / Tilt (v2 long-press Tilt ≈ theme). Desktop keeps arrows / space / click.
+
 Each version folder has its own `README.md` for controls and architecture.
 
 ## Tests (per version folder)

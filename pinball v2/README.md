@@ -19,8 +19,9 @@ A playable vertical pinball table: gravity, flippers, charge launch, scoring mod
 | **R** (in play) | Tilt / nudge (2 warnings, 3rd loses ball) |
 | **R** (game over) | Restart |
 | **T** | Cycle theme pack (art only; same physics) |
+| **Touch** | Tap left / right half of table (or on-screen Left/Right); hold **Launch**; **Tilt / R**; long-press Tilt ≈ **T** theme |
 
-Audio unlocks on first key or click.
+Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / desktop (`device.js`).
 
 ## Quick start
 

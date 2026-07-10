@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Void Pulse Pinball</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,38 +20,112 @@
         radial-gradient(ellipse at 70% 80%, rgba(255, 40, 180, 0.1) 0%, transparent 50%),
         radial-gradient(ellipse at center, #12102a 0%, #050208 70%);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       font-family: 'Orbitron', monospace;
       touch-action: none;
       cursor: default;
       user-select: none;
+      -webkit-user-select: none;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    #stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      max-width: 100%;
+      max-height: 100%;
     }
     #game-wrap {
       position: relative;
       filter: drop-shadow(0 0 48px rgba(0, 220, 255, 0.22))
               drop-shadow(0 0 80px rgba(255, 40, 180, 0.12))
               drop-shadow(0 20px 60px rgba(0, 0, 0, 0.85));
+      line-height: 0;
     }
     #pinball-canvas {
       display: block;
       border-radius: 10px;
       background: #070612;
       box-shadow: inset 0 0 0 1px rgba(0, 240, 255, 0.15);
+      max-width: 100%;
+      height: auto;
     }
     .vignette {
       pointer-events: none;
       position: fixed;
       inset: 0;
       background: radial-gradient(ellipse at center, transparent 38%, rgba(0,0,0,0.62) 100%);
+      z-index: 1;
     }
+    #touch-ui {
+      display: none;
+      width: min(520px, 96vw);
+      gap: 8px;
+      z-index: 5;
+      padding: 0 4px 4px;
+    }
+    html.input-touch #touch-ui,
+    html.device-phone #touch-ui,
+    html.device-tablet #touch-ui {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+    }
+    #touch-ui button {
+      font-family: inherit;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #d8f7ff;
+      background: rgba(10, 14, 28, 0.88);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      border-radius: 10px;
+      min-height: 48px;
+      padding: 8px 4px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #touch-ui button:active,
+    #touch-ui button.held {
+      background: rgba(0, 180, 220, 0.35);
+      border-color: #5ee7ff;
+      color: #fff;
+    }
+    #touch-hint {
+      display: none;
+      position: fixed;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 6;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(200, 230, 255, 0.55);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    html.input-touch #touch-hint { display: block; }
   </style>
 </head>
 <body oncontextmenu="return false">
-  <div id="game-wrap">
-    <canvas id="pinball-canvas" width="520" height="980"></canvas>
+  <div id="touch-hint">Tap left / right of table for flippers</div>
+  <div id="stage">
+    <div id="game-wrap">
+      <canvas id="pinball-canvas" width="520" height="980"></canvas>
+    </div>
+    <div id="touch-ui" aria-label="Touch controls">
+      <button type="button" id="btn-left" data-flip="left">Left</button>
+      <button type="button" id="btn-launch" data-action="launch">Launch</button>
+      <button type="button" id="btn-tilt" data-action="tilt">Tilt / R</button>
+      <button type="button" id="btn-right" data-flip="right">Right</button>
+    </div>
   </div>
   <div class="vignette"></div>
+  <script src="device.js"></script>
   <script src="simulation.js"></script>
   <script src="assets.js"></script>
   <script src="renderer.js"></script>
