@@ -991,8 +991,9 @@
 
   function chargeLaunch(state, dt) {
     if (state.launchCharging && !state.ball.inPlay) {
-      state.launchPower += dt * LAUNCH_CHARGE_RATE;
-      while (state.launchPower >= 1) state.launchPower -= 1;
+      // Hold at full power (1.0). Do NOT wrap — wrapping made the red max meter
+      // drop to ~0 and launch weakly right when the bar looked full.
+      state.launchPower = Math.min(1, state.launchPower + dt * LAUNCH_CHARGE_RATE);
     }
     return state;
   }

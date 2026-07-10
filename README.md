@@ -46,9 +46,21 @@ Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / d
 
 ## Quick play
 
-- **Live:** https://cxmx-dev.github.io/Pinball/ (launcher → v2 recommended)
-- **v2 (current):** open `pinball v2/index.html`
-- **v1:** open `pinball v1/index.html`
+- **Live (share this):** https://cxmx-dev.github.io/Pinball/ (launcher → v2 recommended)
+- **v2 (current):** open `pinball v2/index.html` or serve path `/pinball%20v2/`
+- **v1:** open `pinball v1/index.html` or `/pinball%20v1/`
+
+### Local serve (dev / phone on same Wi‑Fi)
+
+```bash
+# from this repo root only — not the hub parent folder
+npx --yes serve .
+```
+
+Open **`/pinball%20v2/`** (trailing slash) or **`/pinball%20v2/index.html`**.  
+Without the slash/`index.html`, browsers load scripts from the wrong folder and the table stays blank (404).
+
+Phone: use the **Network** URL `serve` prints (e.g. `http://192.168.x.x:3000/pinball%20v2/`), PC and phone on the same Wi‑Fi, leave serve running.
 
 Each version folder has its own `README.md` (controls at top).
 

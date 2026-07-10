@@ -2,6 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <!-- Without a trailing slash, browsers resolve simulation.js etc. to the parent folder (404). -->
+  <script>
+  (function () {
+    var p = location.pathname || '';
+    if (!/\/$/i.test(p) && !/index\.html$/i.test(p)) {
+      location.replace(p + '/' + (location.search || '') + (location.hash || ''));
+    }
+  })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
