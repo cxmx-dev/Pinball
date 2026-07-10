@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>JS 3D Pinball</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #111; font-family: 'Courier New', Courier, monospace; }
+        #score-board {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #ffcc00;
+            font-size: 32px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ffcc00;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        .key { border: 1px solid white; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="score-board">SCORE: <span id="score">0</span></div>
+    <div id="controls">
+        Controls:<br>
+        <span class="key">Space</span> Plunger<br>
+        <span class="key">←</span> Left Flipper<br>
+        <span class="key">→</span> Right Flipper<br>
+        <span class="key">R</span> Reset Ball
+    </div>
+
+    <!-- Import Maps for Three.js and Cannon-es -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "cannon-es": "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import * as CANNON from 'cannon-es';
+
+        // --- CONFIGURATION ---
+        const TABLE_WIDTH = 10;
+        const TABLE_LENGTH = 20;
+        const BALL_RADIUS = 0.4;
+        const FLIPPER_LENGTH = 3.5;
+        
+        // Game State
+        let score = 0;
+        const scoreEl = document.getElementById('score');
+
+        // --- SETUP SCENE & PHYSICS ---
+        // Visuals
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a1a);
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 18, 15); 
+        camera.lookAt(0, 0, -2);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+        scene.add(ambientLight);
+
+        const spotLight = new THREE.SpotLight(0xffffff, 100);
+        spotLight.position.set(0, 20, 5);
+        spotLight.angle = Math.PI / 4;
+        spotLight.penumbra = 0.5;
+        spotLight.castShadow = true;
+        scene.add(spotLight);
+
+        // Physics World
+        const world = new CANNON.World();
+        // Simulate table slope by tilting gravity
+        // Gravity pulls down (-y) and slightly back (+z)
+        world.gravity.set(0, -9.8, 4); 
+        
+        // Materials
+        const defaultMaterial = new CANNON.Material('default');
+        const ballMaterial = new CANNON.Material('ball');
+        const flipperMaterial = new CANNON.Material('flipper');
+        
+        const contactMat = new CANNON.ContactMaterial(defaultMaterial, ballMaterial, {
+            friction: 0.1,
+            restitution: 0.5 // Bounciness
+        });
+        world.addContactMaterial(contactMat);
+
+        const flipperContact = new CANNON.ContactMaterial(flipperMaterial, ballMaterial, {
+            friction: 0.1,
+            restitution: 0.6
+        });
+        world.addContactMaterial(flipperContact);
+
+        // Arrays to sync visual meshes with physics bodies
+        const objects = [];
+
+        // --- HELPER FUNCTIONS ---
+        function createBox(x, y, z, w, h, d, mass, color, material = defaultMaterial, isTrigger = false) {
+            // Physics
+            const shape = new CANNON.Box(new CANNON.Vec3(w/2, h/2, d/2));
+            const body = new CANNON.Body({ mass: mass, material: material });
+            body.addShape(shape);
+            body.position.set(x, y, z);
+            world.addBody(body);
+
+            // Visuals
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mat = new THREE.MeshStandardMaterial({ color: color });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+
+            if(mass > 0) {
+                objects.push({ mesh, body });
+            }
+            return { mesh, body };
+        }
+
+        function createBumper(x, z) {
+            const radius = 0.8;
+            const height = 1;
+            
+            // Physics
+            const shape = new CANNON.Cylinder(radius, radius, height, 16);
+            const body = new CANNON.Body({ mass: 0, material: defaultMaterial });
+            // Rotate cylinder to stand up in Cannon
+            const q = new CANNON.Quaternion();
+            q.setFromAxisAngle(new CANNON.Vec3(1,0,0), -Math.PI/2);
+            body.addShape(shape, new CANNON.Vec3(0,0,0), q);
+            body.position.set(x, 0.5, z);
+            world.addBody(body);
+
+            // Visuals
+            const geo = new THREE.CylinderGeometry(radius, radius, height, 32);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xff0055, emissive: 0x440022 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, 0.5, z);
+            mesh.castShadow = true;
+            scene.add(mesh);
+
+            // Collision Logic for Scoring
+            body.addEventListener("collide", (e) => {
+                const velocity = e.contact.getImpactVelocityAlongNormal();
+                if(Math.abs(velocity) > 1) {
+                    score += 100;
+                    scoreEl.innerText = score;
+                    // Flash effect
+                    mesh.material.emissive.setHex(0xffffff);
+                    setTimeout(() => mesh.material.emissive.setHex(0x440022), 100);
+                }
+            });
+        }
+
+        // --- BUILD THE TABLE ---
+        
+        // Floor
+        createBox(0, -0.5, 0, TABLE_WIDTH, 1, TABLE_LENGTH, 0, 0x222222);
+        
+        // Walls
+        const wallHeight = 2;
+        // Left
+        createBox(-TABLE_WIDTH/2 - 0.5, 0.5, 0, 1, wallHeight, TABLE_LENGTH, 0, 0x555555);
+        // Right (Outer)
+        createBox(TABLE_WIDTH/2 + 1.5, 0.5, 0, 1, wallHeight, TABLE_LENGTH, 0, 0x555555);
+        // Top
+        createBox(0, 0.5, -TABLE_LENGTH/2 - 0.5, TABLE_WIDTH + 4, wallHeight, 1, 0, 0x555555);
+        // Plunger Lane Wall
+        createBox(TABLE_WIDTH/2 - 0.5, 0.5, 2, 0.2, wallHeight, TABLE_LENGTH - 4, 0, 0x555555);
+        // Top Curve (Approximated with boxes)
+        createBox(TABLE_WIDTH/2, 0.5, -TABLE_LENGTH/2 + 1, 2, wallHeight, 1, 0, 0x555555).mesh.rotation.y = Math.PI/4;
+
+        // Bumpers
+        createBumper(-2, -2);
+        createBumper(2, -2);
+        createBumper(0, -5);
+
+        // --- THE BALL ---
+        const ballShape = new CANNON.Sphere(BALL_RADIUS);
+        const ballBody = new CANNON.Body({ mass: 1, material: ballMaterial });
+        ballBody.addShape(ballShape);
+        ballBody.linearDamping = 0.0; // Let it roll freely
+        ballBody.angularDamping = 0.0;
+        ballBody.position.set(4.5, 1, 8); // Start in plunger lane
+        world.addBody(ballBody);
+
+        const ballMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(BALL_RADIUS, 32, 32),
+            new THREE.MeshStandardMaterial({ color: 'silver', metalness: 0.8, roughness: 0.2 })
+        );
+        ballMesh.castShadow = true;
+        scene.add(ballMesh);
+        objects.push({ mesh: ballMesh, body: ballBody });
+
+        // --- FLIPPERS ---
+        function createFlipper(x, z, isLeft) {
+            const w = FLIPPER_LENGTH;
+            const h = 0.8;
+            const d = 0.5;
+            
+            // 1. Create the Flipper Body
+            const shape = new CANNON.Box(new CANNON.Vec3(w/2, h/2, d/2));
+            const body = new CANNON.Body({ mass: 10, material: flipperMaterial });
+            
+            // Offset shape so center of rotation is at the end
+            const offset = isLeft ? -w/2 + 0.5 : w/2 - 0.5;
+            body.addShape(shape, new CANNON.Vec3(offset, 0, 0)); 
+            
+            body.position.set(x, 0.5, z);
+            // body.linearDamping = 0.5;
+            world.addBody(body);
+
+            // 2. Visuals
+            const geo = new THREE.BoxGeometry(w, h, d);
+            // Offset visual geo to match physics shape offset
+            geo.translate(offset, 0, 0);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+            const mesh = new THREE.Mesh(geo, mat);
+            scene.add(mesh);
+            objects.push({ mesh, body });
+
+            // 3. Static Body for Hinge Pivot
+            const staticBody = new CANNON.Body({ mass: 0 });
+            staticBody.position.set(x, 0.5, z);
+            world.addBody(staticBody);
+
+            // 4. Hinge Constraint (The Pivot)
+            const axis = new CANNON.Vec3(0, 1, 0); // Rotate around Y (up)
+            
+            const constraint = new CANNON.HingeConstraint(staticBody, body, {
+                pivotA: new CANNON.Vec3(0, 0, 0),
+                axisA: axis,
+                pivotB: new CANNON.Vec3(0, 0, 0),
+                axisB: axis
+            });
+            
+            // Limits
+            if (isLeft) {
+                constraint.lowerLimit = -Math.PI / 4;
+                constraint.upperLimit = 0.4;
+                // Optional: constraint.limitEquation.bias = 0.1; constraint.limitEquation.relaxation = 0.9;
+            } else {
+                constraint.lowerLimit = -0.4;
+                constraint.upperLimit = Math.PI / 4;
+                // Optional: constraint.limitEquation.bias = 0.1; constraint.limitEquation.relaxation = 0.9;
+            }
+            
+            // Motor (to make it snap back)
+            constraint.enableMotor();
+            constraint.setMotorSpeed(0);
+            constraint.collideConnected = false;
+            
+            world.addConstraint(constraint);
+
+            return { body, constraint };
+        }
+
+        const leftFlipper = createFlipper(-2, 8, true);
+        const rightFlipper = createFlipper(2, 8, false);
+
+        // Static wedge walls near flippers to guide ball
+        createBox(-4, 0.5, 7, 0.5, 1, 4, 0, 0x444444).mesh.rotation.y = -Math.PI/6;
+        createBox(4, 0.5, 7, 0.5, 1, 4, 0, 0x444444).mesh.rotation.y = Math.PI/6;
+
+        // --- INPUT HANDLING ---
+        const keys = {
+            ArrowLeft: false,
+            ArrowRight: false,
+            Space: false
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if(e.code === 'ArrowLeft') keys.ArrowLeft = true;
+            if(e.code === 'ArrowRight') keys.ArrowRight = true;
+            if(e.code === 'Space') keys.Space = true;
+            if(e.code === 'KeyR') resetBall();
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if(e.code === 'ArrowLeft') keys.ArrowLeft = false;
+            if(e.code === 'ArrowRight') keys.ArrowRight = false;
+            if(e.code === 'Space') {
+                keys.Space = false;
+                firePlunger();
+            }
+        });
+
+        let plungerPower = 0;
+
+        function updateFlippers() {
+            // Target velocity for motor
+            const FLIP_SPEED = 15;
+            const REST_SPEED = -10;
+
+            if (keys.ArrowLeft) {
+                leftFlipper.constraint.setMotorSpeed(FLIP_SPEED);
+            } else {
+                leftFlipper.constraint.setMotorSpeed(REST_SPEED);
+            }
+
+            if (keys.ArrowRight) {
+                rightFlipper.constraint.setMotorSpeed(-FLIP_SPEED);
+            } else {
+                rightFlipper.constraint.setMotorSpeed(-REST_SPEED);
+            }
+        }
+
+        function updatePlunger() {
+            if (keys.Space) {
+                plungerPower = Math.min(plungerPower + 0.5, 30);
+                // Visual shake or indicator could go here
+            }
+        }
+
+        function firePlunger() {
+            if(plungerPower > 0 && ballBody.position.z > 6 && ballBody.position.x > 3) {
+                // Only fire if ball is in the lane
+                ballBody.applyImpulse(new CANNON.Vec3(0, 0, -plungerPower), ballBody.position);
+            }
+            plungerPower = 0;
+        }
+
+        function resetBall() {
+            ballBody.velocity.set(0, 0, 0);
+            ballBody.angularVelocity.set(0, 0, 0);
+            ballBody.position.set(4.5, 1, 8);
+            score = 0;
+            scoreEl.innerText = "0";
+        }
+
+        // --- GAME LOOP ---
+        const timeStep = 1 / 60;
+        
+        function animate() {
+            requestAnimationFrame(animate);
+
+            updateFlippers();
+            updatePlunger();
+
+            // Step Physics
+            world.step(timeStep);
+
+            // Sync Visuals
+            objects.forEach(obj => {
+                obj.mesh.position.copy(obj.body.position);
+                obj.mesh.quaternion.copy(obj.body.quaternion);
+            });
+
+            // Ball out of bounds check
+            if(ballBody.position.z > 12) {
+                // Lose ball logic
+                setTimeout(resetBall, 1000);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>

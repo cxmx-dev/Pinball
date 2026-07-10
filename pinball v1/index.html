@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Nexus Pinball</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(ellipse at center, #1a1030 0%, #050208 70%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Orbitron', monospace;
+      touch-action: none;
+      cursor: default;
+      user-select: none;
+    }
+    #game-wrap {
+      position: relative;
+      filter: drop-shadow(0 0 40px rgba(80, 120, 255, 0.25))
+              drop-shadow(0 20px 60px rgba(0, 0, 0, 0.8));
+    }
+    #pinball-canvas {
+      display: block;
+      border-radius: 8px;
+      background: #0a0612;
+    }
+    .vignette {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%);
+    }
+  </style>
+</head>
+<body oncontextmenu="return false">
+  <div id="game-wrap">
+    <canvas id="pinball-canvas" width="520" height="980"></canvas>
+  </div>
+  <div class="vignette"></div>
+  <script src="simulation.js"></script>
+  <script src="renderer.js"></script>
+  <script src="audio.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
