@@ -52,11 +52,28 @@ Long capture session showed multi-mode HUD (skill shot, jackpot, high combos), c
 - **Internet out / no GitHub:** `cd` Pinball repo → `npx --yes serve .` → localhost or LAN IP. Play is fully local.  
 - **Push after Grok edits:** hub `.\scripts\start.ps1 -Repo Pinball` (needs net).  
 - **Friends online:** github.io only. LAN `192.168.x.x:3000` only while serve runs.  
-- Firewall helper `allow-lan-preview.ps1` stays local/untracked.
+- Firewall helper `allow-lan-preview.ps1` stays local/untracked.  
+- Serve URL must use trailing `/` or `index.html` (auto-redirect added in v1/v2).
+
+### Physics fixes (71026 late PM)
+
+- **Launch power:** charge meter **clamps at 1.0** (was wrapping → full red bar launched weak).  
+- **Upper-left stuck ball:** old chute wall wedged against left rail; deflector moved off-rail + `unstickFromCorners` + broader bumper unstick.  
+- Pushed live via User `start.ps1` / `start-all` (~16:46 CST `e75b324` stuck fix; earlier `8a10dbe` launch hold + slash redirect).
+
+### Control parity (71026)
+
+- Dock visible on **PC + mobile**; **Theme** + **Legend** buttons on dock.  
+- Legend = Action / PC / Mobile columns (matches real bindings).  
+- **PC theme = T** (also Theme button). Game-over pinball on both devices.
 
 ---
 
 ## Version History
+
+**71026 4:51:26:83 PM CST** — PC/mobile control parity; legend table; theme on PC via **T** / Theme button.
+
+**71026 4:47:52:30 PM CST** — **`update .mds`:** launch-max hold + upper-left unstick + LAN/serve ops documented; commits on `main`.
 
 **71026 4:42:24:18 PM CST** — **`update .mds`:** offline local host confirmed + documented (internet-out play); push vs LAN vs github.io split.
 

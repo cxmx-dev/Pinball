@@ -6,31 +6,22 @@ Vanilla browser pinball prototypes (HTML5 Canvas + Web Audio). No frameworks.
 
 ## Controls
 
-Legend drawer slides in from the **right** on **v1** and **v2**.
+Legend slides from the **right** on **v1** and **v2**. Same features on PC and mobile (keys + dock).
 
-| Input | Action |
-|--------|--------|
-| **← / →** | Left / right flipper |
-| **LMB / RMB** | Left / right flipper |
-| **Space** hold / release | Charge / launch plunger |
-| **R** | Tilt (3rd loses ball) · restart on game over |
-| **T** | Cycle theme (**v2 only** — art only) |
-| **L** | Toggle controls legend (slide-drawer) |
-| **Esc** | Close legend (when open) |
+### All devices (parity)
 
-### Mobile / touch (recommended scheme)
+| Action | PC | Mobile / dock |
+|--------|-----|----------------|
+| **Left flipper** | **←** · left mouse | **L Flip** · left half of table |
+| **Right flipper** | **→** · right mouse | **R Flip** · right half of table |
+| **Charge / launch** | **Space** hold / release | **Launch** hold / release |
+| **Tilt** | **R** (3rd drain) | **Tilt** button |
+| **Theme** (v2 only) | **T** or **Theme** button | **Theme** button |
+| **Open legend** | **L** or **Legend** button | **Legend** · swipe right→left fast |
+| **Close legend** | **L** · **Esc** · **[X] Close** | **[X] Close** · **Esc** |
+| **Game over restart** | Spinning pinball · **R** | **Press here to Restart** · spin pinball |
 
-| Control | Action |
-|--------|--------|
-| **L Flip / R Flip** | Hold pads (bottom dock) |
-| **Table half** | Tap/hold left or right side of playfield |
-| **Launch** | Hold to charge · release to fire |
-| **Tilt** | Nudge · restart on game over |
-| **Theme** | Cycle packs (**v2 only**) |
-| **Swipe right → left fast** | Open legend from the right |
-| **`#00ff00` dock hint** | Reminds you to swipe for legend |
-| **[X] Close** | Bottom-left of legend drawer |
-| **Game over** | **Press here to Restart** — tap the **spinning / shining pinball** (mobile) |
+**PC theme change:** press **`T`** (or click **Theme** on the bottom dock). Cycles Void Pulse ↔ Ember Rail — art only, same physics. HUD shows the current pack name.
 
 Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / desktop (`device.js`).
 
@@ -39,7 +30,7 @@ Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / d
 | Folder | What |
 |--------|------|
 | `index.html` | Hub launcher (Pages root) |
-| `pinball v1/` | **NEON NEXUS** — solid physics, audio, tests |
+| `pinball v1/` | **NEON NEXUS** — solid physics, audio, tests (no theme packs) |
 | `pinball v2/` | **VOID PULSE** — v1-class play + layered theme art |
 | `backup/` | Untouched reference snapshot — do not modify |
 | `notes/session.md` | Public session log |
@@ -89,6 +80,14 @@ Machine-local paths → `USER-NOTES.md` (local only, gitignored).
 ---
 
 ## Version History
+
+**71026 4:51:26:83 PM CST**
+
+- PC + mobile **control parity**: dock always visible (Theme / Legend on PC); legend is a 3-column Action / PC / Mobile table; game-over pinball on both devices. **PC theme = T or Theme button.**
+
+**71026 4:47:52:30 PM CST**
+
+- **`update .mds`:** physics/ops notes — launch meter **holds at max**; upper-left **stuck ball** wedge opened + corner unstick; trailing-slash serve fix; LAN firewall helper local-only; pushes on `main`.
 
 **71026 4:42:24:18 PM CST**
 

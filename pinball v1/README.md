@@ -6,34 +6,17 @@ Browser pinball built with vanilla JavaScript, HTML5 Canvas, and the Web Audio A
 
 ## Controls
 
-In-game **legend** slides from the **right**: press **L**, or on mobile **swipe right to left fast**. **[X] Close** is bottom-left of the drawer.
+Legend from the **right** (**L**, **Legend** button, or swipe). Dock on **PC and mobile**. No theme packs on NEON NEXUS (see v2 for **T** / Theme).
 
-### Desktop
-
-| Input | Action |
-|--------|--------|
-| **← / →** | Left / right flipper |
-| **Left click / Right click** | Left / right flipper |
-| **Space** hold / release | Charge / launch plunger |
-| **R** (during play) | Tilt / nudge (2 warnings, 3rd loses ball) |
-| **R** (game over) | Restart game |
-| **L** | Toggle controls legend |
-| **Esc** | Close legend |
-
-### Mobile / touch
-
-| Control | Action |
-|--------|--------|
-| **L Flip / R Flip** | Hold bottom dock pads |
-| **Table half** | Hold left or right side of the table |
-| **Launch** | Hold to charge · release to fire |
-| **Tilt** | Nudge · restart on game over |
-| **Swipe right → left fast** | Open legend |
-| Green **`#00ff00`** dock line | *swipe right to left fast to see the legend* |
-| **[X] Close** | Bottom-left of legend |
-| **Game over** | **Press here to Restart** — tap the **spinning / shining pinball** |
-
-Desktop: **R** to restart. Mobile: press the animated pinball.
+| Action | PC | Mobile / dock |
+|--------|-----|----------------|
+| Left flipper | **←** · LMB | **L Flip** · left table half |
+| Right flipper | **→** · RMB | **R Flip** · right table half |
+| Charge / launch | **Space** hold / release | **Launch** hold / release |
+| Tilt | **R** | **Tilt** |
+| Legend | **L** or **Legend** | **Legend** · swipe ← fast |
+| Close legend | **L** · **Esc** · **[X]** | **[X]** · **Esc** |
+| Game over | Spinning pinball · **R** | **Press here to Restart** |
 
 Audio unlocks on the first key, click, or touch.
 
@@ -133,6 +116,10 @@ node verify-browser.js
 ---
 
 ## Version History
+
+**71026 4:47:52:30 PM CST**
+
+- **`update .mds`:** launch meter holds at max; upper-left stuck-ball fix; serve slash + offline notes (shared with v2 physics).
 
 **71026 3:45:44:35 PM CST**
 

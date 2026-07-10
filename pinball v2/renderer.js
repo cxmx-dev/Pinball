@@ -710,18 +710,12 @@
       ctx.font = '18px Orbitron, sans-serif';
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
       ctx.shadowBlur = 0;
-      // Mobile: HTML spinning pinball + "Press here to Restart". Desktop: R key.
-      var touchGo = false;
-      try {
-        var dp = typeof window !== 'undefined' && window.DeviceProfile && window.DeviceProfile.get && window.DeviceProfile.get();
-        touchGo = !!(dp && (dp.isTouch || dp.isPhone || dp.isTablet));
-      } catch (e) { /* ignore */ }
-      if (touchGo) {
-        ctx.fillText('Press here to Restart', canvas.width / 2, canvas.height * 0.38 + 44);
-      } else {
-        ctx.fillText('Press R to play again', canvas.width / 2, canvas.height * 0.38 + 44);
-      }
-      ctx.fillText('Final: ' + formatScore(state.score), canvas.width / 2, canvas.height * 0.38 + 76);
+      ctx.fillText('Press here to Restart', canvas.width / 2, canvas.height * 0.38 + 44);
+      ctx.font = '14px Orbitron, sans-serif';
+      ctx.fillStyle = 'rgba(200,230,255,0.7)';
+      ctx.fillText('(or R on keyboard)', canvas.width / 2, canvas.height * 0.38 + 66);
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillText('Final: ' + formatScore(state.score), canvas.width / 2, canvas.height * 0.38 + 92);
     }
     ctx.restore();
   }

@@ -55,7 +55,7 @@
     var targetH = 980;
     canvas.width = targetW;
     canvas.height = targetH;
-    var chrome = isTouchProfile() ? 120 : 0;
+    var chrome = 130;
     if (Device && Device.fitCanvas) {
       Device.fitCanvas(canvas, {
         touchChrome: chrome,
@@ -119,7 +119,7 @@
 
   function updateGameOverUi() {
     if (!gameOverUi) return;
-    var show = state.phase === 'game_over' && isTouchProfile();
+    var show = state.phase === 'game_over';
     gameOverUi.classList.toggle('show', show);
     gameOverUi.setAttribute('aria-hidden', show ? 'false' : 'true');
   }
@@ -265,6 +265,7 @@
     });
     bindHoldButton(document.getElementById('btn-launch'), beginLaunchCharge, endLaunchCharge);
     bindTapButton(document.getElementById('btn-tilt'), doTiltOrRestart);
+    bindTapButton(document.getElementById('btn-legend'), toggleLegend);
 
     if (btnRestartBall) {
       function pressRestart(ev) {

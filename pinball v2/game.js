@@ -60,8 +60,8 @@
     var targetH = 980;
     canvas.width = targetW;
     canvas.height = targetH;
-    // Extra chrome for dock + green swipe hint
-    var chrome = isTouchProfile() ? 120 : 0;
+    // Reserve space for bottom dock (all devices) + swipe/PC hint
+    var chrome = 130;
     if (Device && Device.fitCanvas) {
       Device.fitCanvas(canvas, {
         touchChrome: chrome,
@@ -125,8 +125,8 @@
 
   function updateGameOverUi() {
     if (!gameOverUi) return;
-    // Mobile / touch: show spinning pinball restart
-    var show = state.phase === 'game_over' && isTouchProfile();
+    // Desktop + mobile: spinning pinball restart (PC can also press R)
+    var show = state.phase === 'game_over';
     gameOverUi.classList.toggle('show', show);
     gameOverUi.setAttribute('aria-hidden', show ? 'false' : 'true');
   }
@@ -283,6 +283,7 @@
     bindHoldButton(document.getElementById('btn-launch'), beginLaunchCharge, endLaunchCharge);
     bindTapButton(document.getElementById('btn-tilt'), doTiltOrRestart);
     bindTapButton(document.getElementById('btn-theme'), cycleTheme);
+    bindTapButton(document.getElementById('btn-legend'), toggleLegend);
 
     if (btnRestartBall) {
       function pressRestart(ev) {

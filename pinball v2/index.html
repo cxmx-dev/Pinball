@@ -72,19 +72,14 @@
       z-index: 1;
     }
 
-    /* ---- Mobile control dock ---- */
+    /* ---- Control dock (desktop + mobile) ---- */
     #touch-ui {
-      display: none;
+      display: grid;
       width: min(520px, 96vw);
       gap: 8px;
       z-index: 5;
       padding: 0 4px 4px;
       grid-template-columns: 1fr 1fr 1fr;
-    }
-    html.input-touch #touch-ui,
-    html.device-phone #touch-ui,
-    html.device-tablet #touch-ui {
-      display: grid;
     }
     #touch-ui button {
       font-family: inherit;
@@ -107,7 +102,7 @@
       color: #fff;
     }
     #swipe-legend-hint {
-      display: none;
+      display: block;
       grid-column: 1 / -1;
       text-align: center;
       font-size: 11px;
@@ -118,13 +113,12 @@
       padding: 6px 4px 2px;
       line-height: 1.35;
     }
-    html.input-touch #swipe-legend-hint,
-    html.device-phone #swipe-legend-hint,
-    html.device-tablet #swipe-legend-hint {
-      display: block;
+    html.input-fine #swipe-legend-hint::before {
+      content: "PC: T = theme · L = legend · ";
+      color: #7dffb0;
     }
     #touch-hint {
-      display: none;
+      display: block;
       position: fixed;
       top: 8px;
       left: 50%;
@@ -136,8 +130,10 @@
       color: rgba(200, 230, 255, 0.55);
       pointer-events: none;
       white-space: nowrap;
+      max-width: 96vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    html.input-touch #touch-hint { display: block; }
 
     /* ---- Legend slide-drawer (from right) ---- */
     #legend-backdrop {
@@ -222,17 +218,23 @@
       border-bottom: 1px solid rgba(0, 240, 255, 0.2);
     }
     #legend-drawer td {
-      padding: 7px 6px 7px 0;
+      padding: 7px 4px 7px 0;
       vertical-align: top;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       color: #c8e8ff;
+      font-size: 0.68rem;
     }
     #legend-drawer td:first-child {
       color: #7df0ff;
       font-weight: 700;
-      white-space: nowrap;
-      width: 42%;
-      padding-right: 8px;
+      width: 28%;
+      padding-right: 6px;
+    }
+    #legend-drawer th:nth-child(2),
+    #legend-drawer th:nth-child(3),
+    #legend-drawer td:nth-child(2),
+    #legend-drawer td:nth-child(3) {
+      width: 36%;
     }
     #legend-drawer .legend-foot {
       flex-shrink: 0;
@@ -363,7 +365,7 @@
   </style>
 </head>
 <body oncontextmenu="return false">
-  <div id="touch-hint">Hold L / R pads · Launch · Theme · swipe legend</div>
+  <div id="touch-hint">Keys: arrows · space · R tilt · T theme · L legend · or use dock</div>
   <div id="gameover-restart" aria-hidden="true">
     <div class="restart-label">Press here to Restart</div>
     <button type="button" id="btn-restart-ball" aria-label="Press here to Restart">
@@ -382,6 +384,7 @@
       <button type="button" id="btn-right" data-flip="right">R Flip</button>
       <button type="button" id="btn-tilt" data-action="tilt">Tilt</button>
       <button type="button" id="btn-theme" data-action="theme">Theme</button>
+      <button type="button" id="btn-legend" data-action="legend">Legend</button>
       <div id="swipe-legend-hint">swipe right to left fast to see the legend</div>
     </div>
   </div>
@@ -390,37 +393,66 @@
   <div id="legend-backdrop" aria-hidden="true"></div>
   <aside id="legend-drawer" aria-label="Controls legend" aria-hidden="true">
     <h2>Controls</h2>
-    <div class="legend-sub">VOID PULSE · legend</div>
+    <div class="legend-sub">VOID PULSE · legend · PC + mobile</div>
     <div class="legend-scroll">
       <table>
-        <thead><tr><th colspan="2">Desktop</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>PC</th>
+            <th>Mobile / dock</th>
+          </tr>
+        </thead>
         <tbody>
-          <tr><td>← / →</td><td>Left / right flipper</td></tr>
-          <tr><td>LMB / RMB</td><td>Left / right flipper</td></tr>
-          <tr><td>Space hold</td><td>Charge plunger</td></tr>
-          <tr><td>Space release</td><td>Launch ball</td></tr>
-          <tr><td>R</td><td>Tilt (×3 drain) · restart if game over</td></tr>
-          <tr><td>T</td><td>Cycle theme pack (art only)</td></tr>
-          <tr><td>L</td><td>Toggle this legend</td></tr>
+          <tr>
+            <td>Left flipper</td>
+            <td>← · LMB</td>
+            <td>L Flip · left half of table</td>
+          </tr>
+          <tr>
+            <td>Right flipper</td>
+            <td>→ · RMB</td>
+            <td>R Flip · right half of table</td>
+          </tr>
+          <tr>
+            <td>Charge / launch</td>
+            <td>Space hold / release</td>
+            <td>Launch hold / release</td>
+          </tr>
+          <tr>
+            <td>Tilt</td>
+            <td>R (×3 drain)</td>
+            <td>Tilt button</td>
+          </tr>
+          <tr>
+            <td>Theme (art only)</td>
+            <td><strong>T</strong> or Theme button</td>
+            <td>Theme button</td>
+          </tr>
+          <tr>
+            <td>Open legend</td>
+            <td><strong>L</strong> or Legend button</td>
+            <td>Legend · swipe ← fast</td>
+          </tr>
+          <tr>
+            <td>Close legend</td>
+            <td>L · Esc · [X] Close</td>
+            <td>[X] Close · Esc</td>
+          </tr>
+          <tr>
+            <td>Game over restart</td>
+            <td>R · spinning pinball</td>
+            <td>Press here to Restart · spin pinball</td>
+          </tr>
         </tbody>
       </table>
-      <table>
-        <thead><tr><th colspan="2">Mobile / touch</th></tr></thead>
-        <tbody>
-          <tr><td>L Flip / R Flip</td><td>Hold flipper pads</td></tr>
-          <tr><td>Table half</td><td>Tap/hold left or right side of table</td></tr>
-          <tr><td>Launch</td><td>Hold to charge · release to fire</td></tr>
-          <tr><td>Tilt</td><td>Nudge · restart on game over</td></tr>
-          <tr><td>Theme</td><td>Cycle Void Pulse / Ember Rail</td></tr>
-          <tr><td>Swipe ← fast</td><td>Open legend (from right edge)</td></tr>
-          <tr><td>[X] Close</td><td>Dismiss legend</td></tr>
-          <tr><td>Game over</td><td>Press here to Restart — spin the pinball</td></tr>
-        </tbody>
-      </table>
+      <p style="margin-top:12px;font-size:0.65rem;color:rgba(180,210,255,0.55);letter-spacing:0.06em;line-height:1.45">
+        Theme cycles Void Pulse ↔ Ember Rail (look only — physics unchanged). Audio unlocks on first input.
+      </p>
     </div>
     <div class="legend-foot">
       <button type="button" id="legend-close">[X] Close</button>
-      <span class="legend-l">L toggles · audio unlocks on first input</span>
+      <span class="legend-l">PC: T = theme · L = legend</span>
     </div>
   </aside>
 

@@ -4,36 +4,20 @@ Browser pinball with **v1-class physics** dressed in layered agent-generated (Im
 
 ## Controls
 
-In-game **legend** slides from the **right**: press **L**, or on mobile **swipe right to left fast**. **[X] Close** sits bottom-left of the drawer.
+In-game **legend** slides from the **right** (**L**, **Legend** button, or swipe ← on touch). **[X] Close** bottom-left. **Dock is on PC and mobile.**
 
-### Desktop
+| Action | PC | Mobile / dock |
+|--------|-----|----------------|
+| Left flipper | **←** · LMB | **L Flip** · left table half |
+| Right flipper | **→** · RMB | **R Flip** · right table half |
+| Charge / launch | **Space** hold / release | **Launch** hold / release |
+| Tilt | **R** | **Tilt** |
+| **Theme** | **T** or **Theme** button | **Theme** button |
+| Legend | **L** or **Legend** button | **Legend** · swipe ← fast |
+| Close legend | **L** · **Esc** · **[X]** | **[X]** · **Esc** |
+| Game over | Spinning pinball · **R** | **Press here to Restart** · spin pinball |
 
-| Input | Action |
-|--------|--------|
-| **← / →** | Flippers |
-| **Left click / Right click** | Left / right flipper |
-| **Space** hold / release | Charge / launch plunger |
-| **R** (in play) | Tilt / nudge (2 warnings, 3rd loses ball) |
-| **R** (game over) | Restart |
-| **T** | Cycle theme pack (art only; same physics) |
-| **L** | Toggle controls legend |
-| **Esc** | Close legend |
-
-### Mobile / touch (best scheme)
-
-| Control | Action |
-|--------|--------|
-| **L Flip / R Flip** | Hold bottom dock pads |
-| **Table half** | Hold left or right side of the table |
-| **Launch** | Hold to charge · release to fire |
-| **Tilt** | Nudge · restart on game over |
-| **Theme** | Cycle Void Pulse / Ember Rail (dedicated button) |
-| **Swipe right → left fast** | Open legend drawer from the right |
-| Green **`#00ff00`** line under dock | *swipe right to left fast to see the legend* |
-| **[X] Close** | Bottom-left of legend |
-| **Game over** | **Press here to Restart** — tap the **spinning / shining pinball** (required on mobile) |
-
-Desktop game over: **R** to play again. Mobile: press the animated pinball (not R-only).
+**PC theme:** press **`T`** (or click **Theme**). Cycles Void Pulse ↔ Ember Rail — art only.
 
 Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / desktop (`device.js`).
 
@@ -99,6 +83,14 @@ Machine-local capture paths: see `USER-NOTES.md` (not published).
 ---
 
 ## Version History
+
+**71026 4:51:26:83 PM CST**
+
+- Control parity PC/mobile; dock always on; legend 3-column table; **T** / Theme button for packs.
+
+**71026 4:47:52:30 PM CST**
+
+- **`update .mds`:** launch meter holds at max; upper-left stuck-ball geometry/unstick; local serve trailing-slash + offline notes.
 
 **71026 3:45:44:35 PM CST**
 
