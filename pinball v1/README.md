@@ -10,13 +10,13 @@ Legend from the **right** (**L**, **Legend** button, or swipe). Dock on **PC and
 
 | Action | PC | Mobile / dock |
 |--------|-----|----------------|
-| Left flipper | **←** · LMB | **L Flip** · left table half |
-| Right flipper | **→** · RMB | **R Flip** · right table half |
+| Left flipper | **←** · **W** · NumPad **1** · LMB | **L Flip** · left table half |
+| Right flipper | **→** · **D** · NumPad **3** · RMB | **R Flip** · right table half |
 | Charge / launch | **Space** hold / release | **Launch** hold / release |
-| Tilt | **R** | **Tilt** |
+| Tilt | NumPad **7** only | HUD **Tilt** (top center) |
 | Legend | **L** or **Legend** | **Legend** · swipe ← fast |
 | Close legend | **L** · **Esc** · **[X]** | **[X]** · **Esc** |
-| Game over | Spinning pinball · **R** | **Press here to Restart** |
+| Game over | Spinning pinball · NumPad **7** | **Press here to Restart** |
 
 Audio unlocks on the first key, click, or touch.
 
@@ -116,6 +116,14 @@ node verify-browser.js
 ---
 
 ## Version History
+
+**71026 10:10:54:56 PM CST**
+
+- Controls: tilt **NumPad 7** only; flippers **←→ / W D / Num 1·3**; HUD Tilt pill; dock without Tilt; legend updated.
+
+**71026 5:12:45:50 PM CST**
+
+- **`update .mds`:** PC/Mobile parity Controls table; dock + Legend on both; game-over pinball both devices (no theme packs on v1).
 
 **71026 4:47:52:30 PM CST**
 

@@ -4,6 +4,8 @@ Public summary of work. Machine paths and capture folders: `USER-NOTES.md` at pr
 
 ## Latest focus
 
+**Controls remap (v1 + v2, 71026 night):** tilt = **NumPad 7** only (awkward on purpose); flippers **←→ / W D / NumPad 1·3**; floating HUD **Tilt** top-center; dock without Tilt; legend + public READMEs updated. Prior map (R tilt, arrows-only flippers) recorded in `USER-NOTES.md` for quick revert.
+
 **pinball v2 / VOID PULSE** — playable table with agent-generated (Imagine-style) art layers on top of v1 physics.
 
 ### Shipped (Phases 0–6)
@@ -70,6 +72,8 @@ Long capture session showed multi-mode HUD (skill shot, jackpot, high combos), c
 ---
 
 ## Version History
+
+**71026 5:12:45:50 PM CST** — **`update .mds`:** control parity + legend match docs (PC **T** theme, dock both devices, 3-col legend).
 
 **71026 4:51:26:83 PM CST** — PC/mobile control parity; legend table; theme on PC via **T** / Theme button.
 

@@ -12,16 +12,18 @@ Legend slides from the **right** on **v1** and **v2**. Same features on PC and m
 
 | Action | PC | Mobile / dock |
 |--------|-----|----------------|
-| **Left flipper** | **←** · left mouse | **L Flip** · left half of table |
-| **Right flipper** | **→** · right mouse | **R Flip** · right half of table |
+| **Left flipper** | **←** · **W** · NumPad **1** · left mouse | **L Flip** · left half of table |
+| **Right flipper** | **→** · **D** · NumPad **3** · right mouse | **R Flip** · right half of table |
 | **Charge / launch** | **Space** hold / release | **Launch** hold / release |
-| **Tilt** | **R** (3rd drain) | **Tilt** button |
+| **Tilt** | NumPad **7** only (3rd drain) | HUD **Tilt** (top-center on table) |
 | **Theme** (v2 only) | **T** or **Theme** button | **Theme** button |
 | **Open legend** | **L** or **Legend** button | **Legend** · swipe right→left fast |
 | **Close legend** | **L** · **Esc** · **[X] Close** | **[X] Close** · **Esc** |
-| **Game over restart** | Spinning pinball · **R** | **Press here to Restart** · spin pinball |
+| **Game over restart** | Spinning pinball · NumPad **7** | **Press here to Restart** · spin pinball |
 
 **PC theme change:** press **`T`** (or click **Theme** on the bottom dock). Cycles Void Pulse ↔ Ember Rail — art only, same physics. HUD shows the current pack name.
+
+**Tilt is intentionally awkward** (NumPad 7 / HUD pill only — not letter **R**), so it is harder to spam like a real cabinet.
 
 Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / desktop (`device.js`).
 
@@ -80,6 +82,14 @@ Machine-local paths → `USER-NOTES.md` (local only, gitignored).
 ---
 
 ## Version History
+
+**71026 10:10:54:56 PM CST**
+
+- **Controls remap (v1 + v2):** tilt = **NumPad 7** only (no **R**); left flipper = **← / W / NumPad 1**; right = **→ / D / NumPad 3**; HUD **Tilt** pill top-center on table (out of dock); legend + READMEs synced. Ready to revert via `USER-NOTES.md` prior bindings.
+
+**71026 5:12:45:50 PM CST**
+
+- **`update .mds`:** PC/mobile **control parity** documented end-to-end — dock on both; legend Action/PC/Mobile matches game; **PC theme = T** or Theme button; game-over spinning pinball both devices.
 
 **71026 4:51:26:83 PM CST**
 

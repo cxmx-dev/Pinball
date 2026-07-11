@@ -694,7 +694,7 @@
         ctx.font = 'bold 13px Orbitron, sans-serif';
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
         ctx.shadowBlur = 0;
-        ctx.fillText('R = nudge table', canvas.width * 0.5, state.tableH * 0.42 + 24);
+        ctx.fillText('NumPad 7 = nudge table', canvas.width * 0.5, state.tableH * 0.42 + 24);
       }
     }
 
@@ -713,7 +713,7 @@
       ctx.fillText('Press here to Restart', canvas.width / 2, canvas.height * 0.38 + 44);
       ctx.font = '14px Orbitron, sans-serif';
       ctx.fillStyle = 'rgba(200,230,255,0.7)';
-      ctx.fillText('(or R on keyboard)', canvas.width / 2, canvas.height * 0.38 + 66);
+      ctx.fillText('(or NumPad 7)', canvas.width / 2, canvas.height * 0.38 + 66);
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
       ctx.fillText('Final: ' + formatScore(state.score), canvas.width / 2, canvas.height * 0.38 + 92);
     }

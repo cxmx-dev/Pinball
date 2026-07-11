@@ -56,6 +56,35 @@
               drop-shadow(0 20px 60px rgba(0, 0, 0, 0.85));
       line-height: 0;
     }
+    /* Floating HUD Tilt — top-center over table (not in dock next to L Flip) */
+    #btn-tilt {
+      position: absolute;
+      left: 50%;
+      top: 76px;
+      transform: translateX(-50%);
+      z-index: 4;
+      font-family: inherit;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #ffd0e8;
+      background: rgba(28, 8, 22, 0.82);
+      border: 1px solid rgba(255, 80, 160, 0.5);
+      border-radius: 999px;
+      min-height: 34px;
+      min-width: 72px;
+      padding: 6px 16px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 0 14px rgba(255, 40, 160, 0.25);
+      pointer-events: auto;
+    }
+    #btn-tilt:active {
+      background: rgba(255, 40, 160, 0.35);
+      color: #fff;
+      border-color: #ff8ad0;
+    }
     #pinball-canvas {
       display: block;
       border-radius: 10px;
@@ -365,7 +394,7 @@
   </style>
 </head>
 <body oncontextmenu="return false">
-  <div id="touch-hint">Keys: arrows · space · R tilt · T theme · L legend · or use dock</div>
+  <div id="touch-hint">Keys: ←→ / W D / Num 1·3 · Space · Num7 tilt · T theme · L legend</div>
   <div id="gameover-restart" aria-hidden="true">
     <div class="restart-label">Press here to Restart</div>
     <button type="button" id="btn-restart-ball" aria-label="Press here to Restart">
@@ -377,12 +406,12 @@
   <div id="stage">
     <div id="game-wrap">
       <canvas id="pinball-canvas" width="520" height="980"></canvas>
+      <button type="button" id="btn-tilt" data-action="tilt" title="Tilt (NumPad 7)">Tilt</button>
     </div>
     <div id="touch-ui" aria-label="Touch controls">
       <button type="button" id="btn-left" data-flip="left">L Flip</button>
       <button type="button" id="btn-launch" data-action="launch">Launch</button>
       <button type="button" id="btn-right" data-flip="right">R Flip</button>
-      <button type="button" id="btn-tilt" data-action="tilt">Tilt</button>
       <button type="button" id="btn-theme" data-action="theme">Theme</button>
       <button type="button" id="btn-legend" data-action="legend">Legend</button>
       <div id="swipe-legend-hint">swipe right to left fast to see the legend</div>
@@ -406,12 +435,12 @@
         <tbody>
           <tr>
             <td>Left flipper</td>
-            <td>← · LMB</td>
+            <td>← · <strong>W</strong> · NumPad <strong>1</strong> · LMB</td>
             <td>L Flip · left half of table</td>
           </tr>
           <tr>
             <td>Right flipper</td>
-            <td>→ · RMB</td>
+            <td>→ · <strong>D</strong> · NumPad <strong>3</strong> · RMB</td>
             <td>R Flip · right half of table</td>
           </tr>
           <tr>
@@ -421,8 +450,8 @@
           </tr>
           <tr>
             <td>Tilt</td>
-            <td>R (×3 drain)</td>
-            <td>Tilt button</td>
+            <td>NumPad <strong>7</strong> only (×3 drain)</td>
+            <td>HUD <strong>Tilt</strong> (top center)</td>
           </tr>
           <tr>
             <td>Theme (art only)</td>
@@ -441,7 +470,7 @@
           </tr>
           <tr>
             <td>Game over restart</td>
-            <td>R · spinning pinball</td>
+            <td>NumPad 7 · spinning pinball</td>
             <td>Press here to Restart · spin pinball</td>
           </tr>
         </tbody>

@@ -119,9 +119,29 @@
 
   function updateGameOverUi() {
     if (!gameOverUi) return;
+    // Spinning pinball restart; keyboard = NumPad 7 (same as tilt key)
     var show = state.phase === 'game_over';
     gameOverUi.classList.toggle('show', show);
     gameOverUi.setAttribute('aria-hidden', show ? 'false' : 'true');
+  }
+
+  // Multi-key flippers: any bound key holds; release only when all left/right keys up.
+  var leftKeyHeld = Object.create(null);
+  var rightKeyHeld = Object.create(null);
+
+  function isLeftFlipperKey(code) {
+    return code === 'ArrowLeft' || code === 'KeyW' || code === 'Numpad1';
+  }
+
+  function isRightFlipperKey(code) {
+    return code === 'ArrowRight' || code === 'KeyD' || code === 'Numpad3';
+  }
+
+  function anyHeld(map) {
+    for (var k in map) {
+      if (map[k]) return true;
+    }
+    return false;
   }
 
   function handleKeyDown(e) {
@@ -135,19 +155,37 @@
       setLegendOpen(false);
       return;
     }
-    if (e.code === 'ArrowLeft') setLeftFlipper(true);
-    if (e.code === 'ArrowRight') setRightFlipper(true);
+    if (isLeftFlipperKey(e.code)) {
+      e.preventDefault();
+      leftKeyHeld[e.code] = true;
+      setLeftFlipper(true);
+    }
+    if (isRightFlipperKey(e.code)) {
+      e.preventDefault();
+      rightKeyHeld[e.code] = true;
+      setRightFlipper(true);
+    }
     if (e.code === 'Space') {
       e.preventDefault();
       beginLaunchCharge();
     }
-    if (e.code === 'KeyR') doTiltOrRestart();
+    // Tilt is intentionally awkward (NumPad 7 only) — not letter R
+    if (e.code === 'Numpad7') {
+      e.preventDefault();
+      doTiltOrRestart();
+    }
   }
 
   function handleKeyUp(e) {
     unlockAudio();
-    if (e.code === 'ArrowLeft') setLeftFlipper(false);
-    if (e.code === 'ArrowRight') setRightFlipper(false);
+    if (isLeftFlipperKey(e.code)) {
+      leftKeyHeld[e.code] = false;
+      if (!anyHeld(leftKeyHeld)) setLeftFlipper(false);
+    }
+    if (isRightFlipperKey(e.code)) {
+      rightKeyHeld[e.code] = false;
+      if (!anyHeld(rightKeyHeld)) setRightFlipper(false);
+    }
     if (e.code === 'Space') endLaunchCharge();
   }
 
@@ -164,6 +202,7 @@
   function isUiChrome(e) {
     return !!(e.target && e.target.closest && (
       e.target.closest('#touch-ui') ||
+      e.target.closest('#btn-tilt') ||
       e.target.closest('#legend-drawer') ||
       e.target.closest('#legend-backdrop') ||
       e.target.closest('#gameover-restart')

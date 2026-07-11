@@ -8,14 +8,14 @@ In-game **legend** slides from the **right** (**L**, **Legend** button, or swipe
 
 | Action | PC | Mobile / dock |
 |--------|-----|----------------|
-| Left flipper | **←** · LMB | **L Flip** · left table half |
-| Right flipper | **→** · RMB | **R Flip** · right table half |
+| Left flipper | **←** · **W** · NumPad **1** · LMB | **L Flip** · left table half |
+| Right flipper | **→** · **D** · NumPad **3** · RMB | **R Flip** · right table half |
 | Charge / launch | **Space** hold / release | **Launch** hold / release |
-| Tilt | **R** | **Tilt** |
+| Tilt | NumPad **7** only | HUD **Tilt** (top center) |
 | **Theme** | **T** or **Theme** button | **Theme** button |
 | Legend | **L** or **Legend** button | **Legend** · swipe ← fast |
 | Close legend | **L** · **Esc** · **[X]** | **[X]** · **Esc** |
-| Game over | Spinning pinball · **R** | **Press here to Restart** · spin pinball |
+| Game over | Spinning pinball · NumPad **7** | **Press here to Restart** · spin pinball |
 
 **PC theme:** press **`T`** (or click **Theme**). Cycles Void Pulse ↔ Ember Rail — art only.
 
@@ -83,6 +83,14 @@ Machine-local capture paths: see `USER-NOTES.md` (not published).
 ---
 
 ## Version History
+
+**71026 10:10:54:56 PM CST**
+
+- Controls: tilt **NumPad 7** only; flippers **←→ / W D / Num 1·3**; HUD Tilt pill; dock without Tilt; legend + in-game table updated.
+
+**71026 5:12:45:50 PM CST**
+
+- **`update .mds`:** Controls table = PC/Mobile parity; **T** / Theme for packs; legend matches game.
 
 **71026 4:51:26:83 PM CST**
 
