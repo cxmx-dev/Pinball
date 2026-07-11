@@ -12,18 +12,20 @@ Legend slides from the **right** on **v1** and **v2**. Same features on PC and m
 
 | Action | PC | Mobile / dock |
 |--------|-----|----------------|
-| **Left flipper** | **←** · **W** · NumPad **1** · left mouse | **L Flip** · left half of table |
+| **Left flipper** | **←** · **A** · NumPad **1** · left mouse | **L Flip** · left half of table |
 | **Right flipper** | **→** · **D** · NumPad **3** · right mouse | **R Flip** · right half of table |
 | **Charge / launch** | **Space** hold / release | **Launch** hold / release |
-| **Tilt** | NumPad **7** only (3rd drain) | HUD **Tilt** pill (top center score band) |
+| **Tilt** | NumPad **7** only (3rd drain) | Compact HUD **Tilt** pill (lower score band; scales with table) |
 | **Theme** (v2 only) | **T** · left half of split | **Theme \| Legend** (left half) |
 | **Open legend** | **L** · right half of split | **Theme \| Legend** (right) · swipe ← |
 | **Close legend** | **L** · **Esc** · **[X] Close** | **[X] Close** · **Esc** |
 | **Game over restart** | Spinning pinball · NumPad **7** | **Press here to Restart** · spin pinball |
 
-**PC theme change:** press **`T`** (or click **Theme** on the bottom dock). Cycles Void Pulse ↔ Ember Rail — art only, same physics. HUD shows the current pack name.
+**PC theme change:** press **`T`** (or left half of the dock split). Cycles Void Pulse ↔ Ember Rail — art only, same physics. HUD shows the current pack name.
 
 **Tilt is intentionally awkward** (NumPad 7 / HUD pill only — not letter **R**), so it is harder to spam like a real cabinet.
+
+**Dock layout (PC + mobile):** row 1 = L Flip · Launch · R Flip; row 2 = centered **Theme \| Legend** split (v2) or **Legend** only (v1) — clear of flipper buttons. No top-of-screen key strip (controls live in legend + dock).
 
 Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / desktop (`device.js`).
 
@@ -83,13 +85,21 @@ Machine-local paths → `USER-NOTES.md` (local only, gitignored).
 
 ## Version History
 
+**71026 10:52:47:33 PM CST**
+
+- **`update .mds`:** left flipper letter key is **A** (not W) with **D** right — code, in-game legend, and all public/User docs synced. Full map: **← / A / NumPad 1** · **→ / D / NumPad 3** · tilt **NumPad 7** · HUD Tilt + Theme\|Legend dock.
+
+**71026 10:48:39:70 PM CST**
+
+- **`update .mds`:** full control/UI sync — NumPad flipper/tilt map; HUD **Tilt** compact at `top: 6.9%` (clears score text); **Theme \| Legend** split dock; **no top KEYS strip** (PC + mobile); legend/READMEs/USER-NOTES match live game.
+
 **71026 10:26:43:78 PM CST**
 
-- **UI:** HUD **Tilt** sits in top score band (`top: 5.1%`, scales on mobile); canvas HUD clears center for it. Dock: remove full-width Theme; **Theme \| Legend** split button centered under Launch (clear of L/R Flip). PC + mobile same.
+- **UI:** HUD **Tilt** in score band; canvas HUD clears center for it. Dock: **Theme \| Legend** split under Launch (clear of L/R Flip). Later polish: Tilt lower/`6.9%` + smaller; remove top keys hint.
 
 **71026 10:10:54:56 PM CST**
 
-- **Controls remap (v1 + v2):** tilt = **NumPad 7** only (no **R**); left flipper = **← / W / NumPad 1**; right = **→ / D / NumPad 3**; HUD **Tilt** pill top-center on table (out of dock); legend + READMEs synced. Ready to revert via `USER-NOTES.md` prior bindings.
+- **Controls remap (v1 + v2):** tilt = **NumPad 7** only (no **R**); left flipper = **← / A / NumPad 1**; right = **→ / D / NumPad 3**; HUD **Tilt** pill top-center on table (out of dock); legend + READMEs synced. Ready to revert via `USER-NOTES.md` prior bindings.
 
 **71026 5:12:45:50 PM CST**
 

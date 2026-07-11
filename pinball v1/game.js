@@ -130,7 +130,7 @@
   var rightKeyHeld = Object.create(null);
 
   function isLeftFlipperKey(code) {
-    return code === 'ArrowLeft' || code === 'KeyW' || code === 'Numpad1';
+    return code === 'ArrowLeft' || code === 'KeyA' || code === 'Numpad1';
   }
 
   function isRightFlipperKey(code) {

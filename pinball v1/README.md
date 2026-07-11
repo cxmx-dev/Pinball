@@ -10,13 +10,15 @@ Legend from the **right** (**L**, **Legend** button, or swipe). Dock on **PC and
 
 | Action | PC | Mobile / dock |
 |--------|-----|----------------|
-| Left flipper | **←** · **W** · NumPad **1** · LMB | **L Flip** · left table half |
+| Left flipper | **←** · **A** · NumPad **1** · LMB | **L Flip** · left table half |
 | Right flipper | **→** · **D** · NumPad **3** · RMB | **R Flip** · right table half |
 | Charge / launch | **Space** hold / release | **Launch** hold / release |
-| Tilt | NumPad **7** only | HUD **Tilt** (top score band) |
+| Tilt | NumPad **7** only | Compact HUD **Tilt** (lower score band) |
 | Legend | **L** or **Legend** | **Legend** centered under Launch · swipe ← |
 | Close legend | **L** · **Esc** · **[X]** | **[X]** · **Esc** |
 | Game over | Spinning pinball · NumPad **7** | **Press here to Restart** |
+
+**Dock:** L Flip · Launch · R Flip, then centered **Legend** (clear of flippers). No top key-hint strip — use legend.
 
 Audio unlocks on the first key, click, or touch.
 
@@ -117,13 +119,21 @@ node verify-browser.js
 
 ## Version History
 
+**71026 10:52:47:33 PM CST**
+
+- **`update .mds`:** left flipper = **A** (not W); **D** right. Docs + legend match `KeyA` / `KeyD` + NumPad 1/3.
+
+**71026 10:48:39:70 PM CST**
+
+- **`update .mds`:** controls/UI docs match live build — Tilt compact at `6.9%`; Legend centered under Launch; no top KEYS bar; NumPad map + legend parity.
+
 **71026 10:26:43:78 PM CST**
 
-- HUD Tilt in top score band (scaled %); **Legend** dock button centered under Launch (clear of flippers).
+- HUD Tilt in score band (scaled %); **Legend** dock button centered under Launch (clear of flippers); later: lower/smaller Tilt + remove top keys hint.
 
 **71026 10:10:54:56 PM CST**
 
-- Controls: tilt **NumPad 7** only; flippers **←→ / W D / Num 1·3**; HUD Tilt pill; dock without Tilt; legend updated.
+- Controls: tilt **NumPad 7** only; flippers **←→ / A D / Num 1·3**; HUD Tilt pill; dock without Tilt; legend updated.
 
 **71026 5:12:45:50 PM CST**
 
