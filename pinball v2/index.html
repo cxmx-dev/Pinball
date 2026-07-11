@@ -205,7 +205,8 @@
       top: 0;
       right: 0;
       z-index: 50;
-      width: min(320px, 88vw);
+      /* Wider on desktop so 3 cols + airy rows; still full-ish on phone */
+      width: min(420px, 92vw);
       height: 100%;
       max-height: 100dvh;
       display: flex;
@@ -220,82 +221,152 @@
       transform: translateX(105%);
       transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
       padding:
-        max(12px, env(safe-area-inset-top))
-        max(14px, env(safe-area-inset-right))
-        max(12px, env(safe-area-inset-bottom))
-        14px;
+        max(16px, env(safe-area-inset-top))
+        max(18px, env(safe-area-inset-right))
+        max(16px, env(safe-area-inset-bottom))
+        18px;
     }
     #legend-drawer.open {
       transform: translateX(0);
     }
     #legend-drawer h2 {
-      font-size: 0.95rem;
+      font-size: 1.05rem;
       letter-spacing: 0.14em;
       text-transform: uppercase;
       color: #5ee7ff;
       text-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
-      margin: 0 0 4px;
+      margin: 0 0 6px;
       flex-shrink: 0;
     }
     #legend-drawer .legend-sub {
-      font-size: 0.65rem;
+      font-size: 0.72rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: rgba(255, 80, 180, 0.85);
-      margin-bottom: 14px;
+      margin-bottom: 18px;
       flex-shrink: 0;
+      line-height: 1.4;
     }
+    #legend-drawer .legend-sub .sub-touch { display: none; }
     #legend-drawer .legend-scroll {
       flex: 1;
       overflow-y: auto;
       min-height: 0;
-      padding-right: 4px;
+      padding-right: 6px;
+      padding-bottom: 12px;
       -webkit-overflow-scrolling: touch;
     }
     #legend-drawer table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.72rem;
-      line-height: 1.35;
+      font-size: 0.82rem;
+      line-height: 1.5;
     }
     #legend-drawer th {
       text-align: left;
-      color: rgba(0, 240, 255, 0.7);
+      color: rgba(0, 240, 255, 0.75);
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      font-size: 0.62rem;
-      padding: 10px 0 6px;
-      border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+      font-size: 0.7rem;
+      padding: 6px 8px 12px 0;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.22);
+      vertical-align: bottom;
     }
     #legend-drawer td {
-      padding: 7px 4px 7px 0;
-      vertical-align: top;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 14px 10px 14px 0;
+      vertical-align: middle;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       color: #c8e8ff;
-      font-size: 0.68rem;
+      font-size: 0.8rem;
+      line-height: 1.55;
     }
     #legend-drawer td:first-child {
       color: #7df0ff;
       font-weight: 700;
-      width: 28%;
-      padding-right: 6px;
+      width: 26%;
+      padding-right: 10px;
+      white-space: nowrap;
     }
-    #legend-drawer th:nth-child(2),
-    #legend-drawer th:nth-child(3),
-    #legend-drawer td:nth-child(2),
-    #legend-drawer td:nth-child(3) {
-      width: 36%;
+    #legend-drawer th.legend-col-pc,
+    #legend-drawer td.legend-col-pc {
+      width: 37%;
+    }
+    #legend-drawer th.legend-col-mobile,
+    #legend-drawer td.legend-col-mobile {
+      width: 37%;
+    }
+    #legend-drawer .legend-col-mobile .label-touch { display: none; }
+    #legend-drawer .legend-note {
+      margin-top: 20px;
+      font-size: 0.74rem;
+      color: rgba(180, 210, 255, 0.55);
+      letter-spacing: 0.04em;
+      line-height: 1.55;
     }
     #legend-drawer .legend-foot {
       flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      gap: 10px;
-      margin-top: 12px;
-      padding-top: 10px;
+      gap: 12px;
+      margin-top: 14px;
+      padding-top: 14px;
       border-top: 1px solid rgba(0, 240, 255, 0.18);
+    }
+    /* Phone / tablet: only Action + dock controls (no PC hotkeys) */
+    html.device-phone #legend-drawer,
+    html.device-tablet #legend-drawer {
+      width: min(360px, 94vw);
+    }
+    html.device-phone #legend-drawer .legend-col-pc,
+    html.device-tablet #legend-drawer .legend-col-pc {
+      display: none;
+    }
+    html.device-phone #legend-drawer td:first-child,
+    html.device-tablet #legend-drawer td:first-child {
+      width: 36%;
+      white-space: normal;
+    }
+    html.device-phone #legend-drawer th.legend-col-mobile,
+    html.device-phone #legend-drawer td.legend-col-mobile,
+    html.device-tablet #legend-drawer th.legend-col-mobile,
+    html.device-tablet #legend-drawer td.legend-col-mobile {
+      width: 64%;
+    }
+    html.device-phone #legend-drawer .legend-col-mobile .label-full,
+    html.device-tablet #legend-drawer .legend-col-mobile .label-full {
+      display: none;
+    }
+    html.device-phone #legend-drawer .legend-col-mobile .label-touch,
+    html.device-tablet #legend-drawer .legend-col-mobile .label-touch {
+      display: inline;
+    }
+    html.device-phone #legend-drawer .legend-sub .sub-pc,
+    html.device-tablet #legend-drawer .legend-sub .sub-pc {
+      display: none;
+    }
+    html.device-phone #legend-drawer .legend-sub .sub-touch,
+    html.device-tablet #legend-drawer .legend-sub .sub-touch {
+      display: inline;
+    }
+    html.device-phone #legend-drawer .legend-l,
+    html.device-tablet #legend-drawer .legend-l {
+      display: none;
+    }
+    html.device-phone #legend-drawer td,
+    html.device-tablet #legend-drawer td {
+      padding: 12px 8px 12px 0;
+      font-size: 0.78rem;
+    }
+    /* Desktop: use vertical room — taller rows */
+    html.device-desktop #legend-drawer td {
+      padding: 16px 12px 16px 0;
+      font-size: 0.84rem;
+    }
+    html.device-desktop #legend-drawer {
+      width: min(460px, 38vw);
+      min-width: 360px;
     }
     #legend-close {
       font-family: inherit;
@@ -447,60 +518,66 @@
   <div id="legend-backdrop" aria-hidden="true"></div>
   <aside id="legend-drawer" aria-label="Controls legend" aria-hidden="true">
     <h2>Controls</h2>
-    <div class="legend-sub">VOID PULSE · legend · PC + mobile</div>
+    <div class="legend-sub">
+      <span class="sub-pc">VOID PULSE · legend · PC + mobile</span>
+      <span class="sub-touch">VOID PULSE · mobile controls</span>
+    </div>
     <div class="legend-scroll">
       <table>
         <thead>
           <tr>
             <th>Action</th>
-            <th>PC</th>
-            <th>Mobile / dock</th>
+            <th class="legend-col-pc">PC</th>
+            <th class="legend-col-mobile">
+              <span class="label-full">Mobile / dock</span>
+              <span class="label-touch">Dock / touch</span>
+            </th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td>Left flipper</td>
-            <td>← · <strong>A</strong> · NumPad <strong>1</strong> · LMB</td>
-            <td>L Flip · left half of table</td>
+            <td class="legend-col-pc">← · <strong>A</strong> · NumPad <strong>1</strong> · LMB</td>
+            <td class="legend-col-mobile">L Flip · left half of table</td>
           </tr>
           <tr>
             <td>Right flipper</td>
-            <td>→ · <strong>D</strong> · NumPad <strong>3</strong> · RMB</td>
-            <td>R Flip · right half of table</td>
+            <td class="legend-col-pc">→ · <strong>D</strong> · NumPad <strong>3</strong> · RMB</td>
+            <td class="legend-col-mobile">R Flip · right half of table</td>
           </tr>
           <tr>
             <td>Charge / launch</td>
-            <td>Space hold / release</td>
-            <td>Launch hold / release</td>
+            <td class="legend-col-pc">Space hold / release</td>
+            <td class="legend-col-mobile">Launch hold / release</td>
           </tr>
           <tr>
             <td>Tilt</td>
-            <td>NumPad <strong>7</strong> only (×3 drain)</td>
-            <td>HUD <strong>Tilt</strong> (top center band)</td>
+            <td class="legend-col-pc">NumPad <strong>7</strong> only (×3 drain)</td>
+            <td class="legend-col-mobile">HUD <strong>Tilt</strong> (top band)</td>
           </tr>
           <tr>
             <td>Theme (art only)</td>
-            <td><strong>T</strong> · split left half</td>
-            <td>Theme | Legend (left half)</td>
+            <td class="legend-col-pc"><strong>T</strong> · split left half</td>
+            <td class="legend-col-mobile">Theme | Legend (left half)</td>
           </tr>
           <tr>
             <td>Open legend</td>
-            <td><strong>L</strong> · split right half</td>
-            <td>Theme | Legend (right) · swipe ←</td>
+            <td class="legend-col-pc"><strong>L</strong> · split right half</td>
+            <td class="legend-col-mobile">Theme | Legend (right) · swipe ←</td>
           </tr>
           <tr>
             <td>Close legend</td>
-            <td>L · Esc · [X] Close</td>
-            <td>[X] Close · Esc</td>
+            <td class="legend-col-pc">L · Esc · [X] Close</td>
+            <td class="legend-col-mobile">[X] Close · Esc</td>
           </tr>
           <tr>
             <td>Game over restart</td>
-            <td>NumPad 7 · spinning pinball</td>
-            <td>Press here to Restart · spin pinball</td>
+            <td class="legend-col-pc">NumPad 7 · spinning pinball</td>
+            <td class="legend-col-mobile">Press here to Restart · spin pinball</td>
           </tr>
         </tbody>
       </table>
-      <p style="margin-top:12px;font-size:0.65rem;color:rgba(180,210,255,0.55);letter-spacing:0.06em;line-height:1.45">
+      <p class="legend-note">
         Theme cycles Void Pulse ↔ Ember Rail (look only — physics unchanged). Audio unlocks on first input.
       </p>
     </div>
