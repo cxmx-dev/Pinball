@@ -52,32 +52,34 @@
               drop-shadow(0 20px 60px rgba(0, 0, 0, 0.8));
       line-height: 0;
     }
-    /* Floating HUD Tilt — top-center over table (not in dock next to L Flip) */
+    /* Floating HUD Tilt — % of table so it stays in the top HUD band on mobile+PC */
     #btn-tilt {
       position: absolute;
       left: 50%;
-      top: 76px;
-      transform: translateX(-50%);
+      top: 5.1%;
+      transform: translate(-50%, -50%);
       z-index: 4;
       font-family: inherit;
-      font-size: 10px;
-      letter-spacing: 0.08em;
+      font-size: clamp(8px, 1.7vw, 10px);
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       font-weight: 700;
       color: #e8e0ff;
-      background: rgba(18, 12, 36, 0.88);
-      border: 1px solid rgba(160, 120, 255, 0.5);
+      background: rgba(14, 10, 28, 0.8);
+      border: 1px solid rgba(160, 120, 255, 0.55);
       border-radius: 999px;
-      min-height: 34px;
-      min-width: 72px;
-      padding: 6px 16px;
+      min-height: 0;
+      height: clamp(20px, 2.6%, 28px);
+      min-width: clamp(56px, 14%, 78px);
+      padding: 0 12px;
+      line-height: 1;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
-      box-shadow: 0 0 14px rgba(120, 100, 255, 0.3);
+      box-shadow: 0 0 10px rgba(120, 100, 255, 0.28);
       pointer-events: auto;
     }
     #btn-tilt:active {
-      background: rgba(120, 100, 255, 0.4);
+      background: rgba(120, 100, 255, 0.45);
       color: #fff;
       border-color: #c8b8ff;
     }
@@ -121,6 +123,39 @@
     #touch-ui button.held {
       background: rgba(100, 120, 255, 0.35);
       border-color: #a8b4ff;
+      color: #fff;
+    }
+    /* Legend alone (no theme packs) — centered under Launch, clear of L/R Flip */
+    #dock-meta {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+    #dock-meta .split-pair {
+      display: flex;
+      width: min(160px, 42vw);
+      max-width: 180px;
+      min-height: 48px;
+      border: 1px solid rgba(120, 140, 255, 0.4);
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(12, 10, 28, 0.9);
+    }
+    #dock-meta .split-pair button {
+      flex: 1 1 100%;
+      border: none;
+      border-radius: 0;
+      min-height: 48px;
+      min-width: 0;
+      margin: 0;
+      background: transparent;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      padding: 8px 4px;
+    }
+    #dock-meta .split-pair button:active {
+      background: rgba(100, 120, 255, 0.35);
       color: #fff;
     }
     #swipe-legend-hint {
@@ -388,7 +423,11 @@
       <button type="button" id="btn-left" data-flip="left">L Flip</button>
       <button type="button" id="btn-launch" data-action="launch">Launch</button>
       <button type="button" id="btn-right" data-flip="right">R Flip</button>
-      <button type="button" id="btn-legend" data-action="legend">Legend</button>
+      <div id="dock-meta">
+        <div class="split-pair" role="group" aria-label="Legend">
+          <button type="button" id="btn-legend" data-action="legend">Legend</button>
+        </div>
+      </div>
       <div id="swipe-legend-hint">swipe right to left fast to see the legend</div>
     </div>
   </div>
@@ -426,7 +465,7 @@
           <tr>
             <td>Tilt</td>
             <td>NumPad <strong>7</strong> only (×3 drain)</td>
-            <td>HUD <strong>Tilt</strong> (top center)</td>
+            <td>HUD <strong>Tilt</strong> (top center band)</td>
           </tr>
           <tr>
             <td>Open legend</td>

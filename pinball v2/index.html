@@ -56,32 +56,35 @@
               drop-shadow(0 20px 60px rgba(0, 0, 0, 0.85));
       line-height: 0;
     }
-    /* Floating HUD Tilt — top-center over table (not in dock next to L Flip) */
+    /* Floating HUD Tilt — % of table so it stays in the top HUD band on mobile+PC */
     #btn-tilt {
       position: absolute;
       left: 50%;
-      top: 76px;
-      transform: translateX(-50%);
+      /* ~mid of 72px HUD on 980-tall canvas (does not scale into playfield) */
+      top: 5.1%;
+      transform: translate(-50%, -50%);
       z-index: 4;
       font-family: inherit;
-      font-size: 10px;
-      letter-spacing: 0.08em;
+      font-size: clamp(8px, 1.7vw, 10px);
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       font-weight: 700;
       color: #ffd0e8;
-      background: rgba(28, 8, 22, 0.82);
-      border: 1px solid rgba(255, 80, 160, 0.5);
+      background: rgba(20, 6, 18, 0.78);
+      border: 1px solid rgba(255, 80, 160, 0.55);
       border-radius: 999px;
-      min-height: 34px;
-      min-width: 72px;
-      padding: 6px 16px;
+      min-height: 0;
+      height: clamp(20px, 2.6%, 28px);
+      min-width: clamp(56px, 14%, 78px);
+      padding: 0 12px;
+      line-height: 1;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
-      box-shadow: 0 0 14px rgba(255, 40, 160, 0.25);
+      box-shadow: 0 0 10px rgba(255, 40, 160, 0.22);
       pointer-events: auto;
     }
     #btn-tilt:active {
-      background: rgba(255, 40, 160, 0.35);
+      background: rgba(255, 40, 160, 0.4);
       color: #fff;
       border-color: #ff8ad0;
     }
@@ -128,6 +131,43 @@
     #touch-ui button.held {
       background: rgba(0, 180, 220, 0.35);
       border-color: #5ee7ff;
+      color: #fff;
+    }
+    /* Theme | Legend split — centered under Launch, clear of L/R Flip */
+    #dock-meta {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+    #dock-meta .split-pair {
+      display: flex;
+      width: min(220px, 52vw);
+      max-width: 240px;
+      min-height: 48px;
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(10, 14, 28, 0.88);
+    }
+    #dock-meta .split-pair button {
+      flex: 1 1 50%;
+      border: none;
+      border-radius: 0;
+      min-height: 48px;
+      min-width: 0;
+      margin: 0;
+      background: transparent;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      padding: 8px 4px;
+    }
+    #dock-meta .split-pair button + button {
+      border-left: 1px solid rgba(0, 240, 255, 0.35);
+    }
+    #dock-meta .split-pair button:active {
+      background: rgba(0, 180, 220, 0.35);
+      border-color: transparent;
       color: #fff;
     }
     #swipe-legend-hint {
@@ -412,8 +452,12 @@
       <button type="button" id="btn-left" data-flip="left">L Flip</button>
       <button type="button" id="btn-launch" data-action="launch">Launch</button>
       <button type="button" id="btn-right" data-flip="right">R Flip</button>
-      <button type="button" id="btn-theme" data-action="theme">Theme</button>
-      <button type="button" id="btn-legend" data-action="legend">Legend</button>
+      <div id="dock-meta">
+        <div class="split-pair" role="group" aria-label="Theme and Legend">
+          <button type="button" id="btn-theme" data-action="theme">Theme</button>
+          <button type="button" id="btn-legend" data-action="legend">Legend</button>
+        </div>
+      </div>
       <div id="swipe-legend-hint">swipe right to left fast to see the legend</div>
     </div>
   </div>
@@ -451,17 +495,17 @@
           <tr>
             <td>Tilt</td>
             <td>NumPad <strong>7</strong> only (×3 drain)</td>
-            <td>HUD <strong>Tilt</strong> (top center)</td>
+            <td>HUD <strong>Tilt</strong> (top center band)</td>
           </tr>
           <tr>
             <td>Theme (art only)</td>
-            <td><strong>T</strong> or Theme button</td>
-            <td>Theme button</td>
+            <td><strong>T</strong> · split left half</td>
+            <td>Theme | Legend (left half)</td>
           </tr>
           <tr>
             <td>Open legend</td>
-            <td><strong>L</strong> or Legend button</td>
-            <td>Legend · swipe ← fast</td>
+            <td><strong>L</strong> · split right half</td>
+            <td>Theme | Legend (right) · swipe ←</td>
           </tr>
           <tr>
             <td>Close legend</td>

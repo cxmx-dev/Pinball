@@ -13,8 +13,8 @@ Legend from the **right** (**L**, **Legend** button, or swipe). Dock on **PC and
 | Left flipper | **←** · **W** · NumPad **1** · LMB | **L Flip** · left table half |
 | Right flipper | **→** · **D** · NumPad **3** · RMB | **R Flip** · right table half |
 | Charge / launch | **Space** hold / release | **Launch** hold / release |
-| Tilt | NumPad **7** only | HUD **Tilt** (top center) |
-| Legend | **L** or **Legend** | **Legend** · swipe ← fast |
+| Tilt | NumPad **7** only | HUD **Tilt** (top score band) |
+| Legend | **L** or **Legend** | **Legend** centered under Launch · swipe ← |
 | Close legend | **L** · **Esc** · **[X]** | **[X]** · **Esc** |
 | Game over | Spinning pinball · NumPad **7** | **Press here to Restart** |
 
@@ -116,6 +116,10 @@ node verify-browser.js
 ---
 
 ## Version History
+
+**71026 10:26:43:78 PM CST**
+
+- HUD Tilt in top score band (scaled %); **Legend** dock button centered under Launch (clear of flippers).
 
 **71026 10:10:54:56 PM CST**
 

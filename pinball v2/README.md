@@ -11,9 +11,9 @@ In-game **legend** slides from the **right** (**L**, **Legend** button, or swipe
 | Left flipper | **←** · **W** · NumPad **1** · LMB | **L Flip** · left table half |
 | Right flipper | **→** · **D** · NumPad **3** · RMB | **R Flip** · right table half |
 | Charge / launch | **Space** hold / release | **Launch** hold / release |
-| Tilt | NumPad **7** only | HUD **Tilt** (top center) |
-| **Theme** | **T** or **Theme** button | **Theme** button |
-| Legend | **L** or **Legend** button | **Legend** · swipe ← fast |
+| Tilt | NumPad **7** only | HUD **Tilt** (top score band) |
+| **Theme** | **T** · split left | **Theme \| Legend** (left) |
+| Legend | **L** · split right | **Theme \| Legend** (right) · swipe ← |
 | Close legend | **L** · **Esc** · **[X]** | **[X]** · **Esc** |
 | Game over | Spinning pinball · NumPad **7** | **Press here to Restart** · spin pinball |
 
@@ -83,6 +83,10 @@ Machine-local capture paths: see `USER-NOTES.md` (not published).
 ---
 
 ## Version History
+
+**71026 10:26:43:78 PM CST**
+
+- HUD Tilt in top score band (scaled %); **Theme \| Legend** split dock under Launch; canvas HUD clears center for Tilt.
 
 **71026 10:10:54:56 PM CST**
 

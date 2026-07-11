@@ -4,7 +4,7 @@ Public summary of work. Machine paths and capture folders: `USER-NOTES.md` at pr
 
 ## Latest focus
 
-**Controls remap (v1 + v2, 71026 night):** tilt = **NumPad 7** only (awkward on purpose); flippers **←→ / W D / NumPad 1·3**; floating HUD **Tilt** top-center; dock without Tilt; legend + public READMEs updated. Prior map (R tilt, arrows-only flippers) recorded in `USER-NOTES.md` for quick revert.
+**Controls remap (v1 + v2, 71026 night):** tilt = **NumPad 7** only (awkward on purpose); flippers **←→ / W D / NumPad 1·3**; floating HUD **Tilt** in top score band (`5.1%` so mobile scales correctly); dock **Theme | Legend** split centered under Launch (no standalone Theme); legend + public READMEs updated. Prior map (R tilt, arrows-only flippers) recorded in `USER-NOTES.md` for quick revert.
 
 **pinball v2 / VOID PULSE** — playable table with agent-generated (Imagine-style) art layers on top of v1 physics.
 

@@ -644,42 +644,51 @@
     ctx.fillStyle = '#80c8ff';
     ctx.fillText('BALL ' + Math.max(0, state.ballsRemaining), canvas.width - 24, 46);
 
-    ctx.font = 'bold 13px Orbitron, sans-serif';
+    // Center of HUD band reserved for DOM #btn-tilt (no canvas text there).
+    ctx.font = 'bold 12px Orbitron, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#ff88cc';
     ctx.shadowBlur = 8;
-    ctx.fillText(state.multiplier + 'X', canvas.width * 0.5, 28);
-    if (state.comboCount > 1) {
-      ctx.fillStyle = '#88ffaa';
-      ctx.fillText('COMBO x' + state.comboCount, canvas.width * 0.5, 48);
-    }
-    if (state.jackpotLit) {
-      ctx.fillStyle = '#ffdd22';
-      ctx.shadowBlur = 14;
-      ctx.fillText('JACKPOT LIT', canvas.width * 0.5, 64);
-    }
+    ctx.fillText(state.multiplier + 'X', canvas.width * 0.5, 18);
 
     ctx.font = '10px Orbitron, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillStyle = 'rgba(180,200,255,0.7)';
     ctx.shadowBlur = 0;
-    ctx.fillText('BONUS ' + formatScore(state.bonusBank), 24, 64);
+    var bonusLine = 'BONUS ' + formatScore(state.bonusBank);
+    if (state.comboCount > 1) {
+      bonusLine += '  ·  COMBO x' + state.comboCount;
+      ctx.fillStyle = '#88ffaa';
+    }
+    ctx.fillText(bonusLine, 24, 64);
     ctx.textAlign = 'right';
     ctx.fillStyle = 'rgba(160,180,220,0.45)';
-    ctx.fillText(themeTitle() + ' · T theme', canvas.width - 24, 64);
-
     if (state.skillShotWindow) {
-      ctx.textAlign = 'right';
       ctx.fillStyle = '#ffcc44';
       ctx.shadowBlur = 10;
       ctx.fillText('SKILL SHOT!', canvas.width - 24, 64);
+    } else {
+      ctx.fillText(themeTitle() + ' · T theme', canvas.width - 24, 64);
+    }
+
+    if (state.jackpotLit) {
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 12px Orbitron, sans-serif';
+      ctx.fillStyle = '#ffdd22';
+      ctx.shadowBlur = 14;
+      ctx.fillText('JACKPOT LIT', canvas.width * 0.5, 86);
     }
 
     if (state.tiltWarnings > 0 && state.phase !== 'game_over') {
       ctx.textAlign = 'center';
+      ctx.font = 'bold 12px Orbitron, sans-serif';
       ctx.fillStyle = state.tiltWarnings > 1 ? '#ff6644' : '#ffaa44';
       ctx.shadowBlur = 10;
-      ctx.fillText('TILT WARNING ' + state.tiltWarnings + '/' + root.PinballSim.MAX_TILT_WARNINGS, canvas.width * 0.5, 64);
+      ctx.fillText(
+        'TILT WARNING ' + state.tiltWarnings + '/' + root.PinballSim.MAX_TILT_WARNINGS,
+        canvas.width * 0.5,
+        state.jackpotLit ? 102 : 86
+      );
     }
 
     if (state.lastScorePopup && state.lastScorePopup.life > 0) {

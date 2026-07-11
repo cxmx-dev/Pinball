@@ -15,9 +15,9 @@ Legend slides from the **right** on **v1** and **v2**. Same features on PC and m
 | **Left flipper** | **←** · **W** · NumPad **1** · left mouse | **L Flip** · left half of table |
 | **Right flipper** | **→** · **D** · NumPad **3** · right mouse | **R Flip** · right half of table |
 | **Charge / launch** | **Space** hold / release | **Launch** hold / release |
-| **Tilt** | NumPad **7** only (3rd drain) | HUD **Tilt** (top-center on table) |
-| **Theme** (v2 only) | **T** or **Theme** button | **Theme** button |
-| **Open legend** | **L** or **Legend** button | **Legend** · swipe right→left fast |
+| **Tilt** | NumPad **7** only (3rd drain) | HUD **Tilt** pill (top center score band) |
+| **Theme** (v2 only) | **T** · left half of split | **Theme \| Legend** (left half) |
+| **Open legend** | **L** · right half of split | **Theme \| Legend** (right) · swipe ← |
 | **Close legend** | **L** · **Esc** · **[X] Close** | **[X] Close** · **Esc** |
 | **Game over restart** | Spinning pinball · NumPad **7** | **Press here to Restart** · spin pinball |
 
@@ -82,6 +82,10 @@ Machine-local paths → `USER-NOTES.md` (local only, gitignored).
 ---
 
 ## Version History
+
+**71026 10:26:43:78 PM CST**
+
+- **UI:** HUD **Tilt** sits in top score band (`top: 5.1%`, scales on mobile); canvas HUD clears center for it. Dock: remove full-width Theme; **Theme \| Legend** split button centered under Launch (clear of L/R Flip). PC + mobile same.
 
 **71026 10:10:54:56 PM CST**
 
