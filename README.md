@@ -27,6 +27,8 @@ Legend slides from the **right** on **v1** and **v2**. Same features on PC and m
 
 **Dock layout (PC + mobile):** row 1 = L Flip · Launch · R Flip; row 2 = centered **Theme \| Legend** split (v2) or **Legend** only (v1) — clear of flipper buttons. No top-of-screen key strip (controls live in legend + dock).
 
+**Legend:** roomier vertical spacing; wider drawer on desktop. Phone/tablet legend shows **Action + dock only** (PC hotkeys column hidden).
+
 Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / desktop (`device.js`).
 
 ## Layout
@@ -84,6 +86,10 @@ Machine-local paths → `USER-NOTES.md` (local only, gitignored).
 ---
 
 ## Version History
+
+**71126 5:03:05:48 AM CST**
+
+- **`update .mds`:** legend spacing (desktop airy rows; mobile hides PC column); full control map restated — **A/D** flippers, NumPad **7** tilt, Theme\|Legend split, HUD Tilt `6.9%`. Session + USER-NOTES already match.
 
 **71026 10:52:47:33 PM CST**
 

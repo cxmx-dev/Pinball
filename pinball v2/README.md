@@ -86,6 +86,10 @@ Machine-local capture paths: see `USER-NOTES.md` (not published).
 
 ## Version History
 
+**71126 5:03:05:48 AM CST**
+
+- **`update .mds`:** legend airy spacing; mobile legend hides PC hotkeys; controls still **A/D** + NumPad 1/3/7 + Theme\|Legend split.
+
 **71026 10:52:47:33 PM CST**
 
 - **`update .mds`:** left flipper = **A** (not W); **D** right. Docs + legend match `KeyA` / `KeyD` + NumPad 1/3.
