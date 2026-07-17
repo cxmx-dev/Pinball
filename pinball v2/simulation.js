@@ -171,7 +171,6 @@
         w: 12,
         h: 22,
         lit: false,
-        preview: false,
         flash: 0,
         occupied: false
       });
@@ -521,7 +520,7 @@
     state.slingshots.forEach(function (s) { s.cooldown = 0; });
   }
 
-  /** Charge preview (bottom-up) + light dashes the ball passes while rising in the lane. */
+  /** Light launch-lane dashes only when the ball rolls over them (not for charge power). */
   function updateLaunchLaneDashes(state, dt) {
     var dashes = state.launchLaneDashes;
     if (!dashes || !dashes.length) return;
@@ -529,24 +528,6 @@
     for (i = 0; i < dashes.length; i++) {
       if (dashes[i].flash > 0) dashes[i].flash = Math.max(0, dashes[i].flash - dt);
     }
-
-    // While charging at plunger: dashes light bottom → top with power (preview only)
-    if (!state.ball.inPlay && state.phase === 'ready') {
-      var power = state.launchCharging ? clamp(state.launchPower, 0, 1) : 0;
-      for (i = 0; i < dashes.length; i++) {
-        var thresh = (i + 0.35) / dashes.length;
-        dashes[i].preview = power >= thresh;
-        if (!state.launchCharging) {
-          dashes[i].preview = false;
-          dashes[i].lit = false;
-          dashes[i].occupied = false;
-        }
-      }
-      return;
-    }
-
-    // Clear charge preview once the ball is live
-    for (i = 0; i < dashes.length; i++) dashes[i].preview = false;
 
     var ball = state.ball;
     if (!ball.inPlay || state.exitedLaunchLane) return;
