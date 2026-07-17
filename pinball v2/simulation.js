@@ -55,8 +55,14 @@
   var WIRE_FORM_DY = WIRE_FORM_Y2 - WIRE_FORM_Y1;
   var COMBO_WINDOW = 2.2;
   var MAX_MULTIPLIER = 5;
-  var SKILL_SHOT_BONUS = 2500;
-  var LAUNCH_DASH_HOLD_SEC = 3;
+  var SKILL_SHOT_CENTER_BONUS = 2500;
+  var SKILL_SHOT_NEAR_BONUS = 1000;
+  /** @deprecated alias — center grade (tests / exports) */
+  var SKILL_SHOT_BONUS = SKILL_SHOT_CENTER_BONUS;
+  var LAUNCH_DASH_FULL_BONUS = 800;
+  var LAUNCH_DASH_HOLD_SEC = 1.5;
+  var POPUP_MERGE_COMBO = 3;
+  var POPUP_MERGE_LIFE_MIN = 0.12;
   /** Reverse cascade: first off (top) is slowest; each next dash toward plunger is faster. */
   var LAUNCH_DASH_FADE_MAX = 0.55;
   var LAUNCH_DASH_FADE_MIN = 0.1;
@@ -285,6 +291,9 @@
       phase: 'ready',
       exitedLaunchLane: false,
       skillShotWindow: false,
+      skillShotGrade: null,
+      skillShotBanner: null,
+      skillShotBannerLife: 0,
       launchTick: 0,
       launchRailT: null,
       activeLaunchPower: 0,
@@ -298,6 +307,11 @@
       lastHitId: null,
       lastScorePopup: null,
       drainEvents: 0,
+      drainFlash: 0,
+      ballSaveArmed: false,
+      ballSaveUsed: false,
+      ballSaveFlash: 0,
+      launchDashRewarded: false,
       tiltWarnings: 0,
       tiltCooldown: 0
     };
@@ -334,14 +348,88 @@
 
     state.lastHitType = hitType;
     state.lastHitId = hitId;
-    state.lastScorePopup = {
-      points: points,
-      x: popupX,
-      y: popupY,
-      life: 1.2,
-      type: hitType
-    };
+
+    // High-combo: merge rapid awards into one floating total
+    var pop = state.lastScorePopup;
+    var canMerge =
+      state.comboCount >= POPUP_MERGE_COMBO &&
+      pop &&
+      pop.life > POPUP_MERGE_LIFE_MIN &&
+      hitType !== 'skillshot' &&
+      hitType !== 'skillshot-near' &&
+      hitType !== 'jackpot' &&
+      hitType !== 'ballsave' &&
+      hitType !== 'lanedash';
+    if (canMerge) {
+      pop.points += points;
+      pop.life = Math.min(1.45, pop.life + 0.28);
+      pop.x = popupX != null ? popupX : pop.x;
+      pop.y = popupY != null ? popupY : pop.y;
+      pop.merged = true;
+      pop.type = 'combo';
+    } else {
+      state.lastScorePopup = {
+        points: points,
+        x: popupX,
+        y: popupY,
+        life: 1.2,
+        type: hitType,
+        merged: false
+      };
+    }
     return points;
+  }
+
+  /**
+   * Grade skill shot from ball distance to top bumper.
+   * center = tight hit; near = graze ring outside center.
+   */
+  function gradeSkillShot(ball, topBumper) {
+    if (!ball || !topBumper) return null;
+    var d = vecLen(ball.x - topBumper.x, ball.y - topBumper.y);
+    var touch = topBumper.radius + ball.radius;
+    if (d < touch + 10) {
+      return {
+        grade: 'center',
+        bonus: SKILL_SHOT_CENTER_BONUS,
+        label: 'SKILL SHOT CENTER!',
+        hitType: 'skillshot'
+      };
+    }
+    if (d < touch + 32) {
+      return {
+        grade: 'near',
+        bonus: SKILL_SHOT_NEAR_BONUS,
+        label: 'SKILL SHOT NEAR!',
+        hitType: 'skillshot-near'
+      };
+    }
+    return null;
+  }
+
+  function applySkillShot(state, gradeInfo) {
+    if (!gradeInfo) return false;
+    var top = state.bumpers[0];
+    awardScore(
+      state,
+      gradeInfo.bonus,
+      gradeInfo.hitType,
+      gradeInfo.grade,
+      top ? top.x : TABLE_W * 0.5,
+      top ? top.y : 200
+    );
+    state.skillShotWindow = false;
+    state.skillShotGrade = gradeInfo.grade;
+    state.skillShotBanner = gradeInfo.label;
+    state.skillShotBannerLife = 2.2;
+    if (gradeInfo.grade === 'center') {
+      state.multiplier = Math.min(MAX_MULTIPLIER, state.multiplier + 1);
+      state.ballSaveArmed = true;
+    } else {
+      // Near-miss still arms a weaker save? Plan: optional after skill shot — arm for both grades
+      state.ballSaveArmed = true;
+    }
+    return true;
   }
 
   function decayCombo(state, dt) {
@@ -354,6 +442,19 @@
     }
     if (state.lastScorePopup && state.lastScorePopup.life > 0) {
       state.lastScorePopup.life -= dt;
+    }
+    if (state.skillShotBannerLife > 0) {
+      state.skillShotBannerLife -= dt;
+      if (state.skillShotBannerLife <= 0) {
+        state.skillShotBannerLife = 0;
+        state.skillShotBanner = null;
+      }
+    }
+    if (state.drainFlash > 0) {
+      state.drainFlash = Math.max(0, state.drainFlash - dt);
+    }
+    if (state.ballSaveFlash > 0) {
+      state.ballSaveFlash = Math.max(0, state.ballSaveFlash - dt);
     }
     state.targets.forEach(function (t) {
       if (t.flash > 0) t.flash -= dt;
@@ -530,8 +631,10 @@
     state.rollovers = createRollovers();
     state.launchLaneDashes = createLaunchLaneDashes();
     resetLaunchDashSequence(state);
+    state.launchDashRewarded = false;
     state.jackpotLit = false;
     state.skillShotWindow = false;
+    state.skillShotGrade = null;
     state.comboCount = 0;
     state.comboTimer = 0;
     if (state.spinner) state.spinner.hitCooldown = 0;
@@ -620,6 +723,12 @@
     }
 
     if (allLaunchDashesLit(dashes)) {
+      // Full stack only: one bonus when first completed (partial = no reward)
+      if (!state.launchDashRewarded) {
+        state.launchDashRewarded = true;
+        var midY = dashes[Math.floor(n / 2)].y;
+        awardScore(state, LAUNCH_DASH_FULL_BONUS, 'lanedash', 'full', LAUNCH_LANE_X, midY);
+      }
       state.launchDashHoldT += dt;
       if (state.launchDashHoldT >= LAUNCH_DASH_HOLD_SEC) {
         state.launchDashReversing = true;
@@ -654,6 +763,8 @@
     state.phase = 'ready';
     state.tiltWarnings = 0;
     state.tiltCooldown = 0;
+    state.ballSaveArmed = false;
+    state.ballSaveUsed = false;
     state.multiplier = Math.max(1, state.multiplier - 1);
     resetBallProgress(state);
   }
@@ -1008,10 +1119,39 @@
   }
 
   function performDrain(state) {
+    // One ball-save after a skill shot (any grade), then consume
+    if (state.ballSaveArmed && !state.ballSaveUsed && state.ball.inPlay) {
+      state.ballSaveUsed = true;
+      state.ballSaveArmed = false;
+      state.ballSaveFlash = 0.7;
+      state.drainFlash = 0.35;
+      state.lastHitType = 'ballsave';
+      state.lastHitId = 'save';
+      state.lastScorePopup = {
+        points: 0,
+        x: TABLE_W * 0.5,
+        y: TABLE_H * 0.42,
+        life: 1.1,
+        type: 'ballsave',
+        merged: false
+      };
+      var ball = state.ball;
+      ball.x = TABLE_W * 0.5;
+      ball.y = FLIPPER_ROW_Y - 90;
+      ball.vx = (Math.random() - 0.5) * 100;
+      ball.vy = -380;
+      state.exitedLaunchLane = true;
+      state.skillShotWindow = false;
+      return state;
+    }
+
     state.ballsRemaining -= 1;
     state.drainEvents += 1;
+    state.drainFlash = 0.55;
     state.exitedLaunchLane = false;
     state.skillShotWindow = false;
+    state.ballSaveArmed = false;
+    // SFX via drainEvents in audio.processState (avoid double-fire from lastHitType)
     if (state.ballsRemaining <= 0) {
       state.phase = 'game_over';
       state.ball.inPlay = false;
@@ -1204,11 +1344,9 @@
 
     if (state.skillShotWindow && state.exitedLaunchLane) {
       var topBumper = state.bumpers[0];
-      var d = vecLen(ball.x - topBumper.x, ball.y - topBumper.y);
-      if (d < topBumper.radius + ball.radius + 20) {
-        awardScore(state, SKILL_SHOT_BONUS, 'skillshot', 'skill', topBumper.x, topBumper.y);
-        state.skillShotWindow = false;
-        state.multiplier = Math.min(MAX_MULTIPLIER, state.multiplier + 1);
+      var gradeInfo = gradeSkillShot(ball, topBumper);
+      if (gradeInfo) {
+        applySkillShot(state, gradeInfo);
       }
     }
 
@@ -1359,6 +1497,9 @@
     FLIPPER_ROW_Y: FLIPPER_ROW_Y,
     MAX_MULTIPLIER: MAX_MULTIPLIER,
     SKILL_SHOT_BONUS: SKILL_SHOT_BONUS,
+    SKILL_SHOT_CENTER_BONUS: SKILL_SHOT_CENTER_BONUS,
+    SKILL_SHOT_NEAR_BONUS: SKILL_SHOT_NEAR_BONUS,
+    LAUNCH_DASH_FULL_BONUS: LAUNCH_DASH_FULL_BONUS,
     MAX_TILT_WARNINGS: MAX_TILT_WARNINGS,
     meterToLaunchPower: meterToLaunchPower,
     canChargePlunger: canChargePlunger,
@@ -1375,7 +1516,11 @@
     flipperTip: flipperTip,
     getDrainBounds: getDrainBounds,
     getRestDrainBounds: getRestDrainBounds,
-    awardScore: awardScore
+    awardScore: awardScore,
+    gradeSkillShot: gradeSkillShot,
+    applySkillShot: applySkillShot,
+    allLaunchDashesLit: allLaunchDashesLit,
+    performDrain: performDrain
   };
 
   if (typeof module !== 'undefined' && module.exports) {

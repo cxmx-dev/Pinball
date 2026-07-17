@@ -87,6 +87,10 @@ Machine-local paths → `USER-NOTES.md` (local only, gitignored).
 
 ## Version History
 
+**71726 2:53:36:86 AM CST**
+
+- **`update .mds`:** **P0 feel & clarity (v2)** — green PC hint auto-hides (first input or 8s; legend unchanged); high-combo score popups **merge** into one total; full launch-lane dash stack awards **800** (partial none); **graded skill shot** (center 2500 + mult / near 1000 + HUD banners); drain red flash + **one ball-save** after skill shot. Launch dashes: light on roll-over only; side power meter restored; reverse cascade after **1.5s** hold (accelerating fade). Tests: `pinball v2/tests/p0-feel.test.js` in `run-tests.js`.
+
 **71726 1:42:43:19 AM CST**
 
 - **`update .mds`:** root **`index.html`** redirects straight to **VOID PULSE (v2)** (no version picker; v1 still at `/pinball%20v1/`). **Dock chrome on PC:** `device.js` `fitCanvas` honors `touchChrome` on **all** devices (was touch-only) so Theme\|Legend is not clipped under the table; chrome pad **150** in v1/v2 `game.js`. **Upper-arch unstick:** ball no longer hangs in wireform × top-rail pocket (`unstickFromCorners` expanded, v1 + v2). Local + live match after push.

@@ -674,7 +674,14 @@
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.font = 'bold 16px Orbitron, sans-serif';
-    ctx.fillStyle = p.type === 'jackpot' || p.type === 'skillshot' ? '#ffdd44' : '#aaffcc';
+    ctx.fillStyle =
+      p.type === 'jackpot' || p.type === 'skillshot' || p.type === 'skillshot-near' || p.type === 'lanedash'
+        ? '#ffdd44'
+        : p.type === 'ballsave'
+          ? '#88ffee'
+          : p.type === 'combo' || p.merged
+            ? '#aaff88'
+            : '#aaffcc';
     ctx.shadowColor = ctx.fillStyle;
     ctx.shadowBlur = 12;
     ctx.textAlign = 'center';
@@ -717,10 +724,18 @@
     ctx.fillText(bonusLine, 24, 64);
     ctx.textAlign = 'right';
     ctx.fillStyle = 'rgba(160,180,220,0.45)';
-    if (state.skillShotWindow) {
+    if (state.skillShotBanner && state.skillShotBannerLife > 0) {
+      ctx.fillStyle = state.skillShotGrade === 'near' ? '#ffd088' : '#ffee66';
+      ctx.shadowBlur = 12;
+      ctx.fillText(state.skillShotBanner, canvas.width - 24, 64);
+    } else if (state.skillShotWindow) {
       ctx.fillStyle = '#ffcc44';
       ctx.shadowBlur = 10;
       ctx.fillText('SKILL SHOT!', canvas.width - 24, 64);
+    } else if (state.ballSaveArmed && state.ball.inPlay && !state.ballSaveUsed) {
+      ctx.fillStyle = '#88ffcc';
+      ctx.shadowBlur = 8;
+      ctx.fillText('BALL SAVE READY', canvas.width - 24, 64);
     } else {
       ctx.fillText(themeTitle() + ' · T theme', canvas.width - 24, 64);
     }
@@ -798,7 +813,11 @@
       spinner: '#ccddee',
       flipper: '#aaddff',
       skillshot: '#ffdd00',
-      jackpot: '#ffee22'
+      'skillshot-near': '#ffcc88',
+      jackpot: '#ffee22',
+      lanedash: '#ffe066',
+      ballsave: '#66ffcc',
+      combo: '#aaff88'
     };
     var color = colors[state.lastHitType] || '#ffffff';
     var x = offset.ox + (state.lastScorePopup ? state.lastScorePopup.x : state.ball.x);
@@ -852,6 +871,27 @@
 
     drawPowerMeter(ctx, canvas, state);
     drawHUD(ctx, canvas, state);
+
+    // Drain / ball-save screen flash
+    if (state.drainFlash > 0 || state.ballSaveFlash > 0) {
+      ctx.save();
+      if (state.ballSaveFlash > 0) {
+        var sa = Math.min(1, state.ballSaveFlash / 0.7) * 0.35;
+        ctx.fillStyle = 'rgba(80, 255, 200, ' + sa + ')';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = 'bold 22px Orbitron, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(180,255,230,' + Math.min(1, state.ballSaveFlash / 0.5) + ')';
+        ctx.shadowColor = '#66ffcc';
+        ctx.shadowBlur = 16;
+        ctx.fillText('BALL SAVED!', canvas.width * 0.5, canvas.height * 0.38);
+      } else if (state.drainFlash > 0) {
+        var da = Math.min(1, state.drainFlash / 0.55) * 0.4;
+        ctx.fillStyle = 'rgba(255, 40, 80, ' + da + ')';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      ctx.restore();
+    }
   }
 
   var api = { render: render, addParticles: addParticles, themeTitle: themeTitle };

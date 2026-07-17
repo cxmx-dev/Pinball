@@ -181,6 +181,17 @@
       text-shadow: 0 0 8px rgba(0, 255, 0, 0.45);
       padding: 6px 4px 2px;
       line-height: 1.35;
+      transition: opacity 0.45s ease, max-height 0.45s ease, padding 0.45s ease, margin 0.45s ease;
+      max-height: 4rem;
+      overflow: hidden;
+    }
+    #swipe-legend-hint.hint-hidden {
+      opacity: 0;
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      margin: 0;
+      pointer-events: none;
     }
     html.input-fine #swipe-legend-hint::before {
       content: "PC: T = theme · L = legend · ";

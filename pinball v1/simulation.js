@@ -56,7 +56,7 @@
   var COMBO_WINDOW = 2.2;
   var MAX_MULTIPLIER = 5;
   var SKILL_SHOT_BONUS = 2500;
-  var LAUNCH_DASH_HOLD_SEC = 3;
+  var LAUNCH_DASH_HOLD_SEC = 1.5;
   /** Reverse cascade: first off (top) is slowest; each next dash toward plunger is faster. */
   var LAUNCH_DASH_FADE_MAX = 0.55;
   var LAUNCH_DASH_FADE_MIN = 0.1;

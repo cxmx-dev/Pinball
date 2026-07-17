@@ -12,7 +12,8 @@ var testFiles = [
   'tests/render.test.js',
   'tests/enhance.test.js',
   'tests/monte-carlo.test.js',
-  'tests/assets-vfx.test.js'
+  'tests/assets-vfx.test.js',
+  'tests/p0-feel.test.js'
 ];
 
 fs.mkdirSync(scratch, { recursive: true });

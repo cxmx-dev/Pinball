@@ -170,6 +170,26 @@
     tone(1320, 'square', t + 0.16, 0.16, 0.14, { filterFreq: 3200 });
   }
 
+  function playSkillshotNear() {
+    var t = now();
+    tone(520, 'square', t, 0.08, 0.16, { filterFreq: 2400 });
+    tone(780, 'square', t + 0.09, 0.1, 0.14, { filterFreq: 2600 });
+  }
+
+  function playLaneDash() {
+    var t = now();
+    tone(440, 'triangle', t, 0.06, 0.12, { filterFreq: 2000 });
+    tone(880, 'triangle', t + 0.05, 0.08, 0.1, { filterFreq: 2800 });
+  }
+
+  function playBallSave() {
+    var t = now();
+    tone(523, 'square', t, 0.1, 0.18, { filterFreq: 3000 });
+    tone(659, 'square', t + 0.08, 0.12, 0.16, { filterFreq: 3200 });
+    tone(784, 'square', t + 0.16, 0.14, 0.14, { filterFreq: 3400 });
+    noiseBurst(t + 0.05, 0.08, 0.1, { filterFreq: 1800 });
+  }
+
   function playJackpot() {
     var t = now();
     var notes = [523, 659, 784, 1047];
@@ -213,6 +233,9 @@
     spinner: playSpinner,
     flipper: playFlipperHit,
     skillshot: playSkillshot,
+    'skillshot-near': playSkillshotNear,
+    lanedash: playLaneDash,
+    ballsave: playBallSave,
     jackpot: playJackpot,
     tilt: playTilt,
     tiltout: playTiltOut,

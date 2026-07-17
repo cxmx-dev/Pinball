@@ -25,9 +25,33 @@
   var legendOpen = false;
   var swipeTrack = null;
   var lastPhase = state.phase;
+  var hintEl = document.getElementById('swipe-legend-hint');
+  var hintHidden = false;
+  var hintTimer = null;
 
   if (Assets && Assets.preloadTheme) {
     Assets.preloadTheme();
+  }
+
+  function hideSwipeHint() {
+    if (hintHidden) return;
+    hintHidden = true;
+    if (hintTimer) {
+      clearTimeout(hintTimer);
+      hintTimer = null;
+    }
+    if (hintEl) {
+      hintEl.classList.add('hint-hidden');
+      hintEl.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function scheduleHintAutoHide() {
+    if (hintHidden || hintTimer) return;
+    hintTimer = setTimeout(function () {
+      hintTimer = null;
+      hideSwipeHint();
+    }, 8000);
   }
 
   function unlockAudio() {
@@ -76,6 +100,7 @@
   }
 
   function setLeftFlipper(active) {
+    if (active) hideSwipeHint();
     if (active && !keys.left) Audio.flipperFire('left');
     keys.left = active;
     Sim.activateFlipper(state, 'left', active);
@@ -84,6 +109,7 @@
   }
 
   function setRightFlipper(active) {
+    if (active) hideSwipeHint();
     if (active && !keys.right) Audio.flipperFire('right');
     keys.right = active;
     Sim.activateFlipper(state, 'right', active);
@@ -92,6 +118,7 @@
   }
 
   function beginLaunchCharge() {
+    hideSwipeHint();
     keys.launch = true;
     if (Sim.canChargePlunger(state)) {
       if (!state.ball.inPlay && state.phase === 'playing') {
@@ -414,6 +441,7 @@
   wireTouchUi();
   wireLegend();
   updateGameOverUi();
+  scheduleHintAutoHide();
   if (Device && Device.onChange) {
     Device.onChange(function () {
       resizeCanvas();
@@ -421,11 +449,17 @@
     });
   }
 
-  window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keydown', function (e) {
+    hideSwipeHint();
+    handleKeyDown(e);
+  });
   window.addEventListener('keyup', handleKeyUp);
   document.addEventListener('contextmenu', blockContextMenu);
   window.addEventListener('contextmenu', blockContextMenu);
-  canvas.addEventListener('pointerdown', handlePointerDown);
+  canvas.addEventListener('pointerdown', function (e) {
+    hideSwipeHint();
+    handlePointerDown(e);
+  });
   canvas.addEventListener('pointerup', handlePointerUp);
   canvas.addEventListener('pointercancel', handlePointerUp);
   canvas.addEventListener('pointerleave', function (e) {

@@ -86,6 +86,10 @@ Machine-local capture paths: see `USER-NOTES.md` (not published).
 
 ## Version History
 
+**71726 2:53:36:86 AM CST**
+
+- **`update .mds`:** **P0 feel** — PC hint auto-hide; combo popup merge; full-lane-dash +800; skill center/near grades + HUD; drain flash + 1× ball-save after skill. Dashes pass-only + reverse cascade; side power meter. Tests: `tests/p0-feel.test.js`.
+
 **71726 1:42:43:19 AM CST**
 
 - **`update .mds`:** root play URL redirects here (v2). PC dock chrome via `device.js` + `game.js` (150). Upper-arch / wireform stuck-ball unstick in `simulation.js`.
