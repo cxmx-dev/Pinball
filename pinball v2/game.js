@@ -10,6 +10,7 @@
   var Audio = window.PinballAudio;
   var Assets = window.PinballAssets;
   var Device = window.DeviceProfile;
+  var HS = window.PinballHighScores;
 
   var canvas = document.getElementById('pinball-canvas');
   var legendDrawer = document.getElementById('legend-drawer');
@@ -17,6 +18,10 @@
   var legendClose = document.getElementById('legend-close');
   var gameOverUi = document.getElementById('gameover-restart');
   var btnRestartBall = document.getElementById('btn-restart-ball');
+  var touchUi = document.getElementById('touch-ui');
+  var highScoreListEl = document.getElementById('highscore-list');
+  var btnCopyScore = document.getElementById('btn-copy-score');
+  var btnMute = document.getElementById('btn-mute');
   var state = Sim.createInitialState();
   var lastTime = 0;
   var keys = { left: false, right: false, launch: false };
@@ -28,6 +33,8 @@
   var hintEl = document.getElementById('swipe-legend-hint');
   var hintHidden = false;
   var hintTimer = null;
+  var lastHighScoreRecorded = -1;
+  var lastShareLine = '';
 
   if (Assets && Assets.preloadTheme) {
     Assets.preloadTheme();
@@ -141,9 +148,14 @@
 
   function restartGame() {
     state = Sim.createInitialState();
+    if (Assets && Assets.getThemeId && Sim.setThemeId) {
+      Sim.setThemeId(state, Assets.getThemeId());
+    }
     soundPrev = Audio.createPrev();
     lastPhase = state.phase;
+    lastHighScoreRecorded = -1;
     updateGameOverUi();
+    updateDockContext();
   }
 
   function doTiltOrRestart() {
@@ -154,12 +166,84 @@
     }
   }
 
+  function loadHighScores() {
+    if (!HS) return [];
+    try {
+      var raw = localStorage.getItem(HS.STORAGE_KEY);
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveHighScores(list) {
+    if (!HS) return;
+    try {
+      localStorage.setItem(HS.STORAGE_KEY, JSON.stringify(list));
+    } catch (e) { /* private mode */ }
+  }
+
+  function renderHighScoreList(list, highlightScore) {
+    if (!highScoreListEl || !HS) return;
+    highScoreListEl.innerHTML = '';
+    var rows = list || [];
+    if (!rows.length) {
+      var empty = document.createElement('li');
+      empty.textContent = 'No scores yet';
+      highScoreListEl.appendChild(empty);
+      return;
+    }
+    rows.forEach(function (entry, idx) {
+      var e = HS.normalizeEntry(entry);
+      if (!e) return;
+      var li = document.createElement('li');
+      if (highlightScore != null && e.score === highlightScore) li.className = 'hi';
+      var rank = document.createElement('span');
+      rank.textContent = '#' + (idx + 1);
+      var pts = document.createElement('span');
+      pts.textContent = e.score.toLocaleString('en-US');
+      li.appendChild(rank);
+      li.appendChild(pts);
+      highScoreListEl.appendChild(li);
+    });
+  }
+
+  function recordGameOverScore() {
+    if (!HS || state.phase !== 'game_over') return;
+    if (lastHighScoreRecorded === state.score) return;
+    lastHighScoreRecorded = state.score;
+    var list = loadHighScores();
+    var next = HS.updateHighScores(list, state.score, HS.DEFAULT_MAX);
+    saveHighScores(next);
+    renderHighScoreList(next, state.score);
+    var rank = HS.rankOfScore(next, state.score);
+    lastShareLine = HS.formatShareLine(state.score, rank);
+  }
+
+  function updateDockContext() {
+    if (!touchUi) return;
+    var inPlay = !!(state.ball && state.ball.inPlay && state.phase === 'playing');
+    touchUi.classList.toggle('ball-in-play', inPlay);
+  }
+
+  function updateMuteButton() {
+    if (!btnMute || !Audio.isMuted) return;
+    var m = Audio.isMuted();
+    btnMute.classList.toggle('muted', m);
+    btnMute.setAttribute('aria-pressed', m ? 'true' : 'false');
+    btnMute.textContent = m ? 'Muted' : 'Sound';
+  }
+
   function updateGameOverUi() {
     if (!gameOverUi) return;
     // Desktop + mobile: spinning pinball restart (PC can also press NumPad 7)
     var show = state.phase === 'game_over';
     gameOverUi.classList.toggle('show', show);
     gameOverUi.setAttribute('aria-hidden', show ? 'false' : 'true');
+    if (show) recordGameOverScore();
+    updateDockContext();
   }
 
   function cycleTheme() {
@@ -169,6 +253,11 @@
       var next = list[(list.indexOf(cur) + 1) % list.length];
       Assets.setTheme(next);
       if (Sim.setThemeId) Sim.setThemeId(state, next);
+      state.themeFlash = 0.4;
+      if (Audio.play) {
+        unlockAudio();
+        Audio.play('rushstart');
+      }
     }
   }
 
@@ -430,8 +519,12 @@
     if (keys.right) Sim.activateFlipper(state, 'right', true);
 
     Sim.tick(state, dt);
+    if (state.themeFlash > 0) {
+      state.themeFlash = Math.max(0, state.themeFlash - dt);
+    }
     soundPrev = Audio.processState(state, soundPrev);
     Render.render(canvas, state, dt);
+    updateDockContext();
 
     if (state.phase !== lastPhase) {
       lastPhase = state.phase;
@@ -441,10 +534,39 @@
     requestAnimationFrame(gameLoop);
   }
 
+  function wireMuteAndShare() {
+    if (btnMute) {
+      bindTapButton(btnMute, function () {
+        unlockAudio();
+        if (Audio.toggleMute) Audio.toggleMute();
+        updateMuteButton();
+      });
+      updateMuteButton();
+    }
+    if (btnCopyScore) {
+      bindTapButton(btnCopyScore, function () {
+        var line = lastShareLine || (HS ? HS.formatShareLine(state.score, null) : String(state.score));
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(line).then(function () {
+            btnCopyScore.textContent = 'Copied!';
+            setTimeout(function () { btnCopyScore.textContent = 'Copy score line'; }, 1200);
+          }).catch(function () {
+            btnCopyScore.textContent = 'Copy failed';
+            setTimeout(function () { btnCopyScore.textContent = 'Copy score line'; }, 1200);
+          });
+        } else {
+          btnCopyScore.textContent = line.slice(0, 18) + '…';
+        }
+      });
+    }
+  }
+
   resizeCanvas();
   wireTouchUi();
   wireLegend();
+  wireMuteAndShare();
   updateGameOverUi();
+  updateDockContext();
   scheduleHintAutoHide();
   if (Device && Device.onChange) {
     Device.onChange(function () {

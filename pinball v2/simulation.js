@@ -373,6 +373,7 @@
       ballSaveFlash: 0,
       launchDashRewarded: false,
       themeId: 'void-pulse',
+      themeFlash: 0,
       rushTimer: 0,
       rushName: null,
       rushMult: 1,

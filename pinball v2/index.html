@@ -434,6 +434,82 @@
       max-width: 16rem;
       line-height: 1.4;
     }
+    #gameover-extras {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 12rem;
+      max-width: 18rem;
+    }
+    #highscore-panel {
+      width: 100%;
+      background: rgba(8, 12, 28, 0.88);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #c8e8ff;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+    }
+    #highscore-panel h3 {
+      margin: 0 0 8px;
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #5ee7ff;
+      text-align: center;
+    }
+    #highscore-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    #highscore-list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-variant-numeric: tabular-nums;
+    }
+    #highscore-list li.hi {
+      color: #ffe066;
+    }
+    #btn-copy-score, #btn-mute {
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #d8f7ff;
+      background: rgba(10, 14, 28, 0.9);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      border-radius: 8px;
+      min-height: 40px;
+      padding: 8px 12px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #btn-copy-score:active, #btn-mute:active {
+      background: rgba(0, 180, 220, 0.35);
+    }
+    #btn-mute {
+      position: fixed;
+      top: max(10px, env(safe-area-inset-top));
+      right: max(10px, env(safe-area-inset-right));
+      z-index: 25;
+      min-width: 72px;
+    }
+    #btn-mute.muted {
+      border-color: rgba(255, 120, 80, 0.55);
+      color: #ffc8a8;
+    }
+    #touch-ui.ball-in-play #btn-launch {
+      opacity: 0.28;
+      pointer-events: none;
+      filter: grayscale(0.35);
+    }
     #btn-restart-ball {
       position: relative;
       width: 100px;
@@ -498,8 +574,16 @@
   </style>
 </head>
 <body oncontextmenu="return false">
+  <button type="button" id="btn-mute" aria-pressed="false" title="Mute audio">Sound</button>
   <div id="gameover-restart" aria-hidden="true">
     <div class="restart-label">Press here to Restart</div>
+    <div id="gameover-extras">
+      <div id="highscore-panel">
+        <h3>Local High Scores</h3>
+        <ol id="highscore-list"></ol>
+      </div>
+      <button type="button" id="btn-copy-score">Copy score line</button>
+    </div>
     <button type="button" id="btn-restart-ball" aria-label="Press here to Restart">
       <span class="pinball-rim" aria-hidden="true"></span>
       <span class="pinball-orb" aria-hidden="true"></span>
@@ -600,6 +684,7 @@
 
   <script src="device.js"></script>
   <script src="simulation.js"></script>
+  <script src="highscores.js"></script>
   <script src="assets.js"></script>
   <script src="renderer.js"></script>
   <script src="audio.js"></script>

@@ -36,6 +36,8 @@ Machine paths / full run book: project `USER-NOTES.md` + hub `USER-NOTES.md` (gi
 
 ## Shipped highlights
 
+- **P2 polish (v2):** theme flash · Launch dims in-play · local high scores · mute · copy score line  
+- **P1 depth (v2):** side routes · drop bank → rush · EOB bonus · outlane tension  
 - **P0 feel (v2):** hint hide · popup merge · full-dash +800 · graded skill · drain flash + 1× ball-save  
 - Launch lane dashes (pass-on, 1.5s hold, reverse accel fade); side power meter  
 - Root play link → VOID PULSE (v2) no picker  
@@ -51,6 +53,7 @@ Machine paths / full run book: project `USER-NOTES.md` + hub `USER-NOTES.md` (gi
 
 | When | What |
 |------|------|
+| 71726 ~3:11 AM | Playtest `2 pinball.mp4` + **P2 polish** + 5× suite green |
 | 71726 ~2:53 AM | `update .mds` — P0 feel shipped on v2; docs + tests |
 | 71726 ~2:25 AM | Playtest review (`1 pinball.mp4`) → `PLAN.md` P0–P3 backlog |
 | 71726 early AM | Root → v2 redirect; PC dock chrome; upper-arch unstick; Pages light-blue ✓ lesson |

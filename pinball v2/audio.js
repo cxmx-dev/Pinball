@@ -7,7 +7,9 @@
   var ctx = null;
   var master = null;
   var unlocked = false;
+  var muted = false;
   var lastFlipperFire = { left: 0, right: 0 };
+  var MASTER_GAIN = 0.52;
 
   function ensureCtx() {
     if (ctx) return ctx;
@@ -15,9 +17,27 @@
     if (!AC) return null;
     ctx = new AC();
     master = ctx.createGain();
-    master.gain.value = 0.52;
+    master.gain.value = muted ? 0 : MASTER_GAIN;
     master.connect(ctx.destination);
     return ctx;
+  }
+
+  function applyMuteGain() {
+    if (master) master.gain.value = muted ? 0 : MASTER_GAIN;
+  }
+
+  function setMuted(on) {
+    muted = !!on;
+    applyMuteGain();
+    return muted;
+  }
+
+  function toggleMute() {
+    return setMuted(!muted);
+  }
+
+  function isMuted() {
+    return muted;
   }
 
   function unlock() {
@@ -25,6 +45,7 @@
     if (!c) return false;
     if (c.state === 'suspended') c.resume();
     unlocked = true;
+    applyMuteGain();
     return true;
   }
 
@@ -275,13 +296,21 @@
   };
 
   function play(name) {
-    if (!unlocked || !ctx) return;
+    if (!unlocked || !ctx || muted) return;
     var fn = handlers[name];
     if (fn) fn();
   }
 
   function processState(state, prev) {
-    if (!unlocked) return prev;
+    if (!unlocked || muted) {
+      return {
+        phase: state.phase,
+        drainEvents: state.drainEvents,
+        ballInPlay: state.ball.inPlay,
+        launchCharging: state.launchCharging,
+        chargeTick: prev.chargeTick || 0
+      };
+    }
 
     if (state.lastHitType) {
       if (state.lastHitType === 'tilt' && state.lastScorePopup && state.lastScorePopup.type === 'tiltout') {
@@ -324,12 +353,22 @@
     };
   }
 
-  root.PinballAudio = {
+  var api = {
     unlock: unlock,
     play: play,
     processState: processState,
     createPrev: createPrev,
-    flipperFire: playFlipperFire,
-    isUnlocked: function () { return unlocked; }
+    flipperFire: function (side) {
+      if (muted) return;
+      playFlipperFire(side);
+    },
+    isUnlocked: function () { return unlocked; },
+    setMuted: setMuted,
+    toggleMute: toggleMute,
+    isMuted: isMuted
   };
-})(typeof window !== 'undefined' ? window : globalThis);
+  root.PinballAudio = api;
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = api;
+  }
+})(typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : this);

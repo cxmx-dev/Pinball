@@ -1005,6 +1005,15 @@
       ctx.fillRect(0, 72, canvas.width, canvas.height - 100);
       ctx.restore();
     }
+
+    // Theme cycle flash
+    if (state.themeFlash > 0) {
+      ctx.save();
+      var ta = Math.min(1, state.themeFlash / 0.4) * 0.28;
+      ctx.fillStyle = 'rgba(255, 255, 255, ' + ta + ')';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
   }
 
   var api = { render: render, addParticles: addParticles, themeTitle: themeTitle };

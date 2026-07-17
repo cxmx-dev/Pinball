@@ -87,6 +87,10 @@ Machine-local paths → `USER-NOTES.md` (local only, gitignored).
 
 ## Version History
 
+**71726 3:11:39:51 AM CST**
+
+- **`update .mds`:** playtest `2 pinball.mp4` review + **P2 polish (v2)** — theme cycle flash; Launch dock dims while ball in play; local high scores on game over; mute control; anonymous copy score line. P0/P1 remain.
+
 **71726 2:53:36:86 AM CST**
 
 - **`update .mds`:** **P0 feel & clarity (v2)** — green PC hint auto-hides (first input or 8s; legend unchanged); high-combo score popups **merge** into one total; full launch-lane dash stack awards **800** (partial none); **graded skill shot** (center 2500 + mult / near 1000 + HUD banners); drain red flash + **one ball-save** after skill shot. Launch dashes: light on roll-over only; side power meter restored; reverse cascade after **1.5s** hold (accelerating fade). Tests: `pinball v2/tests/p0-feel.test.js` in `run-tests.js`.
