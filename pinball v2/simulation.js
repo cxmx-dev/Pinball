@@ -107,17 +107,28 @@
     };
   }
 
+  /**
+   * Fun bumper layout: upper skill triangle under the arch, mid cluster for combos,
+   * lower posts feeding flippers; saver sits near left outlane.
+   */
   function createBumpers() {
     return [
-      { x: TABLE_W * 0.5, y: 200, radius: 36, score: 500, color: '#ff3366', kind: 'bumper', hitCooldown: 0 },
-      { x: TABLE_W * 0.28, y: 300, radius: 28, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0 },
-      { x: TABLE_W * 0.72, y: 300, radius: 28, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
-      { x: TABLE_W * 0.5, y: 390, radius: 24, score: 250, color: '#aa66ff', kind: 'bumper', hitCooldown: 0 },
+      // Skill / top (still bumpers[0] for skill-shot grading)
+      { x: 240, y: 168, radius: 34, score: 500, color: '#ff3366', kind: 'bumper', hitCooldown: 0 },
+      // Upper wings — wider spacing for swoop under arch
+      { x: 155, y: 248, radius: 27, score: 320, color: '#33ccff', kind: 'bumper', hitCooldown: 0 },
+      { x: 325, y: 248, radius: 27, score: 320, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
+      // Mid diamond — bounce party
+      { x: 240, y: 318, radius: 24, score: 280, color: '#aa66ff', kind: 'bumper', hitCooldown: 0 },
+      { x: 175, y: 372, radius: 20, score: 220, color: '#66ddff', kind: 'bumper', hitCooldown: 0 },
+      { x: 305, y: 372, radius: 20, score: 220, color: '#ffaa44', kind: 'bumper', hitCooldown: 0 },
+      // Lower feeder (kept clear of y≈400 open space used by unit tests)
+      { x: 240, y: 448, radius: 17, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0 },
       {
-        // Weaker / smaller saver — outlane tension (P1)
-        x: 152,
-        y: 458,
-        radius: 15,
+        // Weaker / smaller saver — outlane tension
+        x: 138,
+        y: 478,
+        radius: 14,
         score: 120,
         color: '#55ffaa',
         kind: 'bumper',
@@ -154,24 +165,24 @@
 
   function createTargets() {
     return [
-      { id: 'standup-l', x: 108, y: 520, w: 10, h: 32, score: 1000, lit: true, flash: 0, occupied: false },
-      { id: 'standup-r', x: 352, y: 520, w: 10, h: 32, score: 1000, lit: true, flash: 0, occupied: false },
-      { id: 'standup-c', x: 232, y: 560, w: 10, h: 28, score: 1500, lit: false, flash: 0, occupied: false }
+      { id: 'standup-l', x: 118, y: 540, w: 10, h: 30, score: 1000, lit: true, flash: 0, occupied: false },
+      { id: 'standup-r', x: 362, y: 540, w: 10, h: 30, score: 1000, lit: true, flash: 0, occupied: false },
+      { id: 'standup-c', x: 240, y: 575, w: 10, h: 26, score: 1500, lit: false, flash: 0, occupied: false }
     ];
   }
 
-  /** Horizontal drop bank — complete all → start timed rush mode */
+  /** Horizontal drop bank mid-table — complete all → rush mode */
   function createDropTargets() {
     var drops = [];
-    var baseX = 158;
-    var y = 468;
+    var baseX = 188;
+    var y = 488;
     var i;
     for (i = 0; i < DROP_BANK_SIZE; i++) {
       drops.push({
         id: 'drop-' + i,
-        x: baseX + i * 30,
+        x: baseX + i * 28,
         y: y,
-        w: 22,
+        w: 20,
         h: 12,
         down: false,
         score: 350,
@@ -189,18 +200,18 @@
     return {
       leftCaptive: {
         id: 'captive-l',
-        x: 62,
-        y: 330,
+        x: 58,
+        y: 300,
         radius: 13,
         score: 650,
         cooldown: 0
       },
       rightRamp: {
         id: 'ramp-r',
-        x1: LAUNCH_LANE_LEFT - 8,
-        y1: 430,
-        x2: LAUNCH_LANE_LEFT - 48,
-        y2: 290,
+        x1: LAUNCH_LANE_LEFT - 10,
+        y1: 400,
+        x2: LAUNCH_LANE_LEFT - 55,
+        y2: 260,
         score: 750,
         cooldown: 0
       }
@@ -251,14 +262,50 @@
   }
 
   function createKickers() {
+    // Above flipper line, clear of rest pose — feed cross-shots without trapping bats
     return [
-      { id: 'kicker-l', x: 155, y: 640, radius: 14, score: 750, color: '#ff8844' },
-      { id: 'kicker-r', x: 325, y: 640, radius: 14, score: 750, color: '#44ffaa' }
+      { id: 'kicker-l', x: 148, y: 575, radius: 14, score: 750, color: '#ff8844' },
+      { id: 'kicker-r', x: 332, y: 575, radius: 14, score: 750, color: '#44ffaa' }
     ];
   }
 
+  /** Ellipse arc as wall segments (canvas y+ down). a0→a1 radians. */
+  function ellipseArcSegments(cx, cy, rx, ry, a0, a1, n, kind) {
+    var segs = [];
+    var i;
+    var steps = Math.max(4, n | 0);
+    for (i = 0; i < steps; i++) {
+      var t0 = a0 + (a1 - a0) * (i / steps);
+      var t1 = a0 + (a1 - a0) * ((i + 1) / steps);
+      segs.push({
+        x1: cx + rx * Math.cos(t0),
+        y1: cy + ry * Math.sin(t0),
+        x2: cx + rx * Math.cos(t1),
+        y2: cy + ry * Math.sin(t1),
+        kind: kind || 'rail',
+        arc: true
+      });
+    }
+    return segs;
+  }
+
+  /** Approx underside Y of top arch at playfield x (for clamps / unstick). */
+  function topArchFloorY(x) {
+    // Match createWalls top ellipse: cx=240, cy=100, rx=200, ry=52, upper half
+    var cx = TABLE_W * 0.5;
+    var cy = 100;
+    var rx = 200;
+    var ry = 52;
+    var dx = (x - cx) / rx;
+    if (dx < -1) dx = -1;
+    if (dx > 1) dx = 1;
+    // Upper half of ellipse: y = cy - ry * sqrt(1 - dx^2)  (smaller y = higher on screen)
+    return cy - ry * Math.sqrt(Math.max(0, 1 - dx * dx));
+  }
+
   function createSpinner() {
-    return { x: TABLE_W * 0.5, y: 130, radius: 18, angle: 0, score: 200, spinVel: 0, hitCooldown: 0 };
+    // Under the arch peak — skill-shot neighbor
+    return { x: TABLE_W * 0.5, y: 118, radius: 16, angle: 0, score: 200, spinVel: 0, hitCooldown: 0 };
   }
 
   function getRestDrainBounds() {
@@ -291,30 +338,50 @@
     var drainR = rt.x - 6;
     var rightInlaneX = FLIPPER_RIGHT_PIVOT_X + 18;
     var chuteBottom = TABLE_H - 16;
+    var walls = [];
 
-    return [
-      { x1: 36, y1: 60, x2: TABLE_W - 36, y2: 60, kind: 'rail' },
-      { x1: 36, y1: 60, x2: 36, y2: TABLE_H - 80, kind: 'rail' },
-      { x1: TABLE_W - 36, y1: 60, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' },
-      { x1: LAUNCH_LANE_LEFT, y1: 60, x2: LAUNCH_LANE_LEFT, y2: LAUNCH_WIRE_Y1, rail: true, kind: 'lane' },
-      { x1: LAUNCH_LANE_LEFT, y1: LAUNCH_WIRE_Y1, x2: LAUNCH_WIRE_X2, y2: LAUNCH_WIRE_Y2, wireform: true, kind: 'lane' },
-      { x1: LAUNCH_LANE_LEFT, y1: LAUNCH_WIRE_Y1, x2: LAUNCH_LANE_LEFT, y2: TABLE_H - 80, rail: true, kind: 'lane' },
-      { x1: FLIPPER_INLANE_X, y1: FLIPPER_ROW_Y, x2: drainL, y2: FLIPPER_ROW_Y, kind: 'deck' },
-      { x1: drainR, y1: FLIPPER_ROW_Y, x2: rightInlaneX, y2: FLIPPER_ROW_Y, kind: 'deck' },
-      { x1: FLIPPER_INLANE_X + 6, y1: LEFT_INLANE_POST_TOP, x2: FLIPPER_INLANE_X + 6, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' },
-      { x1: FLIPPER_INLANE_X + 6, y1: FLIPPER_ROW_Y - 20, x2: FLIPPER_INLANE_X + 6, y2: chuteBottom, kind: 'chute' },
-      { x1: 36, y1: 540, x2: FLIPPER_INLANE_X + 10, y2: LEFT_INLANE_POST_TOP + 20, kind: 'chute' },
-      // Upper-left deflector: keep OFF the left rail so ball diameter fits (old 36,210→92,145 wedged).
-      { x1: 78, y1: 195, x2: 128, y2: 118, kind: 'chute' },
-      // Left captive route guide
-      { x1: 48, y1: 380, x2: 72, y2: 300, kind: 'chute' },
-      { x1: rightInlaneX - 4, y1: FLIPPER_ROW_Y - 20, x2: rightInlaneX - 4, y2: chuteBottom, kind: 'chute' },
-      // Right ramp rail
-      { x1: LAUNCH_LANE_LEFT - 6, y1: 440, x2: LAUNCH_LANE_LEFT - 50, y2: 300, kind: 'chute' },
-      { x1: bounds.centerLeft, y1: FLIPPER_ROW_Y, x2: bounds.centerLeft, y2: chuteBottom, kind: 'chute' },
-      { x1: bounds.centerRight, y1: FLIPPER_ROW_Y, x2: bounds.centerRight, y2: chuteBottom, kind: 'chute' },
-      { x1: bounds.rightOutlaneLeft, y1: FLIPPER_ROW_Y, x2: bounds.rightOutlaneLeft, y2: chuteBottom, kind: 'chute' }
-    ];
+    // Rounded top arch (ball rides underside — green path annotation)
+    // Ellipse upper half: PI → 2PI (left → top center → right)
+    var archCx = TABLE_W * 0.5;
+    var archCy = 100;
+    var archRx = 200;
+    var archRy = 52;
+    walls = walls.concat(ellipseArcSegments(archCx, archCy, archRx, archRy, Math.PI, Math.PI * 2, 18, 'rail'));
+
+    // Left side rail from arch end down
+    var archLeftX = archCx - archRx;
+    var archLeftY = archCy;
+    walls.push({ x1: archLeftX, y1: archLeftY, x2: 36, y2: 140, kind: 'rail' });
+    walls.push({ x1: 36, y1: 140, x2: 36, y2: TABLE_H - 80, kind: 'rail' });
+
+    // Outer right (cabinet edge past launch lane)
+    walls.push({ x1: TABLE_W - 36, y1: 90, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' });
+
+    // Launch lane
+    walls.push({ x1: LAUNCH_LANE_LEFT, y1: 90, x2: LAUNCH_LANE_LEFT, y2: LAUNCH_WIRE_Y1, rail: true, kind: 'lane' });
+    walls.push({ x1: LAUNCH_LANE_LEFT, y1: LAUNCH_WIRE_Y1, x2: LAUNCH_WIRE_X2, y2: LAUNCH_WIRE_Y2, wireform: true, kind: 'lane' });
+    walls.push({ x1: LAUNCH_LANE_LEFT, y1: LAUNCH_WIRE_Y1, x2: LAUNCH_LANE_LEFT, y2: TABLE_H - 80, rail: true, kind: 'lane' });
+
+    // Soft upper-right round into launch (yellow annotation)
+    walls = walls.concat(
+      ellipseArcSegments(LAUNCH_LANE_LEFT - 8, 118, 42, 38, -Math.PI * 0.15, Math.PI * 0.55, 8, 'rail')
+    );
+
+    walls.push({ x1: FLIPPER_INLANE_X, y1: FLIPPER_ROW_Y, x2: drainL, y2: FLIPPER_ROW_Y, kind: 'deck' });
+    walls.push({ x1: drainR, y1: FLIPPER_ROW_Y, x2: rightInlaneX, y2: FLIPPER_ROW_Y, kind: 'deck' });
+    walls.push({ x1: FLIPPER_INLANE_X + 6, y1: LEFT_INLANE_POST_TOP, x2: FLIPPER_INLANE_X + 6, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' });
+    walls.push({ x1: FLIPPER_INLANE_X + 6, y1: FLIPPER_ROW_Y - 20, x2: FLIPPER_INLANE_X + 6, y2: chuteBottom, kind: 'chute' });
+    walls.push({ x1: 36, y1: 540, x2: FLIPPER_INLANE_X + 10, y2: LEFT_INLANE_POST_TOP + 20, kind: 'chute' });
+    // Upper-left deflector under arch
+    walls.push({ x1: 70, y1: 200, x2: 130, y2: 125, kind: 'chute' });
+    walls.push({ x1: 48, y1: 360, x2: 70, y2: 280, kind: 'chute' });
+    walls.push({ x1: rightInlaneX - 4, y1: FLIPPER_ROW_Y - 20, x2: rightInlaneX - 4, y2: chuteBottom, kind: 'chute' });
+    walls.push({ x1: LAUNCH_LANE_LEFT - 8, y1: 420, x2: LAUNCH_LANE_LEFT - 52, y2: 280, kind: 'chute' });
+    walls.push({ x1: bounds.centerLeft, y1: FLIPPER_ROW_Y, x2: bounds.centerLeft, y2: chuteBottom, kind: 'chute' });
+    walls.push({ x1: bounds.centerRight, y1: FLIPPER_ROW_Y, x2: bounds.centerRight, y2: chuteBottom, kind: 'chute' });
+    walls.push({ x1: bounds.rightOutlaneLeft, y1: FLIPPER_ROW_Y, x2: bounds.rightOutlaneLeft, y2: chuteBottom, kind: 'chute' });
+
+    return walls;
   }
 
   function createInitialState() {
@@ -1104,9 +1171,19 @@
       ball.x = 36 + r;
       ball.vx = Math.abs(ball.vx) * WALL_RESTITUTION;
     }
-    if (ball.y - r < 60) {
-      ball.y = 60 + r;
-      ball.vy = Math.abs(ball.vy) * WALL_RESTITUTION;
+    // Follow rounded top arch (no flat y=60 ceiling)
+    if (ball.x > 40 && ball.x < LAUNCH_LANE_LEFT + 10) {
+      var floorY = topArchFloorY(ball.x);
+      if (ball.y - r < floorY) {
+        ball.y = floorY + r + 0.5;
+        if (ball.vy < 0) ball.vy = Math.abs(ball.vy) * WALL_RESTITUTION;
+        // Nudge along tangent so ball "rides" the curve instead of sticking
+        var mid = TABLE_W * 0.5;
+        ball.vx += (ball.x < mid ? -1 : 1) * 25;
+      }
+    } else if (ball.y - r < 48) {
+      ball.y = 48 + r;
+      if (ball.vy < 0) ball.vy = Math.abs(ball.vy) * WALL_RESTITUTION;
     }
   }
 
@@ -1803,7 +1880,9 @@
     RUSH_MODE_DURATION: RUSH_MODE_DURATION,
     RUSH_SCORE_MULT: RUSH_SCORE_MULT,
     EOB_DURATION: EOB_DURATION,
-    DROP_BANK_SIZE: DROP_BANK_SIZE
+    DROP_BANK_SIZE: DROP_BANK_SIZE,
+    topArchFloorY: topArchFloorY,
+    ellipseArcSegments: ellipseArcSegments
   };
 
   if (typeof module !== 'undefined' && module.exports) {

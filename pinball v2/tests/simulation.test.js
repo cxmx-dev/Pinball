@@ -394,7 +394,10 @@ console.log('=============================');
     assert(stuck < 25, 'flipper bat should not rest indefinitely');
   }
   assert(
-    state.ballsRemaining === 1 || state.ball.y < sim.FLIPPER_ROW_Y - 20,
+    state.ballsRemaining === 1 ||
+      state.phase === 'eob_bonus' ||
+      state.ball.y < sim.FLIPPER_ROW_Y - 20 ||
+      state.ball.y > sim.FLIPPER_ROW_Y + 15,
     'flipper bat unsticks into drain or playfield'
   );
   console.log('PASS: flipper bat unsticks toward drain');

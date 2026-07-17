@@ -261,6 +261,22 @@
   function drawWalls(ctx, state) {
     ctx.save();
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    // Glow pass for rounded top arch segments
+    state.walls.forEach(function (wall) {
+      var kind = wall.kind || 'rail';
+      if (kind === 'lane' || kind === 'chute' || kind === 'guide') return;
+      if (wall.arc || kind === 'rail') {
+        ctx.strokeStyle = 'rgba(100, 200, 255, 0.22)';
+        ctx.lineWidth = 10;
+        ctx.shadowColor = 'rgba(0, 220, 255, 0.35)';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.moveTo(wall.x1, wall.y1);
+        ctx.lineTo(wall.x2, wall.y2);
+        ctx.stroke();
+      }
+    });
     state.walls.forEach(function (wall) {
       var kind = wall.kind || 'rail';
       if (kind === 'lane') return;
@@ -276,8 +292,8 @@
         ctx.shadowColor = 'rgba(100,150,255,0.3)';
         ctx.shadowBlur = 4;
       } else {
-        ctx.strokeStyle = 'rgba(180,200,230,0.85)';
-        ctx.lineWidth = 5;
+        ctx.strokeStyle = wall.arc ? 'rgba(160, 230, 255, 0.95)' : 'rgba(180,200,230,0.85)';
+        ctx.lineWidth = wall.arc ? 6 : 5;
         ctx.shadowColor = 'rgba(100,150,255,0.5)';
         ctx.shadowBlur = 8;
       }
