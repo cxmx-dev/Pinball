@@ -60,8 +60,9 @@
     var targetH = 980;
     canvas.width = targetW;
     canvas.height = targetH;
-    // Reserve space for bottom dock (all devices) + swipe/PC hint
-    var chrome = 130;
+    // Reserve space for bottom dock (all devices) + Theme|Legend + swipe/PC hint
+    // (fitCanvas must honor this on PC too — see device.js touchChrome, not touch-only)
+    var chrome = 150;
     if (Device && Device.fitCanvas) {
       Device.fitCanvas(canvas, {
         touchChrome: chrome,

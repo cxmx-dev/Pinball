@@ -55,7 +55,8 @@
     var targetH = 980;
     canvas.width = targetW;
     canvas.height = targetH;
-    var chrome = 130;
+    // Dock chrome on all devices (PC + touch) — see device.js fitCanvas
+    var chrome = 150;
     if (Device && Device.fitCanvas) {
       Device.fitCanvas(canvas, {
         touchChrome: chrome,

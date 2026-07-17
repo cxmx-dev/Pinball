@@ -666,27 +666,84 @@
     });
   }
 
-  /** Free ball wedged in upper-left rail corner / narrow side pockets. */
+  /**
+   * Free ball wedged in upper rail corners / wireform entry pocket.
+   * User-reported hang: top-right under arch (wireform × top rail × lane wall).
+   */
   function unstickFromCorners(state) {
     var ball = state.ball;
     if (!ball.inPlay || !state.exitedLaunchLane) return;
     var speed = ballSpeed(ball);
-    if (speed > 55) return;
+    if (speed > 70) return;
     var r = ball.radius;
-    // Top-left pocket: near left rail + upper third of table
-    var nearLeft = ball.x - r < 36 + 22;
-    var upper = ball.y < 280;
-    if (nearLeft && upper) {
-      ball.x = Math.max(ball.x, 36 + r + 10);
-      ball.vx = Math.max(ball.vx, 140);
-      ball.vy = Math.min(ball.vy, -40);
+    var upper = ball.y < 300;
+    if (!upper) return;
+
+    // Top-left pocket: near left rail + upper third
+    var nearLeft = ball.x - r < 36 + 28;
+    if (nearLeft && speed <= 70) {
+      ball.x = Math.max(ball.x, 36 + r + 14);
+      ball.y = Math.max(ball.y, 60 + r + 8);
+      ball.vx = Math.max(ball.vx, 160);
+      ball.vy = Math.min(ball.vy, 40); // drop back into play, not into ceiling
+      return;
     }
-    // Symmetric top-right (inside playfield, not launch lane)
-    var nearRightPlay = ball.x + r > LAUNCH_LANE_LEFT - 22 && ball.x < LAUNCH_LANE_LEFT - 4;
-    if (nearRightPlay && upper && speed < 55) {
-      ball.x = Math.min(ball.x, LAUNCH_LANE_LEFT - r - 10);
-      ball.vx = Math.min(ball.vx, -120);
-      ball.vy = Math.min(ball.vy, -30);
+
+    // Top-right outer corner (outer right rail, above play — rare)
+    var nearOuterRight = ball.x + r > TABLE_W - 36 - 10;
+    if (nearOuterRight && ball.y < 140 && speed <= 70) {
+      ball.x = Math.min(ball.x, LAUNCH_LANE_LEFT - r - 12);
+      ball.vx = -Math.max(Math.abs(ball.vx), 180);
+      ball.vy = Math.max(ball.vy, 80);
+      return;
+    }
+
+    // Playfield side of launch lane wall (wide band — old 4px band was too thin)
+    var nearLaneWall =
+      ball.x + r > LAUNCH_LANE_LEFT - 48 &&
+      ball.x < LAUNCH_LANE_LEFT + r + 2;
+    if (nearLaneWall && ball.y < 220 && speed <= 70) {
+      ball.x = Math.min(ball.x, LAUNCH_LANE_LEFT - r - 14);
+      ball.vx = -Math.max(Math.abs(ball.vx), 170);
+      ball.vy = Math.max(ball.vy, 90);
+      return;
+    }
+
+    // Wireform × top-rail wedge (skill-shot entry pocket — annotated stuck spot)
+    // Wire: (LAUNCH_LANE_LEFT, LAUNCH_WIRE_Y1) → (LAUNCH_WIRE_X2, LAUNCH_WIRE_Y2)
+    var wx1 = WIRE_FORM_X1;
+    var wy1 = WIRE_FORM_Y1;
+    var wx2 = WIRE_FORM_X2;
+    var wy2 = WIRE_FORM_Y2;
+    var wdx = wx2 - wx1;
+    var wdy = wy2 - wy1;
+    var wlenSq = wdx * wdx + wdy * wdy;
+    if (wlenSq > 1e-6 && ball.y < LAUNCH_WIRE_Y1 + 40 && ball.x > WIRE_FORM_X2 - 30) {
+      var wt = clamp(((ball.x - wx1) * wdx + (ball.y - wy1) * wdy) / wlenSq, 0, 1);
+      var wcx = wx1 + wt * wdx;
+      var wcy = wy1 + wt * wdy;
+      var wdist = vecLen(ball.x - wcx, ball.y - wcy);
+      var nearTopRail = ball.y - r < 60 + 28;
+      var inWirePocket = wdist < r + 18 || (nearTopRail && ball.x > 220 && ball.x < LAUNCH_LANE_LEFT + 8);
+      if (inWirePocket && speed <= 70) {
+        // Push into center playfield below the arch
+        ball.x = clamp(ball.x - 24, 36 + r + 8, LAUNCH_LANE_LEFT - r - 16);
+        ball.y = Math.max(ball.y, 60 + r + 20);
+        if (ball.y < 120) ball.y = 130 + r;
+        ball.vx = -Math.max(Math.abs(ball.vx), 140);
+        ball.vy = Math.max(Math.abs(ball.vy), 160); // fall into bumpers
+        return;
+      }
+    }
+
+    // Generic upper-slow: very low speed high on table → kick toward top bumper center
+    if (speed < 28 && ball.y < 160) {
+      var cx = TABLE_W * 0.5;
+      var cy = 220;
+      var n = normalize(cx - ball.x, cy - ball.y);
+      ball.vx = n.x * 150;
+      ball.vy = n.y * 150;
+      if (ball.y - r < 60 + 4) ball.y = 60 + r + 10;
     }
   }
 

@@ -102,7 +102,8 @@
 
   /**
    * Fit a fixed-aspect canvas into the viewport (CSS size only; keep internal resolution).
-   * opts: { aspect, maxW, maxH, pad, touchChrome } — touchChrome reserves bottom space for controls
+   * opts: { aspect, maxW, maxH, pad, touchChrome } — reserves bottom dock chrome on ALL devices
+   * (PC + touch). Do not gate on isTouch or desktop clips the control dock under the table.
    */
   function fitCanvas(canvas, opts) {
     if (!canvas) return { scale: 1, cssW: 0, cssH: 0 };
@@ -111,7 +112,7 @@
     var ih = canvas.height || opts.height || 1;
     var pad = opts.pad != null ? opts.pad : 8;
     var chrome = 0;
-    if (opts.touchChrome && profile.isTouch) {
+    if (opts.touchChrome) {
       chrome = typeof opts.touchChrome === 'number' ? opts.touchChrome : 120;
     }
     var maxW = (opts.maxW != null ? opts.maxW : global.innerWidth) - pad * 2;
