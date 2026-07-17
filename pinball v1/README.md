@@ -119,6 +119,10 @@ node verify-browser.js
 
 ## Version History
 
+**71726 1:42:43:19 AM CST**
+
+- **`update .mds`:** dock chrome on PC (shared `device.js` pattern) + upper-arch unstick parity with v2. Root site still opens v2; this path remains `/pinball%20v1/`.
+
 **71126 5:03:05:48 AM CST**
 
 - **`update .mds`:** legend airy spacing; mobile legend hides PC hotkeys; controls **A/D** + NumPad 1/3/7.

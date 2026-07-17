@@ -146,8 +146,31 @@
   function createRollovers() {
     return [
       { id: 'lane-l', x1: 72, y1: 180, x2: 72, y2: 280, width: 18, score: 500, lit: false, occupied: false },
-      { id: 'lane-r', x1: 408, y1: 180, x2: 408, y2: 280, width: 18, score: 500, lit: false, occupied: false }
+      { id: 'lane-r', x1: LAUNCH_LANE_LEFT - 36, y1: 260, x2: LAUNCH_LANE_LEFT - 36, y2: 360, width: 18, score: 500, lit: false, occupied: false }
     ];
+  }
+
+  function createLaunchLaneDashes() {
+    var dashes = [];
+    var count = 9;
+    var yBot = PLUNGER_REST_Y - 40;
+    var yTop = LAUNCH_WIRE_Y1 + 28;
+    var i;
+    for (i = 0; i < count; i++) {
+      var t = count === 1 ? 0 : i / (count - 1);
+      dashes.push({
+        id: 'll-dash-' + i,
+        x: LAUNCH_LANE_X,
+        y: yBot + (yTop - yBot) * t,
+        w: 12,
+        h: 22,
+        lit: false,
+        preview: false,
+        flash: 0,
+        occupied: false
+      });
+    }
+    return dashes;
   }
 
   function createKickers() {
@@ -229,6 +252,7 @@
       slingshots: createSlingshots(),
       targets: createTargets(),
       rollovers: createRollovers(),
+      launchLaneDashes: createLaunchLaneDashes(),
       kickers: createKickers(),
       spinner: createSpinner(),
       walls: createWalls(),
@@ -482,12 +506,61 @@
   function resetBallProgress(state) {
     state.targets = createTargets();
     state.rollovers = createRollovers();
+    state.launchLaneDashes = createLaunchLaneDashes();
     state.jackpotLit = false;
     state.skillShotWindow = false;
     state.comboCount = 0;
     state.comboTimer = 0;
     if (state.spinner) state.spinner.hitCooldown = 0;
     state.slingshots.forEach(function (s) { s.cooldown = 0; });
+  }
+
+  function updateLaunchLaneDashes(state, dt) {
+    var dashes = state.launchLaneDashes;
+    if (!dashes || !dashes.length) return;
+    var i;
+    for (i = 0; i < dashes.length; i++) {
+      if (dashes[i].flash > 0) dashes[i].flash = Math.max(0, dashes[i].flash - dt);
+    }
+
+    if (!state.ball.inPlay && state.phase === 'ready') {
+      var power = state.launchCharging ? clamp(state.launchPower, 0, 1) : 0;
+      for (i = 0; i < dashes.length; i++) {
+        var thresh = (i + 0.35) / dashes.length;
+        dashes[i].preview = power >= thresh;
+        if (!state.launchCharging) {
+          dashes[i].preview = false;
+          dashes[i].lit = false;
+          dashes[i].occupied = false;
+        }
+      }
+      return;
+    }
+
+    for (i = 0; i < dashes.length; i++) dashes[i].preview = false;
+
+    var ball = state.ball;
+    if (!ball.inPlay || state.exitedLaunchLane) return;
+    if (!isBallInLaunchLane(state)) return;
+
+    var halfW = 16;
+    var halfH = 14;
+    for (i = 0; i < dashes.length; i++) {
+      var d = dashes[i];
+      var dx = Math.abs(ball.x - d.x);
+      var dy = Math.abs(ball.y - d.y);
+      if (dx < halfW && dy < halfH + ball.radius * 0.35) {
+        if (!d.occupied) {
+          d.occupied = true;
+          if (!d.lit) {
+            d.lit = true;
+            d.flash = 0.4;
+          }
+        }
+      } else {
+        d.occupied = false;
+      }
+    }
   }
 
   function resetBallToPlunger(state) {
@@ -729,7 +802,11 @@
       }
     }
 
-    if (speed < 28 && ball.y < 160) {
+    var nearRail =
+      ball.x - r < 36 + 30 ||
+      ball.x + r > LAUNCH_LANE_LEFT - 20 ||
+      ball.y - r < 60 + 22;
+    if (speed < 28 && ball.y < 160 && nearRail) {
       var cx = TABLE_W * 0.5;
       var cy = 220;
       var n = normalize(cx - ball.x, cy - ball.y);
@@ -1165,6 +1242,7 @@
     decayCombo(state, dt);
     chargeLaunch(state, dt);
     stepPhysics(state, dt);
+    updateLaunchLaneDashes(state, dt);
     checkDrain(state);
     ensureBallAtPlunger(state);
     return state;

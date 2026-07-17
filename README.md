@@ -29,7 +29,7 @@ Legend slides from the **right** on **v1** and **v2**. Same features on PC and m
 
 **Legend:** roomier vertical spacing; wider drawer on desktop. Phone/tablet legend shows **Action + dock only** (PC hotkeys column hidden).
 
-Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / desktop (`device.js`).
+Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / desktop (`device.js`) and **always reserves bottom dock space** (PC + touch) so Theme\|Legend stay visible.
 
 ## Layout
 
@@ -86,6 +86,10 @@ Machine-local paths → `USER-NOTES.md` (local only, gitignored).
 ---
 
 ## Version History
+
+**71726 1:42:43:19 AM CST**
+
+- **`update .mds`:** root **`index.html`** redirects straight to **VOID PULSE (v2)** (no version picker; v1 still at `/pinball%20v1/`). **Dock chrome on PC:** `device.js` `fitCanvas` honors `touchChrome` on **all** devices (was touch-only) so Theme\|Legend is not clipped under the table; chrome pad **150** in v1/v2 `game.js`. **Upper-arch unstick:** ball no longer hangs in wireform × top-rail pocket (`unstickFromCorners` expanded, v1 + v2). Local + live match after push.
 
 **71126 5:03:05:48 AM CST**
 

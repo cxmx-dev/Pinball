@@ -86,6 +86,10 @@ Machine-local capture paths: see `USER-NOTES.md` (not published).
 
 ## Version History
 
+**71726 1:42:43:19 AM CST**
+
+- **`update .mds`:** root play URL redirects here (v2). PC dock chrome via `device.js` + `game.js` (150). Upper-arch / wireform stuck-ball unstick in `simulation.js`.
+
 **71126 5:03:05:48 AM CST**
 
 - **`update .mds`:** legend airy spacing; mobile legend hides PC hotkeys; controls still **A/D** + NumPad 1/3/7 + Theme\|Legend split.

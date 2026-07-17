@@ -113,6 +113,7 @@
     ctx.stroke();
 
     drawLaunchLaneChannel(ctx, state);
+    drawLaunchLaneDashes(ctx, state);
     drawGlassSheen(ctx, tw, th);
     drawApron(ctx, state);
     drawWalls(ctx, state);
@@ -145,6 +146,39 @@
     ctx.strokeStyle = 'rgba(80,140,200,0.2)';
     ctx.lineWidth = 1;
     ctx.strokeRect(laneLeft + 1, 60, tw - laneLeft - 6, th - 132);
+  }
+
+  function drawLaunchLaneDashes(ctx, state) {
+    var dashes = state.launchLaneDashes;
+    if (!dashes || !dashes.length) return;
+    var i;
+    for (i = 0; i < dashes.length; i++) {
+      var d = dashes[i];
+      var on = !!(d.lit || d.preview);
+      var hot = d.flash > 0;
+      var w = d.w || 12;
+      var h = d.h || 22;
+      ctx.save();
+      if (on) {
+        ctx.shadowColor = hot ? 'rgba(255,240,140,0.95)' : 'rgba(255,200,50,0.7)';
+        ctx.shadowBlur = hot ? 18 : 12;
+        var g = ctx.createLinearGradient(d.x, d.y - h * 0.5, d.x, d.y + h * 0.5);
+        g.addColorStop(0, hot ? '#fff6a0' : '#ffe066');
+        g.addColorStop(0.45, '#ffcc22');
+        g.addColorStop(1, '#e09010');
+        ctx.fillStyle = g;
+      } else {
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(50, 80, 110, 0.55)';
+      }
+      drawRoundedRect(ctx, d.x - w * 0.5, d.y - h * 0.5, w, h, 5);
+      ctx.fill();
+      ctx.strokeStyle = on ? 'rgba(255,255,220,0.75)' : 'rgba(100,150,200,0.28)';
+      ctx.lineWidth = 1;
+      drawRoundedRect(ctx, d.x - w * 0.5, d.y - h * 0.5, w, h, 5);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   function drawGlassSheen(ctx, tw, th) {
@@ -408,43 +442,7 @@
   }
 
   function drawPowerMeter(ctx, canvas, state) {
-    if (state.phase !== 'ready' || state.ball.inPlay) return;
-
-    var ox = 20;
-    var oy = 80;
-    var mx = ox + state.tableW + 6;
-    var mw = 18;
-    var mb = oy + root.PinballSim.PLUNGER_REST_Y + 14;
-    var mt = oy + root.PinballSim.LAUNCH_LANE_TOP - 40;
-    var mh = mb - mt;
-    var fill = clamp(state.launchPower, 0, 1) * mh;
-
-    ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    drawRoundedRect(ctx, mx, mt, mw, mh, 4);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(180,200,255,0.35)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    if (fill > 1) {
-      var grad = ctx.createLinearGradient(0, mb, 0, mt);
-      grad.addColorStop(0, '#22dd55');
-      grad.addColorStop(0.45, '#ffdd22');
-      grad.addColorStop(1, '#ff3344');
-      ctx.fillStyle = grad;
-      ctx.shadowColor = state.launchCharging ? 'rgba(255,200,60,0.5)' : 'transparent';
-      ctx.shadowBlur = state.launchCharging ? 10 : 0;
-      ctx.fillRect(mx + 3, mb - fill, mw - 6, fill);
-    }
-
-    if (state.launchCharging) {
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.beginPath();
-      ctx.arc(mx + mw / 2, mb - fill, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
+    // no-op — launch power / pass lights = drawLaunchLaneDashes
   }
 
   function clamp(v, lo, hi) {
