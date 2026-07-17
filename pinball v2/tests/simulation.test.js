@@ -7,6 +7,14 @@ function fresh() {
   return sim.createInitialState();
 }
 
+/** Advance end-of-ball bonus sequence to plunger / game over. */
+function flushEob(state) {
+  var guard = 0;
+  while (state.phase === 'eob_bonus' && guard++ < 80) {
+    sim.tick(state, 0.05);
+  }
+}
+
 console.log('Pinball simulation unit tests');
 console.log('=============================');
 
@@ -203,6 +211,7 @@ console.log('=============================');
   assert.strictEqual(state.tiltWarnings, 2);
   state.tiltCooldown = 0;
   sim.tilt(state);
+  flushEob(state);
   assert.strictEqual(state.ballsRemaining, 2);
   assert.strictEqual(state.tiltWarnings, 0);
   console.log('PASS: tilt warns then drains');
@@ -278,8 +287,9 @@ console.log('=============================');
   sim.checkDrain(state);
   assert.strictEqual(state.ball.inPlay, false);
   assert.strictEqual(state.ballsRemaining, ballsBefore - 1);
-  assert.strictEqual(state.phase, 'ready');
   assert.strictEqual(state.drainEvents, 1);
+  flushEob(state);
+  assert.strictEqual(state.phase, 'ready');
   console.log('PASS: drain decrements balls and resets');
 })();
 
@@ -293,6 +303,7 @@ console.log('=============================');
   state.ball.y = sim.DRAIN_Y + sim.BALL_RADIUS + 2;
   sim.checkDrain(state);
   assert.strictEqual(state.ballsRemaining, 0);
+  flushEob(state);
   assert.strictEqual(state.phase, 'game_over');
   console.log('PASS: drain triggers game over');
 })();
@@ -336,6 +347,7 @@ console.log('=============================');
     sim.tick(state, 0.016);
     if (!state.ball.inPlay) break;
   }
+  flushEob(state);
   assert.strictEqual(state.ballsRemaining, 2);
   assert.strictEqual(state.phase, 'ready');
   console.log('PASS: left outlane drains via physics fall to slot');
@@ -355,6 +367,7 @@ console.log('=============================');
     sim.tick(state, 0.016);
     if (!state.ball.inPlay) break;
   }
+  flushEob(state);
   assert.strictEqual(state.ballsRemaining, 1);
   assert.strictEqual(state.phase, 'ready');
   console.log('PASS: right outlane falls through deck gap to drain slot');
@@ -557,6 +570,7 @@ console.log('=============================');
     sim.tick(state, 0.016);
     if (!state.ball.inPlay) break;
   }
+  flushEob(state);
   assert.strictEqual(state.phase, 'ready');
   assert.strictEqual(state.targets[2].lit, false);
   assert.strictEqual(state.rollovers[0].lit, false);

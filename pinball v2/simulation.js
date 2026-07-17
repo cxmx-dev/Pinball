@@ -35,7 +35,7 @@
   var HIT_COOLDOWN_SLING = 0.25;
   var HIT_COOLDOWN_BUMPER = 0.24;
   var MIN_BUMPER_EXIT_SPEED = 130;
-  var SAVER_BUMPER_EXIT_SPEED = 155;
+  var SAVER_BUMPER_EXIT_SPEED = 112;
   var BUMPER_UNSTICK_SPEED = 85;
   var MAX_TILT_WARNINGS = 2;
   var TILT_COOLDOWN = 0.55;
@@ -67,6 +67,11 @@
   var LAUNCH_DASH_FADE_MAX = 0.55;
   var LAUNCH_DASH_FADE_MIN = 0.1;
   var LAUNCH_DASH_FADE_ACCEL = 0.72; // multiply duration each step down
+  var RUSH_MODE_DURATION = 20;
+  var RUSH_SCORE_MULT = 2;
+  var EOB_DURATION = 1.65;
+  var DROP_BANK_SIZE = 4;
+  var SIDE_ROUTE_COOLDOWN = 0.35;
 
   function clamp(v, lo, hi) {
     return v < lo ? lo : v > hi ? hi : v;
@@ -109,10 +114,11 @@
       { x: TABLE_W * 0.72, y: 300, radius: 28, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
       { x: TABLE_W * 0.5, y: 390, radius: 24, score: 250, color: '#aa66ff', kind: 'bumper', hitCooldown: 0 },
       {
-        x: 148,
-        y: 452,
-        radius: 20,
-        score: 150,
+        // Weaker / smaller saver — outlane tension (P1)
+        x: 152,
+        y: 458,
+        radius: 15,
+        score: 120,
         color: '#55ffaa',
         kind: 'bumper',
         saver: true,
@@ -152,6 +158,53 @@
       { id: 'standup-r', x: 352, y: 520, w: 10, h: 32, score: 1000, lit: true, flash: 0, occupied: false },
       { id: 'standup-c', x: 232, y: 560, w: 10, h: 28, score: 1500, lit: false, flash: 0, occupied: false }
     ];
+  }
+
+  /** Horizontal drop bank — complete all → start timed rush mode */
+  function createDropTargets() {
+    var drops = [];
+    var baseX = 158;
+    var y = 468;
+    var i;
+    for (i = 0; i < DROP_BANK_SIZE; i++) {
+      drops.push({
+        id: 'drop-' + i,
+        x: baseX + i * 30,
+        y: y,
+        w: 22,
+        h: 12,
+        down: false,
+        score: 350,
+        occupied: false,
+        flash: 0
+      });
+    }
+    return drops;
+  }
+
+  /**
+   * Side routes: left captive post (kick into playfield), right ramp return segment.
+   */
+  function createSideRoutes() {
+    return {
+      leftCaptive: {
+        id: 'captive-l',
+        x: 62,
+        y: 330,
+        radius: 13,
+        score: 650,
+        cooldown: 0
+      },
+      rightRamp: {
+        id: 'ramp-r',
+        x1: LAUNCH_LANE_LEFT - 8,
+        y1: 430,
+        x2: LAUNCH_LANE_LEFT - 48,
+        y2: 290,
+        score: 750,
+        cooldown: 0
+      }
+    };
   }
 
   function createRollovers() {
@@ -214,10 +267,11 @@
     var lt = flipperTip(leftRest);
     var rt = flipperTip(rightRest);
     return {
-      centerLeft: lt.x + 8,
-      centerRight: rt.x - 8,
-      leftOutlaneRight: FLIPPER_INLANE_X,
-      rightOutlaneLeft: FLIPPER_RIGHT_PIVOT_X + 18,
+      // Slightly greedier drains (P1 outlane tension)
+      centerLeft: lt.x + 4,
+      centerRight: rt.x - 4,
+      leftOutlaneRight: FLIPPER_INLANE_X + 8,
+      rightOutlaneLeft: FLIPPER_RIGHT_PIVOT_X + 12,
       leftOutlaneLeft: 40,
       rightOutlaneRight: LAUNCH_LANE_LEFT
     };
@@ -247,12 +301,16 @@
       { x1: LAUNCH_LANE_LEFT, y1: LAUNCH_WIRE_Y1, x2: LAUNCH_LANE_LEFT, y2: TABLE_H - 80, rail: true, kind: 'lane' },
       { x1: FLIPPER_INLANE_X, y1: FLIPPER_ROW_Y, x2: drainL, y2: FLIPPER_ROW_Y, kind: 'deck' },
       { x1: drainR, y1: FLIPPER_ROW_Y, x2: rightInlaneX, y2: FLIPPER_ROW_Y, kind: 'deck' },
-      { x1: FLIPPER_INLANE_X, y1: LEFT_INLANE_POST_TOP, x2: FLIPPER_INLANE_X, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' },
-      { x1: FLIPPER_INLANE_X, y1: FLIPPER_ROW_Y - 20, x2: FLIPPER_INLANE_X, y2: chuteBottom, kind: 'chute' },
-      { x1: 36, y1: 540, x2: FLIPPER_INLANE_X + 6, y2: LEFT_INLANE_POST_TOP + 20, kind: 'chute' },
+      { x1: FLIPPER_INLANE_X + 6, y1: LEFT_INLANE_POST_TOP, x2: FLIPPER_INLANE_X + 6, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' },
+      { x1: FLIPPER_INLANE_X + 6, y1: FLIPPER_ROW_Y - 20, x2: FLIPPER_INLANE_X + 6, y2: chuteBottom, kind: 'chute' },
+      { x1: 36, y1: 540, x2: FLIPPER_INLANE_X + 10, y2: LEFT_INLANE_POST_TOP + 20, kind: 'chute' },
       // Upper-left deflector: keep OFF the left rail so ball diameter fits (old 36,210→92,145 wedged).
       { x1: 78, y1: 195, x2: 128, y2: 118, kind: 'chute' },
-      { x1: rightInlaneX, y1: FLIPPER_ROW_Y - 20, x2: rightInlaneX, y2: chuteBottom, kind: 'chute' },
+      // Left captive route guide
+      { x1: 48, y1: 380, x2: 72, y2: 300, kind: 'chute' },
+      { x1: rightInlaneX - 4, y1: FLIPPER_ROW_Y - 20, x2: rightInlaneX - 4, y2: chuteBottom, kind: 'chute' },
+      // Right ramp rail
+      { x1: LAUNCH_LANE_LEFT - 6, y1: 440, x2: LAUNCH_LANE_LEFT - 50, y2: 300, kind: 'chute' },
       { x1: bounds.centerLeft, y1: FLIPPER_ROW_Y, x2: bounds.centerLeft, y2: chuteBottom, kind: 'chute' },
       { x1: bounds.centerRight, y1: FLIPPER_ROW_Y, x2: bounds.centerRight, y2: chuteBottom, kind: 'chute' },
       { x1: bounds.rightOutlaneLeft, y1: FLIPPER_ROW_Y, x2: bounds.rightOutlaneLeft, y2: chuteBottom, kind: 'chute' }
@@ -275,6 +333,8 @@
       bumpers: createBumpers(),
       slingshots: createSlingshots(),
       targets: createTargets(),
+      dropTargets: createDropTargets(),
+      sideRoutes: createSideRoutes(),
       rollovers: createRollovers(),
       launchLaneDashes: createLaunchLaneDashes(),
       launchDashHoldT: 0,
@@ -312,6 +372,16 @@
       ballSaveUsed: false,
       ballSaveFlash: 0,
       launchDashRewarded: false,
+      themeId: 'void-pulse',
+      rushTimer: 0,
+      rushName: null,
+      rushMult: 1,
+      eobTimer: 0,
+      eobDuration: EOB_DURATION,
+      eobBreakdown: null,
+      eobTotal: 0,
+      eobDisplay: 0,
+      eobStep: 0,
       tiltWarnings: 0,
       tiltCooldown: 0
     };
@@ -337,7 +407,8 @@
     state.comboTimer = COMBO_WINDOW;
 
     var comboBoost = 1 + Math.min(state.comboCount - 1, 8) * 0.12;
-    var points = Math.round(base * state.multiplier * comboBoost);
+    var rush = state.rushTimer > 0 ? (state.rushMult || RUSH_SCORE_MULT) : 1;
+    var points = Math.round(base * state.multiplier * comboBoost * rush);
     state.score += points;
     state.bonusBank += Math.floor(points * 0.04);
 
@@ -456,9 +527,31 @@
     if (state.ballSaveFlash > 0) {
       state.ballSaveFlash = Math.max(0, state.ballSaveFlash - dt);
     }
+    if (state.rushTimer > 0) {
+      state.rushTimer = Math.max(0, state.rushTimer - dt);
+      if (state.rushTimer <= 0) {
+        state.rushTimer = 0;
+        state.rushName = null;
+        state.rushMult = 1;
+        resetDropTargets(state);
+      }
+    }
     state.targets.forEach(function (t) {
       if (t.flash > 0) t.flash -= dt;
     });
+    if (state.dropTargets) {
+      state.dropTargets.forEach(function (d) {
+        if (d.flash > 0) d.flash -= dt;
+      });
+    }
+    if (state.sideRoutes) {
+      if (state.sideRoutes.leftCaptive && state.sideRoutes.leftCaptive.cooldown > 0) {
+        state.sideRoutes.leftCaptive.cooldown -= dt;
+      }
+      if (state.sideRoutes.rightRamp && state.sideRoutes.rightRamp.cooldown > 0) {
+        state.sideRoutes.rightRamp.cooldown -= dt;
+      }
+    }
     if (state.spinner && state.spinner.hitCooldown > 0) {
       state.spinner.hitCooldown -= dt;
     }
@@ -626,8 +719,14 @@
     }
   }
 
+  function resetDropTargets(state) {
+    state.dropTargets = createDropTargets();
+  }
+
   function resetBallProgress(state) {
     state.targets = createTargets();
+    state.dropTargets = createDropTargets();
+    state.sideRoutes = createSideRoutes();
     state.rollovers = createRollovers();
     state.launchLaneDashes = createLaunchLaneDashes();
     resetLaunchDashSequence(state);
@@ -637,8 +736,180 @@
     state.skillShotGrade = null;
     state.comboCount = 0;
     state.comboTimer = 0;
+    // rush continues across ball unless expired
     if (state.spinner) state.spinner.hitCooldown = 0;
     state.slingshots.forEach(function (s) { s.cooldown = 0; });
+  }
+
+  function setThemeId(state, id) {
+    if (id) state.themeId = String(id);
+    return state;
+  }
+
+  function startRushMode(state) {
+    if (state.rushTimer > 0) return false;
+    var tid = (state.themeId || 'void-pulse').toLowerCase();
+    state.rushTimer = RUSH_MODE_DURATION;
+    state.rushMult = RUSH_SCORE_MULT;
+    state.rushName = tid.indexOf('ember') >= 0 ? 'EMBER RUSH' : 'VOID RUSH';
+    state.lastHitType = 'rushstart';
+    state.lastHitId = state.rushName;
+    state.lastScorePopup = {
+      points: 0,
+      x: TABLE_W * 0.5,
+      y: TABLE_H * 0.28,
+      life: 1.4,
+      type: 'rushstart',
+      merged: false
+    };
+    return true;
+  }
+
+  function allDropsDown(drops) {
+    if (!drops || !drops.length) return false;
+    var i;
+    for (i = 0; i < drops.length; i++) {
+      if (!drops[i].down) return false;
+    }
+    return true;
+  }
+
+  function resolveDropTargetCollisions(state) {
+    if (!state.dropTargets || !state.ball.inPlay || !state.exitedLaunchLane) return;
+    var ball = state.ball;
+    state.dropTargets.forEach(function (drop) {
+      if (drop.down) return;
+      var halfW = drop.w * 0.5;
+      var halfH = drop.h * 0.5;
+      var closestX = clamp(ball.x, drop.x - halfW, drop.x + halfW);
+      var closestY = clamp(ball.y, drop.y - halfH, drop.y + halfH);
+      var dx = ball.x - closestX;
+      var dy = ball.y - closestY;
+      var dist = vecLen(dx, dy);
+      if (dist < ball.radius + 1) {
+        if (!drop.occupied) {
+          drop.occupied = true;
+          drop.down = true;
+          drop.flash = 0.35;
+          var n = dist > 1e-6 ? normalize(dx, dy) : { x: 0, y: -1 };
+          ball.x = closestX + n.x * (ball.radius + 2);
+          ball.y = closestY + n.y * (ball.radius + 2);
+          ball.vx += n.x * 80;
+          ball.vy += n.y * 120 - 40;
+          awardScore(state, drop.score, 'drop', drop.id, drop.x, drop.y);
+          if (allDropsDown(state.dropTargets)) {
+            startRushMode(state);
+          }
+        }
+      } else {
+        drop.occupied = false;
+      }
+    });
+  }
+
+  function resolveSideRouteCollisions(state) {
+    if (!state.sideRoutes || !state.ball.inPlay || !state.exitedLaunchLane) return;
+    var ball = state.ball;
+    var cap = state.sideRoutes.leftCaptive;
+    if (cap && cap.cooldown <= 0) {
+      var cdx = ball.x - cap.x;
+      var cdy = ball.y - cap.y;
+      var cdist = vecLen(cdx, cdy);
+      var cmin = ball.radius + cap.radius;
+      if (cdist < cmin && cdist > 1e-6) {
+        var cn = normalize(cdx, cdy);
+        ball.x = cap.x + cn.x * cmin;
+        ball.y = cap.y + cn.y * cmin;
+        // Kick into upper center playfield
+        ball.vx = Math.max(ball.vx, 0) + 280;
+        ball.vy = -Math.max(Math.abs(ball.vy), 320);
+        cap.cooldown = SIDE_ROUTE_COOLDOWN;
+        awardScore(state, cap.score, 'route', cap.id, cap.x, cap.y);
+      }
+    }
+    var ramp = state.sideRoutes.rightRamp;
+    if (ramp && ramp.cooldown <= 0) {
+      var hit = segmentCollision(
+        ball,
+        ramp.x1,
+        ramp.y1,
+        ramp.x2,
+        ramp.y2,
+        WALL_RESTITUTION * 1.05,
+        null
+      );
+      if (hit) {
+        // Launch back into playfield (left/up)
+        ball.vx = -Math.max(Math.abs(ball.vx), 260);
+        ball.vy = -Math.max(Math.abs(ball.vy), 300);
+        ramp.cooldown = SIDE_ROUTE_COOLDOWN;
+        awardScore(state, ramp.score, 'route', ramp.id, (ramp.x1 + ramp.x2) * 0.5, (ramp.y1 + ramp.y2) * 0.5);
+      }
+    }
+  }
+
+  function beginEndOfBallBonus(state) {
+    var multPts = state.multiplier * 500;
+    var dashPts = state.launchDashRewarded ? 1000 : 0;
+    var jackPts = state.jackpotLit ? 2500 : 0;
+    var bankPts = Math.floor(state.bonusBank || 0);
+    var steps = [];
+    if (multPts > 0) steps.push({ label: 'MULT ×' + state.multiplier, points: multPts });
+    if (dashPts > 0) steps.push({ label: 'LANE DASH', points: dashPts });
+    if (jackPts > 0) steps.push({ label: 'JACKPOT FLAG', points: jackPts });
+    steps.push({ label: 'BONUS BANK', points: bankPts });
+    var total = 0;
+    var i;
+    for (i = 0; i < steps.length; i++) total += steps[i].points;
+    state.phase = 'eob_bonus';
+    state.ball.inPlay = false;
+    state.ball.vx = 0;
+    state.ball.vy = 0;
+    state.eobTimer = 0;
+    state.eobDuration = EOB_DURATION;
+    state.eobBreakdown = steps;
+    state.eobTotal = total;
+    state.eobDisplay = 0;
+    state.eobStep = 0;
+    state.eobAwarded = false;
+    return state;
+  }
+
+  function updateEndOfBallBonus(state, dt) {
+    if (state.phase !== 'eob_bonus') return state;
+    state.eobTimer += dt;
+    var steps = state.eobBreakdown || [];
+    var n = Math.max(1, steps.length);
+    var stepDur = state.eobDuration / n;
+    state.eobStep = Math.min(n - 1, Math.floor(state.eobTimer / stepDur));
+    // Progressive display of tally
+    var shown = 0;
+    var i;
+    for (i = 0; i <= state.eobStep && i < steps.length; i++) {
+      shown += steps[i].points;
+    }
+    state.eobDisplay = shown;
+
+    if (state.eobTimer >= state.eobDuration && !state.eobAwarded) {
+      state.eobAwarded = true;
+      state.score += state.eobTotal;
+      state.bonusBank = 0;
+      state.lastScorePopup = {
+        points: state.eobTotal,
+        x: TABLE_W * 0.5,
+        y: TABLE_H * 0.36,
+        life: 1.3,
+        type: 'eob',
+        merged: false
+      };
+      state.lastHitType = 'eob';
+      if (state.ballsRemaining <= 0) {
+        state.phase = 'game_over';
+      } else {
+        resetBallToPlunger(state);
+      }
+    }
+    return state;
   }
 
   /**
@@ -1152,15 +1423,8 @@
     state.skillShotWindow = false;
     state.ballSaveArmed = false;
     // SFX via drainEvents in audio.processState (avoid double-fire from lastHitType)
-    if (state.ballsRemaining <= 0) {
-      state.phase = 'game_over';
-      state.ball.inPlay = false;
-      state.ball.vx = 0;
-      state.ball.vy = 0;
-    } else {
-      resetBallToPlunger(state);
-    }
-    return state;
+    // End-of-ball bonus sequence (then plunger or game over)
+    return beginEndOfBallBonus(state);
   }
 
   function isBallInDrainZone(ball, zones) {
@@ -1239,19 +1503,20 @@
     var ball = state.ball;
     var zones = getDrainBounds(state);
     var r = ball.radius;
+    // Weaker shelf assist (P1 outlane tension) — still prevents hard freeze only
     if (
-      ball.x + r < zones.leftOutlaneRight + 14 &&
-      ball.y > LEFT_INLANE_POST_TOP - 30 &&
-      ball.y < FLIPPER_ROW_Y + 8
+      ball.x + r < zones.leftOutlaneRight + 8 &&
+      ball.y > LEFT_INLANE_POST_TOP - 20 &&
+      ball.y < FLIPPER_ROW_Y + 4
     ) {
-      var safeX = zones.leftOutlaneRight + r + 8;
+      var safeX = zones.leftOutlaneRight + r + 2;
       var saver = getOutlaneSaverBumper(state);
-      if (saver && ball.y > saver.y - saver.radius - r - 24 && ball.y < saver.y + saver.radius + r + 24) {
-        safeX = Math.max(safeX, saver.x + saver.radius + r + 10);
+      if (saver && ball.y > saver.y - saver.radius - r - 16 && ball.y < saver.y + saver.radius + r + 16) {
+        safeX = Math.max(safeX, saver.x + saver.radius + r + 4);
       }
       if (ball.x < safeX) ball.x = safeX;
-      if (ball.vx < 90) ball.vx = 90;
-      if (ball.vy > 120) ball.vy -= 40;
+      if (ball.vx < 50) ball.vx = 50;
+      if (ball.vy > 160) ball.vy -= 20;
     }
   }
 
@@ -1330,6 +1595,8 @@
     unstickFromCorners(state);
     resolveKickerCollisions(state);
     resolveTargetCollisions(state);
+    resolveDropTargetCollisions(state);
+    resolveSideRouteCollisions(state);
     resolveRolloverCollisions(state);
     resolveSpinnerCollision(state);
 
@@ -1461,6 +1728,11 @@
   }
 
   function tick(state, dt) {
+    if (state.phase === 'eob_bonus') {
+      decayCombo(state, dt);
+      updateEndOfBallBonus(state, dt);
+      return state;
+    }
     ensureBallAtPlunger(state);
     decayCombo(state, dt);
     chargeLaunch(state, dt);
@@ -1520,7 +1792,17 @@
     gradeSkillShot: gradeSkillShot,
     applySkillShot: applySkillShot,
     allLaunchDashesLit: allLaunchDashesLit,
-    performDrain: performDrain
+    performDrain: performDrain,
+    startRushMode: startRushMode,
+    setThemeId: setThemeId,
+    beginEndOfBallBonus: beginEndOfBallBonus,
+    updateEndOfBallBonus: updateEndOfBallBonus,
+    allDropsDown: allDropsDown,
+    resetDropTargets: resetDropTargets,
+    RUSH_MODE_DURATION: RUSH_MODE_DURATION,
+    RUSH_SCORE_MULT: RUSH_SCORE_MULT,
+    EOB_DURATION: EOB_DURATION,
+    DROP_BANK_SIZE: DROP_BANK_SIZE
   };
 
   if (typeof module !== 'undefined' && module.exports) {

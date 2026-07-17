@@ -139,11 +139,15 @@ console.log('==========================');
   assert(state.ballSaveFlash > 0, 'save flash');
   assert.strictEqual(state.lastHitType, 'ballsave');
 
-  // Second drain loses the ball
+  // Second drain spends ball and enters EOB (then ready after flush)
   sim.performDrain(state);
   assert.strictEqual(state.ballsRemaining, ballsBefore - 1, 'second drain spends ball');
   assert.strictEqual(state.drainEvents, drainsBefore + 1);
   assert(state.drainFlash > 0, 'drain flash on real drain');
+  assert.strictEqual(state.phase, 'eob_bonus', 'EOB sequence after real drain');
+  var g = 0;
+  while (state.phase === 'eob_bonus' && g++ < 80) sim.tick(state, 0.05);
+  assert.strictEqual(state.phase, 'ready');
   console.log('PASS: ball-save once then real drain');
 })();
 

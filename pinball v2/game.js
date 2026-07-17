@@ -32,6 +32,9 @@
   if (Assets && Assets.preloadTheme) {
     Assets.preloadTheme();
   }
+  if (Assets && Assets.getThemeId && Sim.setThemeId) {
+    Sim.setThemeId(state, Assets.getThemeId());
+  }
 
   function hideSwipeHint() {
     if (hintHidden) return;
@@ -165,6 +168,7 @@
       var cur = Assets.getThemeId();
       var next = list[(list.indexOf(cur) + 1) % list.length];
       Assets.setTheme(next);
+      if (Sim.setThemeId) Sim.setThemeId(state, next);
     }
   }
 
@@ -482,7 +486,11 @@
     },
     gameLoop: gameLoop,
     setTheme: function (id) {
-      if (Assets && Assets.setTheme) return Assets.setTheme(id);
+      if (Assets && Assets.setTheme) {
+        var ok = Assets.setTheme(id);
+        if (ok && Sim.setThemeId) Sim.setThemeId(state, id);
+        return ok;
+      }
       return false;
     },
     getThemeId: function () {

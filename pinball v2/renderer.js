@@ -154,6 +154,8 @@
     drawWalls(ctx, state);
     drawLaunchLaneRail(ctx, state);
     drawRollovers(ctx, state);
+    drawSideRoutes(ctx, state, glowPulse);
+    drawDropTargets(ctx, state);
     drawSlingshots(ctx, state);
     drawTargets(ctx, state);
     drawBumpers(ctx, state, glowPulse);
@@ -306,6 +308,72 @@
       ctx.beginPath();
       ctx.arc(sling.x2, sling.y2, 6, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  function drawSideRoutes(ctx, state, pulse) {
+    if (!state.sideRoutes) return;
+    var cap = state.sideRoutes.leftCaptive;
+    if (cap) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(120, 200, 255, 0.55)';
+      ctx.shadowBlur = 10 + Math.sin(pulse * 2) * 3;
+      var g = ctx.createRadialGradient(cap.x - 3, cap.y - 3, 2, cap.x, cap.y, cap.radius);
+      g.addColorStop(0, '#c8f0ff');
+      g.addColorStop(0.5, '#48a0e0');
+      g.addColorStop(1, '#184868');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(cap.x, cap.y, cap.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(200,240,255,0.7)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+    var ramp = state.sideRoutes.rightRamp;
+    if (ramp) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 180, 80, 0.75)';
+      ctx.lineWidth = 8;
+      ctx.lineCap = 'round';
+      ctx.shadowColor = 'rgba(255, 160, 40, 0.45)';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.moveTo(ramp.x1, ramp.y1);
+      ctx.lineTo(ramp.x2, ramp.y2);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255, 220, 140, 0.5)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function drawDropTargets(ctx, state) {
+    if (!state.dropTargets) return;
+    state.dropTargets.forEach(function (drop) {
+      ctx.save();
+      var halfW = drop.w * 0.5;
+      var halfH = drop.h * 0.5;
+      if (drop.down) {
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = 'rgba(40, 50, 70, 0.8)';
+        ctx.fillRect(drop.x - halfW, drop.y - halfH * 0.4, drop.w, halfH * 0.7);
+      } else {
+        var hot = drop.flash > 0;
+        ctx.shadowColor = hot ? 'rgba(255, 220, 80, 0.9)' : 'rgba(255, 120, 60, 0.5)';
+        ctx.shadowBlur = hot ? 14 : 8;
+        var tg = ctx.createLinearGradient(drop.x, drop.y - halfH, drop.x, drop.y + halfH);
+        tg.addColorStop(0, '#ffcc66');
+        tg.addColorStop(1, '#cc5520');
+        ctx.fillStyle = tg;
+        ctx.fillRect(drop.x - halfW, drop.y - halfH, drop.w, drop.h);
+        ctx.strokeStyle = 'rgba(255,255,200,0.65)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(drop.x - halfW, drop.y - halfH, drop.w, drop.h);
+      }
       ctx.restore();
     });
   }
@@ -732,6 +800,12 @@
       ctx.fillStyle = '#ffcc44';
       ctx.shadowBlur = 10;
       ctx.fillText('SKILL SHOT!', canvas.width - 24, 64);
+    } else if (state.rushTimer > 0 && state.rushName) {
+      var isEmber = /EMBER/i.test(state.rushName);
+      ctx.fillStyle = isEmber ? '#ff8844' : '#44e0ff';
+      ctx.shadowColor = isEmber ? '#ff6622' : '#22c8ff';
+      ctx.shadowBlur = 14;
+      ctx.fillText(state.rushName + ' ' + Math.ceil(state.rushTimer) + 's · ' + (state.rushMult || 2) + 'X', canvas.width - 24, 64);
     } else if (state.ballSaveArmed && state.ball.inPlay && !state.ballSaveUsed) {
       ctx.fillStyle = '#88ffcc';
       ctx.shadowBlur = 8;
@@ -890,6 +964,45 @@
         ctx.fillStyle = 'rgba(255, 40, 80, ' + da + ')';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
+      ctx.restore();
+    }
+
+    // End-of-ball bonus tally
+    if (state.phase === 'eob_bonus') {
+      ctx.save();
+      ctx.fillStyle = 'rgba(4, 8, 20, 0.72)';
+      ctx.fillRect(0, 72, canvas.width, canvas.height - 100);
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 20px Orbitron, sans-serif';
+      ctx.fillStyle = '#88e0ff';
+      ctx.shadowColor = '#44a0ff';
+      ctx.shadowBlur = 12;
+      ctx.fillText('END OF BALL', canvas.width * 0.5, canvas.height * 0.28);
+      ctx.shadowBlur = 0;
+      ctx.font = '13px Orbitron, sans-serif';
+      var steps = state.eobBreakdown || [];
+      var i;
+      for (i = 0; i < steps.length; i++) {
+        var active = i <= state.eobStep;
+        ctx.fillStyle = active ? '#ffe088' : 'rgba(180,200,220,0.45)';
+        ctx.fillText(
+          steps[i].label + '  +' + formatScore(steps[i].points),
+          canvas.width * 0.5,
+          canvas.height * 0.34 + i * 22
+        );
+      }
+      ctx.font = 'bold 18px Orbitron, sans-serif';
+      ctx.fillStyle = '#aaffcc';
+      ctx.fillText('TOTAL  ' + formatScore(state.eobDisplay || 0), canvas.width * 0.5, canvas.height * 0.34 + steps.length * 22 + 16);
+      ctx.restore();
+    }
+
+    // Rush mode wash
+    if (state.rushTimer > 0 && state.rushName) {
+      ctx.save();
+      var ember = /EMBER/i.test(state.rushName);
+      ctx.fillStyle = ember ? 'rgba(255, 80, 20, 0.06)' : 'rgba(20, 180, 255, 0.06)';
+      ctx.fillRect(0, 72, canvas.width, canvas.height - 100);
       ctx.restore();
     }
   }
