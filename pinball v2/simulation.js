@@ -367,9 +367,25 @@
       ellipseArcSegments(LAUNCH_LANE_LEFT - 8, 118, 42, 38, -Math.PI * 0.15, Math.PI * 0.55, 8, 'rail')
     );
 
-    walls.push({ x1: FLIPPER_INLANE_X, y1: FLIPPER_ROW_Y, x2: drainL, y2: FLIPPER_ROW_Y, kind: 'deck' });
-    walls.push({ x1: drainR, y1: FLIPPER_ROW_Y, x2: rightInlaneX, y2: FLIPPER_ROW_Y, kind: 'deck' });
-    walls.push({ x1: FLIPPER_INLANE_X + 6, y1: LEFT_INLANE_POST_TOP, x2: FLIPPER_INLANE_X + 6, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' });
+    // Short deck stubs under flipper pivots only — full-length gray bars blocked lower toys
+    var leftPivot = FLIPPER_LEFT_PIVOT_X;
+    var rightPivot = FLIPPER_RIGHT_PIVOT_X;
+    walls.push({
+      x1: leftPivot - 18,
+      y1: FLIPPER_ROW_Y,
+      x2: Math.min(drainL, leftPivot + FLIPPER_LEN * 0.55),
+      y2: FLIPPER_ROW_Y,
+      kind: 'deck'
+    });
+    walls.push({
+      x1: Math.max(drainR, rightPivot - FLIPPER_LEN * 0.55),
+      y1: FLIPPER_ROW_Y,
+      x2: rightPivot + 18,
+      y2: FLIPPER_ROW_Y,
+      kind: 'deck'
+    });
+    // Inlane post starts lower so mid bumpers/kickers stay open
+    walls.push({ x1: FLIPPER_INLANE_X + 6, y1: 520, x2: FLIPPER_INLANE_X + 6, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' });
     walls.push({ x1: FLIPPER_INLANE_X + 6, y1: FLIPPER_ROW_Y - 20, x2: FLIPPER_INLANE_X + 6, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: 36, y1: 540, x2: FLIPPER_INLANE_X + 10, y2: LEFT_INLANE_POST_TOP + 20, kind: 'chute' });
     // Upper-left deflector under arch
@@ -1164,7 +1180,9 @@
 
     state.walls.forEach(function (wall) {
       if (!state.exitedLaunchLane && (wall.wireform || wall.kind === 'lane')) return;
-      segmentCollision(ball, wall.x1, wall.y1, wall.x2, wall.y2, WALL_RESTITUTION, null);
+      // Soft short deck stubs — less bounce so they don't steal lower play
+      var rest = wall.kind === 'deck' ? WALL_RESTITUTION * 0.55 : WALL_RESTITUTION;
+      segmentCollision(ball, wall.x1, wall.y1, wall.x2, wall.y2, rest, null);
     });
 
     if (ball.x - r < 36) {

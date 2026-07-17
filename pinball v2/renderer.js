@@ -287,10 +287,10 @@
         ctx.lineWidth = 3;
         ctx.shadowBlur = 0;
       } else if (kind === 'deck') {
-        ctx.strokeStyle = 'rgba(200,220,240,0.7)';
-        ctx.lineWidth = 4;
-        ctx.shadowColor = 'rgba(100,150,255,0.3)';
-        ctx.shadowBlur = 4;
+        // Subtle stubs only — full gray bars used to block lower bumpers/kickers
+        ctx.strokeStyle = 'rgba(160,180,210,0.28)';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 0;
       } else {
         ctx.strokeStyle = wall.arc ? 'rgba(160, 230, 255, 0.95)' : 'rgba(180,200,230,0.85)';
         ctx.lineWidth = wall.arc ? 6 : 5;
