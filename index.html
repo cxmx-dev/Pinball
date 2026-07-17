@@ -4,138 +4,27 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <title>Pinball — VOID PULSE / NEON NEXUS</title>
-  <script src="device.js"></script>
+  <meta http-equiv="refresh" content="0; url=pinball%20v2/index.html" />
+  <title>Pinball — VOID PULSE</title>
+  <script>
+    location.replace('pinball%20v2/index.html');
+  </script>
+  <link rel="canonical" href="pinball%20v2/index.html" />
   <style>
-    :root {
-      color-scheme: dark;
-      --bg: #07070c;
-      --fg: #e8f0ff;
-      --muted: #8a94a8;
-      --void: #5ee7ff;
-      --ember: #ff9b5e;
-      --panel: #10121a;
-      --line: #242838;
-    }
-    * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: "Segoe UI", system-ui, sans-serif;
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -10%, #1a2740 0%, transparent 55%),
-        var(--bg);
-      color: var(--fg);
       display: grid;
       place-items: center;
-      padding: 2rem 1rem;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: #07070c;
+      color: #8a94a8;
     }
-    main {
-      width: min(34rem, 100%);
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 1rem;
-      padding: 1.75rem 1.5rem 1.5rem;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
-    }
-    h1 {
-      margin: 0 0 0.35rem;
-      font-size: 1.55rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-    p {
-      margin: 0 0 1.25rem;
-      color: var(--muted);
-      line-height: 1.45;
-      font-size: 0.95rem;
-    }
-    .links {
-      display: grid;
-      gap: 0.75rem;
-    }
-    a {
-      display: block;
-      text-decoration: none;
-      color: inherit;
-      border: 1px solid var(--line);
-      border-radius: 0.75rem;
-      padding: 0.95rem 1rem;
-      transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
-    }
-    a:hover {
-      transform: translateY(-1px);
-      background: #151926;
-    }
-    a.primary {
-      border-color: color-mix(in srgb, var(--void) 55%, var(--line));
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--void) 20%, transparent);
-    }
-    a.primary:hover { border-color: var(--void); }
-    a.secondary:hover { border-color: var(--ember); }
-    .label {
-      display: block;
-      font-size: 0.72rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 0.25rem;
-    }
-    .title {
-      font-weight: 700;
-      font-size: 1.05rem;
-    }
-    .title.void { color: var(--void); }
-    .title.ember { color: var(--ember); }
-    .desc {
-      display: block;
-      margin-top: 0.25rem;
-      color: var(--muted);
-      font-size: 0.88rem;
-    }
-    footer {
-      margin-top: 1.1rem;
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-    footer a {
-      display: inline;
-      padding: 0;
-      border: 0;
-      box-shadow: none;
-      color: #b8c4dc;
-      text-decoration: underline;
-      text-underline-offset: 2px;
-    }
-    footer a:hover {
-      transform: none;
-      background: transparent;
-      color: var(--fg);
-    }
+    a { color: #5ee7ff; }
   </style>
 </head>
 <body>
-  <main>
-    <h1>Pinball</h1>
-    <p>Vanilla Canvas + Web Audio. PC: <strong>T</strong> = theme (v2) · <strong>L</strong> = legend · arrows/space/R · dock on both devices. Mobile: same dock + swipe legend.</p>
-    <p>Pick a version:</p>
-    <div class="links">
-      <a class="primary" href="pinball%20v2/index.html">
-        <span class="label">Current</span>
-        <span class="title void">VOID PULSE (v2)</span>
-        <span class="desc">v1-class physics + layered theme art packs (T cycles themes)</span>
-      </a>
-      <a class="secondary" href="pinball%20v1/index.html">
-        <span class="label">Baseline</span>
-        <span class="title ember">NEON NEXUS (v1)</span>
-        <span class="desc">Solid physics / audio / tests — procedural look</span>
-      </a>
-    </div>
-    <footer>
-      Source + docs on
-      <a href="https://github.com/cxmx-dev/Pinball">GitHub</a>.
-      Prefer sharing the play link only.
-    </footer>
-  </main>
+  <p>Loading <a href="pinball%20v2/index.html">VOID PULSE (v2)</a>…</p>
+  <p style="font-size:0.85rem">Baseline: <a href="pinball%20v1/index.html" style="color:#ff9b5e">NEON NEXUS (v1)</a></p>
 </body>
 </html>

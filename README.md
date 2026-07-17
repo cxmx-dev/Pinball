@@ -35,7 +35,7 @@ Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / d
 
 | Folder | What |
 |--------|------|
-| `index.html` | Hub launcher (Pages root) |
+| `index.html` | Pages root → redirects to **v2** (VOID PULSE) |
 | `pinball v1/` | **NEON NEXUS** — solid physics, audio, tests (no theme packs) |
 | `pinball v2/` | **VOID PULSE** — v1-class play + layered theme art |
 | `backup/` | Untouched reference snapshot — do not modify |
@@ -43,9 +43,9 @@ Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / d
 
 ## Quick play
 
-- **Live (share this):** https://cxmx-dev.github.io/Pinball/ (launcher → v2 recommended)
-- **v2 (current):** open `pinball v2/index.html` or serve path `/pinball%20v2/`
-- **v1:** open `pinball v1/index.html` or `/pinball%20v1/`
+- **Live (share this):** https://cxmx-dev.github.io/Pinball/ → **VOID PULSE (v2)** immediately (no version picker)
+- **v2 (current):** same as live root, or `pinball v2/index.html` / `/pinball%20v2/`
+- **v1:** open `pinball v1/index.html` or `/pinball%20v1/` (still available; not on the root picker)
 
 ### Local serve (dev / phone on same Wi‑Fi / **internet out**)
 
