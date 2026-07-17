@@ -57,7 +57,10 @@
   var MAX_MULTIPLIER = 5;
   var SKILL_SHOT_BONUS = 2500;
   var LAUNCH_DASH_HOLD_SEC = 3;
-  var LAUNCH_DASH_FADE_SEC = 0.42;
+  /** Reverse cascade: first off (top) is slowest; each next dash toward plunger is faster. */
+  var LAUNCH_DASH_FADE_MAX = 0.55;
+  var LAUNCH_DASH_FADE_MIN = 0.1;
+  var LAUNCH_DASH_FADE_ACCEL = 0.72; // multiply duration each step down
 
   function clamp(v, lo, hi) {
     return v < lo ? lo : v > hi ? hi : v;
@@ -556,8 +559,12 @@
         resetLaunchDashSequence(state);
         return;
       }
+      // step 0 = top (slowest), higher steps = closer to plunger (faster)
+      var stepFromTop = (n - 1) - ri;
+      var fadeSec = LAUNCH_DASH_FADE_MAX * Math.pow(LAUNCH_DASH_FADE_ACCEL, stepFromTop);
+      if (fadeSec < LAUNCH_DASH_FADE_MIN) fadeSec = LAUNCH_DASH_FADE_MIN;
       state.launchDashFadeT += dt;
-      var u = clamp(state.launchDashFadeT / LAUNCH_DASH_FADE_SEC, 0, 1);
+      var u = clamp(state.launchDashFadeT / fadeSec, 0, 1);
       // Pulse while fading: brighter mid-dip, then settle off
       var pulse = 0.55 + 0.45 * Math.sin(u * Math.PI * 2.2);
       var fade = 1 - u;
