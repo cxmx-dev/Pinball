@@ -56,6 +56,8 @@
   var COMBO_WINDOW = 2.2;
   var MAX_MULTIPLIER = 5;
   var SKILL_SHOT_BONUS = 2500;
+  var LAUNCH_DASH_HOLD_SEC = 3;
+  var LAUNCH_DASH_FADE_SEC = 0.42;
 
   function clamp(v, lo, hi) {
     return v < lo ? lo : v > hi ? hi : v;
@@ -165,11 +167,19 @@
         w: 12,
         h: 22,
         lit: false,
+        intensity: 0,
         flash: 0,
         occupied: false
       });
     }
     return dashes;
+  }
+
+  function resetLaunchDashSequence(state) {
+    state.launchDashHoldT = 0;
+    state.launchDashReversing = false;
+    state.launchDashReverseI = -1;
+    state.launchDashFadeT = 0;
   }
 
   function createKickers() {
@@ -252,6 +262,10 @@
       targets: createTargets(),
       rollovers: createRollovers(),
       launchLaneDashes: createLaunchLaneDashes(),
+      launchDashHoldT: 0,
+      launchDashReversing: false,
+      launchDashReverseI: -1,
+      launchDashFadeT: 0,
       kickers: createKickers(),
       spinner: createSpinner(),
       walls: createWalls(),
@@ -506,6 +520,7 @@
     state.targets = createTargets();
     state.rollovers = createRollovers();
     state.launchLaneDashes = createLaunchLaneDashes();
+    resetLaunchDashSequence(state);
     state.jackpotLit = false;
     state.skillShotWindow = false;
     state.comboCount = 0;
@@ -514,36 +529,96 @@
     state.slingshots.forEach(function (s) { s.cooldown = 0; });
   }
 
-  /** Light launch-lane dashes only when the ball rolls over them (not for charge power). */
+  function allLaunchDashesLit(dashes) {
+    var i;
+    for (i = 0; i < dashes.length; i++) {
+      if (!dashes[i].lit || dashes[i].intensity < 0.95) return false;
+    }
+    return true;
+  }
+
+  /**
+   * Light dashes when the ball rolls over them (bottom → top).
+   * After all are on for 3s, reverse top → bottom with a slow pulse-fade off.
+   */
   function updateLaunchLaneDashes(state, dt) {
     var dashes = state.launchLaneDashes;
     if (!dashes || !dashes.length) return;
     var i;
-    for (i = 0; i < dashes.length; i++) {
+    var n = dashes.length;
+
+    for (i = 0; i < n; i++) {
       if (dashes[i].flash > 0) dashes[i].flash = Math.max(0, dashes[i].flash - dt);
     }
 
-    var ball = state.ball;
-    if (!ball.inPlay || state.exitedLaunchLane) return;
-    if (!isBallInLaunchLane(state)) return;
-
-    var halfW = 16;
-    var halfH = 14;
-    for (i = 0; i < dashes.length; i++) {
-      var d = dashes[i];
-      var dx = Math.abs(ball.x - d.x);
-      var dy = Math.abs(ball.y - d.y);
-      if (dx < halfW && dy < halfH + ball.radius * 0.35) {
-        if (!d.occupied) {
-          d.occupied = true;
-          if (!d.lit) {
-            d.lit = true;
-            d.flash = 0.4;
-          }
-        }
-      } else {
-        d.occupied = false;
+    if (state.launchDashReversing) {
+      var ri = state.launchDashReverseI;
+      if (ri < 0) {
+        resetLaunchDashSequence(state);
+        return;
       }
+      state.launchDashFadeT += dt;
+      var u = clamp(state.launchDashFadeT / LAUNCH_DASH_FADE_SEC, 0, 1);
+      var pulse = 0.55 + 0.45 * Math.sin(u * Math.PI * 2.2);
+      var fade = 1 - u;
+      dashes[ri].intensity = clamp(fade * pulse, 0, 1);
+      dashes[ri].lit = dashes[ri].intensity > 0.04;
+      if (u >= 1) {
+        dashes[ri].intensity = 0;
+        dashes[ri].lit = false;
+        dashes[ri].occupied = false;
+        dashes[ri].flash = 0;
+        state.launchDashReverseI = ri - 1;
+        state.launchDashFadeT = 0;
+        if (state.launchDashReverseI < 0) {
+          resetLaunchDashSequence(state);
+        }
+      }
+      return;
+    }
+
+    var ball = state.ball;
+    if (ball.inPlay && !state.exitedLaunchLane && isBallInLaunchLane(state)) {
+      var halfW = 16;
+      var halfH = 14;
+      for (i = 0; i < n; i++) {
+        var d = dashes[i];
+        var dx = Math.abs(ball.x - d.x);
+        var dy = Math.abs(ball.y - d.y);
+        if (dx < halfW && dy < halfH + ball.radius * 0.35) {
+          if (!d.occupied) {
+            d.occupied = true;
+            if (!d.lit || d.intensity < 1) {
+              d.lit = true;
+              d.intensity = 1;
+              d.flash = 0.4;
+              if (state.launchDashHoldT > 0 && !allLaunchDashesLit(dashes)) {
+                state.launchDashHoldT = 0;
+              }
+            }
+          }
+        } else {
+          d.occupied = false;
+        }
+      }
+    }
+
+    for (i = 0; i < n; i++) {
+      if (dashes[i].lit && dashes[i].intensity < 1 && !state.launchDashReversing) {
+        dashes[i].intensity = 1;
+      }
+    }
+
+    if (allLaunchDashesLit(dashes)) {
+      state.launchDashHoldT += dt;
+      if (state.launchDashHoldT >= LAUNCH_DASH_HOLD_SEC) {
+        state.launchDashReversing = true;
+        state.launchDashReverseI = n - 1;
+        state.launchDashFadeT = 0;
+        state.launchDashHoldT = 0;
+      }
+    } else {
+      state.launchDashHoldT = 0;
     }
   }
 

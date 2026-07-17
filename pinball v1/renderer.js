@@ -154,29 +154,43 @@
     var i;
     for (i = 0; i < dashes.length; i++) {
       var d = dashes[i];
-      var on = !!d.lit;
+      var intensity = d.intensity != null ? d.intensity : (d.lit ? 1 : 0);
+      if (intensity < 0) intensity = 0;
+      if (intensity > 1) intensity = 1;
       var hot = d.flash > 0;
       var w = d.w || 12;
       var h = d.h || 22;
+      var x0 = d.x - w * 0.5;
+      var y0 = d.y - h * 0.5;
       ctx.save();
-      if (on) {
-        ctx.shadowColor = hot ? 'rgba(255,240,140,0.95)' : 'rgba(255,200,50,0.7)';
-        ctx.shadowBlur = hot ? 18 : 12;
-        var g = ctx.createLinearGradient(d.x, d.y - h * 0.5, d.x, d.y + h * 0.5);
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = 'rgba(50, 80, 110, 0.55)';
+      drawRoundedRect(ctx, x0, y0, w, h, 5);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(100,150,200,0.28)';
+      ctx.lineWidth = 1;
+      drawRoundedRect(ctx, x0, y0, w, h, 5);
+      ctx.stroke();
+      if (intensity > 0.02) {
+        var a = intensity;
+        ctx.globalAlpha = a;
+        ctx.shadowColor = hot
+          ? 'rgba(255,240,140,' + (0.5 + 0.5 * a) + ')'
+          : 'rgba(255,200,50,' + (0.25 + 0.55 * a) + ')';
+        ctx.shadowBlur = (hot ? 18 : 12) * (0.4 + 0.6 * a);
+        var g = ctx.createLinearGradient(d.x, y0, d.x, y0 + h);
         g.addColorStop(0, hot ? '#fff6a0' : '#ffe066');
         g.addColorStop(0.45, '#ffcc22');
         g.addColorStop(1, '#e09010');
         ctx.fillStyle = g;
-      } else {
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = 'rgba(50, 80, 110, 0.55)';
+        drawRoundedRect(ctx, x0, y0, w, h, 5);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,220,' + (0.4 + 0.5 * a) + ')';
+        ctx.lineWidth = 1;
+        drawRoundedRect(ctx, x0, y0, w, h, 5);
+        ctx.stroke();
       }
-      drawRoundedRect(ctx, d.x - w * 0.5, d.y - h * 0.5, w, h, 5);
-      ctx.fill();
-      ctx.strokeStyle = on ? 'rgba(255,255,220,0.75)' : 'rgba(100,150,200,0.28)';
-      ctx.lineWidth = 1;
-      drawRoundedRect(ctx, d.x - w * 0.5, d.y - h * 0.5, w, h, 5);
-      ctx.stroke();
       ctx.restore();
     }
   }
