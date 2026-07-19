@@ -86,6 +86,14 @@ Machine-local capture paths: see `USER-NOTES.md` (not published).
 
 ## Version History
 
+**71726 3:37:09:81 AM CST**
+
+- **`update .mds`:** hub push `996a3ab` live path confirmed. Local high scores are browser-only.
+
+**71726 3:33:54:30 AM CST**
+
+- **Table geometry:** rounded top arch (segment ellipse + ride clamp); bumper/kicker rearrange for skill triangle + mid cluster; flipper deck shortened/softened so gray bars no longer block lower toys.
+
 **71726 3:11:39:51 AM CST**
 
 - **P2 polish:** theme flash on pack cycle; Launch dims in play; local high scores + mute + copy score line. Tests: `tests/p2-polish.test.js`.

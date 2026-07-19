@@ -87,6 +87,14 @@ Machine-local paths → `USER-NOTES.md` (local only, gitignored).
 
 ## Version History
 
+**71726 3:37:09:81 AM CST**
+
+- **`update .mds`:** live deploy confirmed via hub `start.ps1 -Repo Pinball` (`main` **`996a3ab`** sync). Local high scores stay **browser-only** (not on GitHub). Prefer play URL with trailing `/` or `/index.html` under `pinball v2/`.
+
+**71726 3:33:54:30 AM CST**
+
+- **`update .mds`:** table geometry pass (v2) — **rounded top arch** (ball rides curve, no flat ceiling); **reworked bumper/kicker layout** (skill triangle + mid diamond + lower feeder); **short soft flipper-deck stubs** (long gray bars no longer block lower toys). Playtest `3 pinball.mp4` annotations addressed.
+
 **71726 3:11:39:51 AM CST**
 
 - **`update .mds`:** playtest `2 pinball.mp4` review + **P2 polish (v2)** — theme cycle flash; Launch dock dims while ball in play; local high scores on game over; mute control; anonymous copy score line. P0/P1 remain.

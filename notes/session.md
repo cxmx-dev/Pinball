@@ -10,10 +10,13 @@ Machine paths / full run book: project `USER-NOTES.md` + hub `USER-NOTES.md` (gi
 | Push after edit | hub `.\scripts\start.ps1 -Repo Pinball` → wait for Deployments **light-blue ✓** (not yellow) → hard-refresh |
 | Local dev | from `Repos\Pinball`: `npx --yes serve .` → `/` or `/pinball%20v2/` **with trailing `/`** |
 | Not for friends | LAN `192.168…` only while your PC is serving |
+| High scores | **This browser only** (`localStorage`) — push does **not** publish scores |
 
-**Local blank table?** Serve from Pinball folder (not hub); use trailing `/` or `index.html`.
+**Local blank table?** Serve from Pinball folder (not hub); use trailing `/` or `/index.html`. First hit without slash may 404 scripts; retry with `/pinball%20v2/`.
 
 **Pages status (User lesson):** yellow/orange = queued/building; **light-blue check** = success/Active (not green). Deployments list: only the **Active** row is live. Yellow spinner alone may be stale UI — refresh Deployments to confirm.
+
+**Last verified push:** `main` **`996a3ab`** via `start.ps1 -Repo Pinball` (71726) — “Repo updated”; live https://cxmx-dev.github.io/Pinball/
 
 ## Live controls (summary)
 
@@ -36,6 +39,7 @@ Machine paths / full run book: project `USER-NOTES.md` + hub `USER-NOTES.md` (gi
 
 ## Shipped highlights
 
+- **Table geometry (v2):** rounded **top arch** (ball follows curve); fun **bumper diamond** layout; short soft **deck stubs** (no long gray flipper bars blocking kickers)  
 - **P2 polish (v2):** theme flash · Launch dims in-play · local high scores · mute · copy score line  
 - **P1 depth (v2):** side routes · drop bank → rush · EOB bonus · outlane tension  
 - **P0 feel (v2):** hint hide · popup merge · full-dash +800 · graded skill · drain flash + 1× ball-save  
@@ -53,6 +57,8 @@ Machine paths / full run book: project `USER-NOTES.md` + hub `USER-NOTES.md` (gi
 
 | When | What |
 |------|------|
+| 71726 ~3:37 AM | `update .mds` — push confirmed `996a3ab`; high scores browser-local note |
+| 71726 ~3:33 AM | `update .mds` — rounded top + bumper layout + deck-bar fix (playtest 3 annotations) |
 | 71726 ~3:11 AM | Playtest `2 pinball.mp4` + **P2 polish** + 5× suite green |
 | 71726 ~2:53 AM | `update .mds` — P0 feel shipped on v2; docs + tests |
 | 71726 ~2:25 AM | Playtest review (`1 pinball.mp4`) → `PLAN.md` P0–P3 backlog |
