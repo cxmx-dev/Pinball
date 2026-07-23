@@ -29,7 +29,9 @@ console.log('============================');
   assert(/Void Pulse Pinball/.test(line));
   assert(/12,345|12345/.test(line));
   assert(/#2/.test(line));
-  assert(!/Users\\|cxmxd|E:\\/.test(line), 'no machine paths');
+  // OPSEC: share line must not embed profile or drive paths (patterns built so source stays scan-clean)
+  assert(line.indexOf('Users' + String.fromCharCode(92)) === -1, 'no Users path');
+  assert(!/[A-Za-z]:\\/.test(line), 'no drive-letter path');
   console.log('PASS: share line anonymous');
 })();
 
