@@ -87,6 +87,10 @@ Machine-local paths → `USER-NOTES.md` (local only, gitignored).
 
 ## Version History
 
+**72226 11:43:55:28 PM CST**
+
+- **`update .mds`:** privacy scrub — `pinball v2/tests/p2-polish.test.js` OPSEC assert no longer embeds username/drive literals in source (false positive for hub scan). Pushed `main` **`c54ba30`**. Hub `scan-repos-privacy` **OK**.
+
 **71726 3:37:09:81 AM CST**
 
 - **`update .mds`:** live deploy confirmed via hub `start.ps1 -Repo Pinball` (`main` **`996a3ab`** sync). Local high scores stay **browser-only** (not on GitHub). Prefer play URL with trailing `/` or `/index.html` under `pinball v2/`.
