@@ -1,6 +1,6 @@
 # Pinball — session notes (public)
 
-Machine paths / full run book: project `USER-NOTES.md` + hub `USER-NOTES.md` (gitignored).
+Machine paths / full run book: `USER-NOTES.md` (local only, gitignored).
 
 ## How to play / push (short)
 
@@ -8,7 +8,7 @@ Machine paths / full run book: project `USER-NOTES.md` + hub `USER-NOTES.md` (gi
 |------|-----|
 | Live (anyone, anytime) | https://cxmx-dev.github.io/Pinball/ → **v2 immediately** (root redirect) |
 | Push after edit | hub `.\scripts\start.ps1 -Repo Pinball` → wait for Deployments **light-blue ✓** (not yellow) → hard-refresh |
-| Local dev | from `Repos\Pinball`: `npx --yes serve .` → `/` or `/pinball%20v2/` **with trailing `/`** |
+| Local dev | from this repo root: `npx --yes serve .` → `/` or `/pinball%20v2/` **with trailing `/`** |
 | Not for friends | LAN `192.168…` only while your PC is serving |
 | High scores | **This browser only** (`localStorage`) — push does **not** publish scores |
 
@@ -20,10 +20,10 @@ Machine paths / full run book: project `USER-NOTES.md` + hub `USER-NOTES.md` (gi
 
 ## Live controls (summary)
 
-- Flippers: **←→ / A D / NumPad 1·3** + mouse/dock  
-- Tilt: **NumPad 7** + HUD pill (`6.9%`) — intentionally awkward  
-- Dock: L Flip · Launch · R Flip · **Theme \| Legend** (v2) — full row visible on PC  
-- Legend: airy rows; mobile hides PC hotkeys column  
+- Flippers: **←→ / A D / NumPad 1·3** + mouse/dock
+- Tilt: **NumPad 7** + HUD pill (`6.9%`) — intentionally awkward
+- Dock: L Flip · Launch · R Flip · **Theme \| Legend** (v2) — full row visible on PC
+- Legend: airy rows; mobile hides PC hotkeys column
 - Green PC/swipe hint: **auto-hides** after first input or ~8s (legend keeps the map)
 
 ## Stack
@@ -39,31 +39,31 @@ Machine paths / full run book: project `USER-NOTES.md` + hub `USER-NOTES.md` (gi
 
 ## Shipped highlights
 
-- **Table geometry (v2):** rounded **top arch** (ball follows curve); fun **bumper diamond** layout; short soft **deck stubs** (no long gray flipper bars blocking kickers)  
-- **P2 polish (v2):** theme flash · Launch dims in-play · local high scores · mute · copy score line  
-- **P1 depth (v2):** side routes · drop bank → rush · EOB bonus · outlane tension  
-- **P0 feel (v2):** hint hide · popup merge · full-dash +800 · graded skill · drain flash + 1× ball-save  
-- Launch lane dashes (pass-on, 1.5s hold, reverse accel fade); side power meter  
-- Root play link → VOID PULSE (v2) no picker  
-- PC dock chrome (Theme\|Legend no longer clipped)  
-- Upper-arch / wireform stuck-ball unstick  
-- Phases 0–6 theme layer + safeDrawImage fix  
-- Launch clamp at max; upper-left unstick  
-- Control remap + HUD Tilt + split dock  
-- Legend spacing / mobile PC-column hide  
-- Offline local play docs; trailing-slash redirect  
+- **Table geometry (v2):** rounded **top arch** (ball follows curve); fun **bumper diamond** layout; short soft **deck stubs** (no long gray flipper bars blocking kickers)
+- **P2 polish (v2):** theme flash · Launch dims in-play · local high scores · mute · copy score line
+- **P1 depth (v2):** side routes · drop bank → rush · EOB bonus · outlane tension
+- **P0 feel (v2):** hint hide · popup merge · full-dash +800 · graded skill · drain flash + 1× ball-save
+- Launch lane dashes (pass-on, 1.5s hold, reverse accel fade); side power meter
+- Root play link → VOID PULSE (v2) no picker
+- PC dock chrome (Theme\|Legend no longer clipped)
+- Upper-arch / wireform stuck-ball unstick
+- Phases 0–6 theme layer + safeDrawImage fix
+- Launch clamp at max; upper-left unstick
+- Control remap + HUD Tilt + split dock
+- Legend spacing / mobile PC-column hide
+- Offline local play docs; trailing-slash redirect
 
 ## History (condensed)
 
 | When | What |
 |------|------|
-| 71726 ~3:37 AM | `update .mds` — push confirmed `996a3ab`; high scores browser-local note |
-| 71726 ~3:33 AM | `update .mds` — rounded top + bumper layout + deck-bar fix (playtest 3 annotations) |
-| 71726 ~3:11 AM | Playtest `2 pinball.mp4` + **P2 polish** + 5× suite green |
-| 71726 ~2:53 AM | `update .mds` — P0 feel shipped on v2; docs + tests |
-| 71726 ~2:25 AM | Playtest review (`1 pinball.mp4`) → `PLAN.md` P0–P3 backlog |
-| 71726 early AM | Root → v2 redirect; PC dock chrome; upper-arch unstick; Pages light-blue ✓ lesson |
-| 71126 early AM | `update .mds` — legend mobile PC-column hide + airy desktop rows |
-| 71026 night | Controls A/D, NumPad tilt, HUD Tilt, Theme\|Legend, legend UX |
-| 71026 PM | Control parity, offline serve docs, launch/unstick physics |
-| 71026 day | Hub co-locate, Pages, device-aware, legend drawer, game-over pinball |
+| 2026-07-17 | `update .mds` — push confirmed `996a3ab`; high scores browser-local note |
+| 2026-07-17 | `update .mds` — rounded top + bumper layout + deck-bar fix (playtest 3 annotations) |
+| 2026-07-17 | Playtest `2 pinball.mp4` + **P2 polish** + 5× suite green |
+| 2026-07-17 | `update .mds` — P0 feel shipped on v2; docs + tests |
+| 2026-07-17 | Playtest review (`1 pinball.mp4`) → `PLAN.md` P0–P3 backlog |
+| 2026-07-17 | Root → v2 redirect; PC dock chrome; upper-arch unstick; Pages light-blue ✓ lesson |
+| 2026-07-11 | `update .mds` — legend mobile PC-column hide + airy desktop rows |
+| 2026-07-10 | Controls A/D, NumPad tilt, HUD Tilt, Theme\|Legend, legend UX |
+| 2026-07-10 | Control parity, offline serve docs, launch/unstick physics |
+| 2026-07-10 | Hub co-locate, Pages, device-aware, legend drawer, game-over pinball |

@@ -63,7 +63,7 @@ npx --yes serve .
 | Internet / GitHub down | Same local serve — **no** github.io needed |
 | Friends anytime online | https://cxmx-dev.github.io/Pinball/ (no `serve`) |
 
-Open **`/pinball%20v2/`** (trailing slash) or **`/pinball%20v2/index.html`**.  
+Open **`/pinball%20v2/`** (trailing slash) or **`/pinball%20v2/index.html`**.
 Without the slash/`index.html`, browsers load scripts from the wrong folder and the table stays blank (404).
 
 Leave the terminal running while you play. Phone LAN needs Private Wi‑Fi + firewall once (`allow-lan-preview.ps1` on this machine — local only).
@@ -87,86 +87,86 @@ Machine-local paths → `USER-NOTES.md` (local only, gitignored).
 
 ## Version History
 
-**72226 11:43:55:28 PM CST**
+**2026-07-22**
 
 - **`update .mds`:** privacy scrub — `pinball v2/tests/p2-polish.test.js` OPSEC assert no longer embeds username/drive literals in source (false positive for hub scan). Pushed `main` **`c54ba30`**. Hub `scan-repos-privacy` **OK**.
 
-**71726 3:37:09:81 AM CST**
+**2026-07-17**
 
 - **`update .mds`:** live deploy confirmed via hub `start.ps1 -Repo Pinball` (`main` **`996a3ab`** sync). Local high scores stay **browser-only** (not on GitHub). Prefer play URL with trailing `/` or `/index.html` under `pinball v2/`.
 
-**71726 3:33:54:30 AM CST**
+**2026-07-17**
 
 - **`update .mds`:** table geometry pass (v2) — **rounded top arch** (ball rides curve, no flat ceiling); **reworked bumper/kicker layout** (skill triangle + mid diamond + lower feeder); **short soft flipper-deck stubs** (long gray bars no longer block lower toys). Playtest `3 pinball.mp4` annotations addressed.
 
-**71726 3:11:39:51 AM CST**
+**2026-07-17**
 
 - **`update .mds`:** playtest `2 pinball.mp4` review + **P2 polish (v2)** — theme cycle flash; Launch dock dims while ball in play; local high scores on game over; mute control; anonymous copy score line. P0/P1 remain.
 
-**71726 2:53:36:86 AM CST**
+**2026-07-17**
 
 - **`update .mds`:** **P0 feel & clarity (v2)** — green PC hint auto-hides (first input or 8s; legend unchanged); high-combo score popups **merge** into one total; full launch-lane dash stack awards **800** (partial none); **graded skill shot** (center 2500 + mult / near 1000 + HUD banners); drain red flash + **one ball-save** after skill shot. Launch dashes: light on roll-over only; side power meter restored; reverse cascade after **1.5s** hold (accelerating fade). Tests: `pinball v2/tests/p0-feel.test.js` in `run-tests.js`.
 
-**71726 1:42:43:19 AM CST**
+**2026-07-17**
 
 - **`update .mds`:** root **`index.html`** redirects straight to **VOID PULSE (v2)** (no version picker; v1 still at `/pinball%20v1/`). **Dock chrome on PC:** `device.js` `fitCanvas` honors `touchChrome` on **all** devices (was touch-only) so Theme\|Legend is not clipped under the table; chrome pad **150** in v1/v2 `game.js`. **Upper-arch unstick:** ball no longer hangs in wireform × top-rail pocket (`unstickFromCorners` expanded, v1 + v2). Local + live match after push.
 
-**71126 5:03:05:48 AM CST**
+**2026-07-11**
 
 - **`update .mds`:** legend spacing (desktop airy rows; mobile hides PC column); full control map restated — **A/D** flippers, NumPad **7** tilt, Theme\|Legend split, HUD Tilt `6.9%`. Session + USER-NOTES already match.
 
-**71026 10:52:47:33 PM CST**
+**2026-07-10**
 
 - **`update .mds`:** left flipper letter key is **A** (not W) with **D** right — code, in-game legend, and all public/User docs synced. Full map: **← / A / NumPad 1** · **→ / D / NumPad 3** · tilt **NumPad 7** · HUD Tilt + Theme\|Legend dock.
 
-**71026 10:48:39:70 PM CST**
+**2026-07-10**
 
 - **`update .mds`:** full control/UI sync — NumPad flipper/tilt map; HUD **Tilt** compact at `top: 6.9%` (clears score text); **Theme \| Legend** split dock; **no top KEYS strip** (PC + mobile); legend/READMEs/USER-NOTES match live game.
 
-**71026 10:26:43:78 PM CST**
+**2026-07-10**
 
 - **UI:** HUD **Tilt** in score band; canvas HUD clears center for it. Dock: **Theme \| Legend** split under Launch (clear of L/R Flip). Later polish: Tilt lower/`6.9%` + smaller; remove top keys hint.
 
-**71026 10:10:54:56 PM CST**
+**2026-07-10**
 
 - **Controls remap (v1 + v2):** tilt = **NumPad 7** only (no **R**); left flipper = **← / A / NumPad 1**; right = **→ / D / NumPad 3**; HUD **Tilt** pill top-center on table (out of dock); legend + READMEs synced. Ready to revert via `USER-NOTES.md` prior bindings.
 
-**71026 5:12:45:50 PM CST**
+**2026-07-10**
 
 - **`update .mds`:** PC/mobile **control parity** documented end-to-end — dock on both; legend Action/PC/Mobile matches game; **PC theme = T** or Theme button; game-over spinning pinball both devices.
 
-**71026 4:51:26:83 PM CST**
+**2026-07-10**
 
 - PC + mobile **control parity**: dock always visible (Theme / Legend on PC); legend is a 3-column Action / PC / Mobile table; game-over pinball on both devices. **PC theme = T or Theme button.**
 
-**71026 4:47:52:30 PM CST**
+**2026-07-10**
 
 - **`update .mds`:** physics/ops notes — launch meter **holds at max**; upper-left **stuck ball** wedge opened + corner unstick; trailing-slash serve fix; LAN firewall helper local-only; pushes on `main`.
 
-**71026 4:42:24:18 PM CST**
+**2026-07-10**
 
 - **`update .mds`:** documented **offline / internet-out local play** (`npx serve` from repo root, no GitHub required); LAN phone vs github.io summary; push habit separate from local host.
 
-**71026 3:45:44:35 PM CST**
+**2026-07-10**
 
 - **`update .mds`:** full public control docs synced — legend drawer, mobile dock, green swipe hint, game-over spinning pinball restart; **Controls always first** on root + v1 + v2 READMEs.
 
-**71026 3:43:05:78 PM CST**
+**2026-07-10**
 
 - Mobile **game over**: **Press here to Restart** + animated spinning/shining pinball button (must press). Desktop still uses **R**.
 
-**71026 3:30:07:67 PM CST**
+**2026-07-10**
 
 - Legend slide-drawer from right (**L** toggle; mobile fast swipe right-to-left; **[X] Close** bottom-left). Mobile dock scheme + green `#00ff00` swipe hint. Controls documented at top of public READMEs.
 
-**71026 2:49:40:70 PM CST**
+**2026-07-10**
 
 - `update .mds`: device-aware (scale-to-fit + touch flippers/UI); hub **`start-all.ps1`** / `-NoPreview` for batch push without local serve.
 
-**71026 1:41:17:74 PM CST**
+**2026-07-10**
 
-- Hub co-locate under `Repos\Pinball`; root launcher + GitHub Pages; scrubbed absolute scratch paths from test/verify scripts (`os.tmpdir()` default). Live: `cxmx-dev/Pinball`.
+- Hub co-locate under this project folder; root launcher + GitHub Pages; scrubbed absolute scratch paths from test/verify scripts (`os.tmpdir()` default). Live: `cxmx-dev/Pinball`.
 
-**71026 12:28:26:70 PM CST**
+**2026-07-10**
 
 - Root README added: maps v1 / v2 / backup; points to VOID PULSE as current layered-art table.

@@ -119,67 +119,67 @@ node verify-browser.js
 
 ## Version History
 
-**71726 1:42:43:19 AM CST**
+**2026-07-17**
 
 - **`update .mds`:** dock chrome on PC (shared `device.js` pattern) + upper-arch unstick parity with v2. Root site still opens v2; this path remains `/pinball%20v1/`.
 
-**71126 5:03:05:48 AM CST**
+**2026-07-11**
 
 - **`update .mds`:** legend airy spacing; mobile legend hides PC hotkeys; controls **A/D** + NumPad 1/3/7.
 
-**71026 10:52:47:33 PM CST**
+**2026-07-10**
 
 - **`update .mds`:** left flipper = **A** (not W); **D** right. Docs + legend match `KeyA` / `KeyD` + NumPad 1/3.
 
-**71026 10:48:39:70 PM CST**
+**2026-07-10**
 
 - **`update .mds`:** controls/UI docs match live build — Tilt compact at `6.9%`; Legend centered under Launch; no top KEYS bar; NumPad map + legend parity.
 
-**71026 10:26:43:78 PM CST**
+**2026-07-10**
 
 - HUD Tilt in score band (scaled %); **Legend** dock button centered under Launch (clear of flippers); later: lower/smaller Tilt + remove top keys hint.
 
-**71026 10:10:54:56 PM CST**
+**2026-07-10**
 
 - Controls: tilt **NumPad 7** only; flippers **←→ / A D / Num 1·3**; HUD Tilt pill; dock without Tilt; legend updated.
 
-**71026 5:12:45:50 PM CST**
+**2026-07-10**
 
 - **`update .mds`:** PC/Mobile parity Controls table; dock + Legend on both; game-over pinball both devices (no theme packs on v1).
 
-**71026 4:47:52:30 PM CST**
+**2026-07-10**
 
 - **`update .mds`:** launch meter holds at max; upper-left stuck-ball fix; serve slash + offline notes (shared with v2 physics).
 
-**71026 3:45:44:35 PM CST**
+**2026-07-10**
 
 - **`update .mds`:** Controls-first README complete (legend + mobile dock + game-over pinball restart).
 
-**71026 3:43:05:78 PM CST**
+**2026-07-10**
 
 - Mobile game over: **Press here to Restart** + spinning/shining pinball button.
 
-**71026 3:30:07:67 PM CST**
+**2026-07-10**
 
 - Legend slide-drawer (**L** / swipe / **[X] Close**); mobile dock + green swipe hint; Controls section at top of README.
 
-**71026 2:49:40:70 PM CST**
+**2026-07-10**
 
 - `update .mds`: device-aware touch UI; hub batch via `start-all.ps1`.
 
-**71026 1:41:17:74 PM CST**
+**2026-07-10**
 
 - Portable `SCRATCH` default (`os.tmpdir()/pinball-scratch`) in test/verify scripts for public repo hygiene.
 
-**71026 12:28:26:70 PM CST**
+**2026-07-10**
 
 - Doc pointer: successor table is `pinball v2/` (VOID PULSE + theme art layers). v1 remains the NEON NEXUS physics baseline.
 
-**62426 2:58:37:60 CST**
+**2026-06-24**
 
 - Added `README.md` with controls, roadmap, and version history.
 
-**62426 (session) CST**
+**62426 (session) **
 
 - Added procedural pinball audio (`audio.js`) — bumpers, flippers, drain, tilt, launch, jackpot, and more.
 - Removed visible glass-reflection guide lines; made left lane protectors invisible physics-only walls.
