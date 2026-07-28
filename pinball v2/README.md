@@ -42,7 +42,7 @@ node run-tests.js
 node verify-browser.js
 ```
 
-Optional: set env `SCRATCH` to a writable folder for dual-run logs (defaults to OS temp `pinball-scratch`; machine habits → root `USER-NOTES.md` if present).
+Optional: set env `SCRATCH` to a writable folder for dual-run logs (defaults to OS temp).
 
 ## Architecture
 
@@ -76,88 +76,6 @@ Optional: set env `SCRATCH` to a writable folder for dual-run logs (defaults to 
 - `assets/themes/ember-rail/` — alternate
 - `assets/themes.json` — pack index
 
-## What’s preserved from v1
+## What's preserved from v1
 
 Gravity, flippers, charge launch, wireform, bumpers, slings, targets, rollovers, spinner, kickers, skill shot, jackpot, combo multiplier, tilt, three drain zones, procedural audio, unit + Monte Carlo + browser-load verification.
-
-Machine-local capture paths: see `USER-NOTES.md` (not published).
-
----
-
-## Version History
-
-**2026-07-17**
-
-- **`update .mds`:** hub push `996a3ab` live path confirmed. Local high scores are browser-only.
-
-**2026-07-17**
-
-- **Table geometry:** rounded top arch (segment ellipse + ride clamp); bumper/kicker rearrange for skill triangle + mid cluster; flipper deck shortened/softened so gray bars no longer block lower toys.
-
-**2026-07-17**
-
-- **P2 polish:** theme flash on pack cycle; Launch dims in play; local high scores + mute + copy score line. Tests: `tests/p2-polish.test.js`.
-
-**2026-07-17**
-
-- **`update .mds`:** **P0 feel** — PC hint auto-hide; combo popup merge; full-lane-dash +800; skill center/near grades + HUD; drain flash + 1× ball-save after skill. Dashes pass-only + reverse cascade; side power meter. Tests: `tests/p0-feel.test.js`.
-
-**2026-07-17**
-
-- **`update .mds`:** root play URL redirects here (v2). PC dock chrome via `device.js` + `game.js` (150). Upper-arch / wireform stuck-ball unstick in `simulation.js`.
-
-**2026-07-11**
-
-- **`update .mds`:** legend airy spacing; mobile legend hides PC hotkeys; controls still **A/D** + NumPad 1/3/7 + Theme\|Legend split.
-
-**2026-07-10**
-
-- **`update .mds`:** left flipper = **A** (not W); **D** right. Docs + legend match `KeyA` / `KeyD` + NumPad 1/3.
-
-**2026-07-10**
-
-- **`update .mds`:** controls/UI docs match live build — Tilt `6.9%` compact pill; Theme\|Legend split; no top KEYS bar; NumPad map + legend parity.
-
-**2026-07-10**
-
-- HUD Tilt in score band (scaled %); **Theme \| Legend** split dock under Launch; canvas HUD clears center for Tilt; later: lower/smaller Tilt + remove top keys hint.
-
-**2026-07-10**
-
-- Controls: tilt **NumPad 7** only; flippers **←→ / A D / Num 1·3**; HUD Tilt pill; dock without Tilt; legend + in-game table updated.
-
-**2026-07-10**
-
-- **`update .mds`:** Controls table = PC/Mobile parity; **T** / Theme for packs; legend matches game.
-
-**2026-07-10**
-
-- Control parity PC/mobile; dock always on; legend 3-column table; **T** / Theme button for packs.
-
-**2026-07-10**
-
-- **`update .mds`:** launch meter holds at max; upper-left stuck-ball geometry/unstick; local serve trailing-slash + offline notes.
-
-**2026-07-10**
-
-- **`update .mds`:** Controls-first README complete (desktop + mobile legend + game-over pinball restart).
-
-**2026-07-10**
-
-- Mobile game over: **Press here to Restart** with spinning/shining pinball control.
-
-**2026-07-10**
-
-- Right-side **legend slide-drawer** (**L**, swipe RTL, **[X] Close**). Mobile dock: L/R Flip, Launch, Tilt, Theme + green swipe hint. Controls section at top of README.
-
-**2026-07-10**
-
-- `update .mds`: device-aware touch/desktop controls documented; hub batch via `start-all.ps1`.
-
-**2026-07-10**
-
-- Portable `SCRATCH` default (`os.tmpdir()/pinball-scratch`) in test/verify scripts for public repo hygiene.
-
-**2026-07-10**
-
-- Doc sync: Phases 0–6 ship, `safeDrawImage` overloads, tests, theme packs, play validation notes.
