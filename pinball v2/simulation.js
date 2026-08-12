@@ -1,5 +1,5 @@
 /**
- * Pure pinball simulation — no DOM, no rendering.
+ * Pure pinball simulation â€” no DOM, no rendering.
  * Loadable in browser (window.PinballSim) and Node (module.exports).
  */
 (function (root) {
@@ -15,13 +15,13 @@
   var FLIPPER_LEFT_PIVOT_X = Math.round(4.5 / 20.25 * TABLE_W);
   var FLIPPER_RIGHT_PIVOT_X = Math.round(11.625 / 20.25 * TABLE_W);
   var FLIPPER_PIVOT_SPACING = FLIPPER_RIGHT_PIVOT_X - FLIPPER_LEFT_PIVOT_X;
-  var FLIPPER_LEN = Math.round(2.75 / 20.25 * TABLE_W);
+  var FLIPPER_LEN = Math.round(2.5 / 20.25 * TABLE_W); // shorter bats: ~12px wider rest tip gap
   var FLIPPER_W = 14;
   var FLIPPER_PIVOT_R = 16;
   var FLIPPER_SPEED = 14;
   /** Powered bat slap only while |omega| exceeds this (rad/s). */
   var FLIPPER_OMEGA_DEAD = 2;
-  /** Scales tip velocity → ball Δv while sweeping. */
+  /** Scales tip velocity â†’ ball Î”v while sweeping. */
   var FLIPPER_IMPULSE_GAIN = 0.85;
   /** Cap on powered add-speed from a flipper slap (px/s). */
   var FLIPPER_MAX_ADD_SPEED = 1150;
@@ -31,7 +31,7 @@
   var FLIPPER_RESTITUTION_PASSIVE = 1.05;
   var DECK_DRAIN_SPEED = 220;
   var WALL_RESTITUTION = 0.72;
-  /** Habitrail/guide bounce — livelier than cabinet rails so channels do not crawl. */
+  /** Habitrail/guide bounce â€” livelier than cabinet rails so channels do not crawl. */
   var HABITRAIL_RESTITUTION = 0.92;
   var GUIDE_RESTITUTION = 0.88;
   /** Min along-rail speed (px/s) while ball is inside a habitrail channel. */
@@ -50,7 +50,7 @@
   var MAX_LAUNCH_POWER = 1400;
   var MIN_LAUNCH_POWER = 200;
   var LAUNCH_CHARGE_RATE = 1.1;
-  /** Meter→power ease exponent (1 = linear). */
+  /** Meterâ†’power ease exponent (1 = linear). */
   var LAUNCH_METER_EASE = 1.25;
   /** Frames of plunger follow thrust while still in shooter lane. */
   var PLUNGER_FOLLOW_FRAMES = 3;
@@ -91,7 +91,7 @@
   var MAX_MULTIPLIER = 5;
   var SKILL_SHOT_CENTER_BONUS = 2500;
   var SKILL_SHOT_NEAR_BONUS = 1000;
-  /** @deprecated alias — center grade (tests / exports) */
+  /** @deprecated alias â€” center grade (tests / exports) */
   var SKILL_SHOT_BONUS = SKILL_SHOT_CENTER_BONUS;
   var LAUNCH_DASH_FULL_BONUS = 800;
   var LAUNCH_DASH_HOLD_SEC = 1.5;
@@ -207,7 +207,7 @@
     ];
   }
 
-  /** Horizontal drop bank mid-table — complete all → rush mode */
+  /** Horizontal drop bank mid-table â€” complete all â†’ rush mode */
   function createDropTargets() {
     var drops = [];
     var baseX = 188;
@@ -325,14 +325,14 @@
       { id: 'lane-l', x1: 72, y1: 180, x2: 72, y2: 280, width: 18, score: 500, lit: false, occupied: false },
       // Playfield side of launch wall (not inside shooter lane)
       { id: 'lane-r', x1: LAUNCH_LANE_LEFT - 36, y1: 260, x2: LAUNCH_LANE_LEFT - 36, y2: 360, width: 18, score: 500, lit: false, occupied: false },
-      // Mid-field rollover — shot path without bumper party
+      // Mid-field rollover â€” shot path without bumper party
       { id: 'lane-mid', x1: 195, y1: 412, x2: 285, y2: 412, width: 16, score: 600, lit: false, occupied: false }
     ];
   }
 
   /**
    * Vertical dash lights centered in the launch/shooter lane.
-   * Light when the ball travels over each segment (bottom → top on launch).
+   * Light when the ball travels over each segment (bottom â†’ top on launch).
    * Index 0 = nearest plunger; last = nearest wireform.
    */
   function createLaunchLaneDashes() {
@@ -366,14 +366,14 @@
   }
 
   function createKickers() {
-    // Above flipper line, clear of rest pose — feed cross-shots without trapping bats
+    // Above flipper line, clear of rest pose â€” feed cross-shots without trapping bats
     return [
       { id: 'kicker-l', x: 148, y: 575, radius: 14, score: 750, color: '#ff8844' },
       { id: 'kicker-r', x: 332, y: 575, radius: 14, score: 750, color: '#44ffaa' }
     ];
   }
 
-  /** Small mid-field posts — deflect without recreating bumper chaos. */
+  /** Small mid-field posts â€” deflect without recreating bumper chaos. */
   function createPosts() {
     return [
       { id: 'post-ml', x: 175, y: 385, radius: 9, score: 200, color: '#88ccee', flash: 0 },
@@ -384,7 +384,7 @@
     ];
   }
 
-  /** Ellipse arc as wall segments (canvas y+ down). a0→a1 radians. */
+  /** Ellipse arc as wall segments (canvas y+ down). a0â†’a1 radians. */
   function ellipseArcSegments(cx, cy, rx, ry, a0, a1, n, kind) {
     var segs = [];
     var i;
@@ -419,7 +419,7 @@
   }
 
   function createSpinner() {
-    // Left under arch — clear of apex bumper (240,198) and left habitrail exit (~150,136)
+    // Left under arch â€” clear of apex bumper (240,198) and left habitrail exit (~150,136)
     return { x: 168, y: 124, radius: 16, angle: 0, score: 200, spinVel: 0, hitCooldown: 0 };
   }
 
@@ -430,8 +430,8 @@
     var rt = flipperTip(rightRest);
     return {
       // Slightly greedier drains (P1 outlane tension)
-      centerLeft: lt.x + 4,
-      centerRight: rt.x - 4,
+      centerLeft: lt.x + 2,
+      centerRight: rt.x - 2,
       leftOutlaneRight: FLIPPER_INLANE_X + 8,
       rightOutlaneLeft: FLIPPER_RIGHT_PIVOT_X + 12,
       leftOutlaneLeft: 40,
@@ -449,14 +449,14 @@
     var rightRest = createFlipper('right');
     var lt = flipperTip(leftRest);
     var rt = flipperTip(rightRest);
-    var drainL = lt.x + 6;
-    var drainR = rt.x - 6;
+    var drainL = lt.x + 4;
+    var drainR = rt.x - 4;
     var rightInlaneX = FLIPPER_RIGHT_PIVOT_X + 18;
     var chuteBottom = TABLE_H - 16;
     var walls = [];
 
-    // Rounded top arch (ball rides underside — green path annotation)
-    // Ellipse upper half: PI → 2PI (left → top center → right)
+    // Rounded top arch (ball rides underside â€” green path annotation)
+    // Ellipse upper half: PI â†’ 2PI (left â†’ top center â†’ right)
     var archCx = TABLE_W * 0.5;
     var archCy = 100;
     var archRx = 200;
@@ -482,7 +482,7 @@
       ellipseArcSegments(LAUNCH_LANE_LEFT - 8, 118, 42, 38, -Math.PI * 0.15, Math.PI * 0.55, 8, 'rail')
     );
 
-    // Tiny deck stubs under pivots only — longer stubs shelved balls in the inlanes
+    // Tiny deck stubs under pivots only â€” longer stubs shelved balls in the inlanes
     var leftPivot = FLIPPER_LEFT_PIVOT_X;
     var rightPivot = FLIPPER_RIGHT_PIVOT_X;
     walls.push({
@@ -703,12 +703,12 @@
     state.skillShotBannerLife = 2.2;
     if (gradeInfo.grade === 'center') {
       state.multiplier = Math.min(MAX_MULTIPLIER, state.multiplier + 1);
-      // Explicit arm: CENTER skill shot only — one timed save, then drain sticks
+      // Explicit arm: CENTER skill shot only â€” one timed save, then drain sticks
       state.ballSaveArmed = true;
       state.ballSaveUsed = false;
       state.ballSaveTimer = BALL_SAVE_DURATION;
     }
-    // Near grade: points/banner only — does NOT arm ball-save
+    // Near grade: points/banner only â€” does NOT arm ball-save
     return true;
   }
 
@@ -1164,7 +1164,7 @@
     var jackPts = state.jackpotLit ? 2500 : 0;
     var bankPts = Math.floor(state.bonusBank || 0);
     var steps = [];
-    if (multPts > 0) steps.push({ label: 'MULT ×' + state.multiplier, points: multPts });
+    if (multPts > 0) steps.push({ label: 'MULT Ã—' + state.multiplier, points: multPts });
     if (dashPts > 0) steps.push({ label: 'LANE DASH', points: dashPts });
     if (jackPts > 0) steps.push({ label: 'JACKPOT FLAG', points: jackPts });
     steps.push({ label: 'BONUS BANK', points: bankPts });
@@ -1223,8 +1223,8 @@
   }
 
   /**
-   * Light dashes when the ball rolls over them (bottom → top).
-   * After all are on for 3s, reverse top → bottom with a slow pulse-fade off.
+   * Light dashes when the ball rolls over them (bottom â†’ top).
+   * After all are on for 3s, reverse top â†’ bottom with a slow pulse-fade off.
    */
   function updateLaunchLaneDashes(state, dt) {
     var dashes = state.launchLaneDashes;
@@ -1236,7 +1236,7 @@
       if (dashes[i].flash > 0) dashes[i].flash = Math.max(0, dashes[i].flash - dt);
     }
 
-    // Reverse extinguish: top (last lit) → plunger (first), staggered pulse-fade
+    // Reverse extinguish: top (last lit) â†’ plunger (first), staggered pulse-fade
     if (state.launchDashReversing) {
       var ri = state.launchDashReverseI;
       if (ri < 0) {
@@ -1437,7 +1437,7 @@
 
     state.walls.forEach(function (wall) {
       if (!state.exitedLaunchLane && (wall.wireform || wall.kind === 'lane')) return;
-      // Soft short deck stubs — less bounce so they don't steal lower play
+      // Soft short deck stubs â€” less bounce so they don't steal lower play
       var rest = WALL_RESTITUTION;
       if (wall.kind === 'deck') rest = WALL_RESTITUTION * 0.55;
       else if (wall.kind === 'habitrail') rest = HABITRAIL_RESTITUTION;
@@ -1563,7 +1563,7 @@
 
   /**
    * Free ball wedged in upper rail corners / wireform entry pocket.
-   * User-reported hang: top-right under arch (wireform × top rail × lane wall).
+   * User-reported hang: top-right under arch (wireform Ã— top rail Ã— lane wall).
    */
   function unstickFromCorners(state) {
     var ball = state.ball;
@@ -1584,7 +1584,7 @@
       return;
     }
 
-    // Top-right outer corner (outer right rail, above play — rare)
+    // Top-right outer corner (outer right rail, above play â€” rare)
     var nearOuterRight = ball.x + r > TABLE_W - 36 - 10;
     if (nearOuterRight && ball.y < 140 && speed <= 70) {
       ball.x = Math.min(ball.x, LAUNCH_LANE_LEFT - r - 12);
@@ -1593,7 +1593,7 @@
       return;
     }
 
-    // Playfield side of launch lane wall (wide band — old 4px band was too thin)
+    // Playfield side of launch lane wall (wide band â€” old 4px band was too thin)
     var nearLaneWall =
       ball.x + r > LAUNCH_LANE_LEFT - 48 &&
       ball.x < LAUNCH_LANE_LEFT + r + 2;
@@ -1604,8 +1604,8 @@
       return;
     }
 
-    // Wireform × top-rail wedge (skill-shot entry pocket — annotated stuck spot)
-    // Wire: (LAUNCH_LANE_LEFT, LAUNCH_WIRE_Y1) → (LAUNCH_WIRE_X2, LAUNCH_WIRE_Y2)
+    // Wireform Ã— top-rail wedge (skill-shot entry pocket â€” annotated stuck spot)
+    // Wire: (LAUNCH_LANE_LEFT, LAUNCH_WIRE_Y1) â†’ (LAUNCH_WIRE_X2, LAUNCH_WIRE_Y2)
     var wx1 = WIRE_FORM_X1;
     var wy1 = WIRE_FORM_Y1;
     var wx2 = WIRE_FORM_X2;
@@ -1899,7 +1899,24 @@
     var zones = getDrainBounds(state);
     // Already deep in a drain slot — let checkDrain finish the job
     if (ball.y > FLIPPER_ROW_Y + 24 && isBallInDrainZone(ball, zones)) return;
-    var centerX = (zones.centerLeft + zones.centerRight) * 0.5;
+
+    var leftFlip = null;
+    var rightFlip = null;
+    var fi;
+    for (fi = 0; fi < state.flippers.length; fi++) {
+      if (state.flippers[fi].side === 'left') leftFlip = state.flippers[fi];
+      if (state.flippers[fi].side === 'right') rightFlip = state.flippers[fi];
+    }
+    // Between rest tips: do not peel — kill loft so gravity takes the center hole
+    if (leftFlip && rightFlip) {
+      var ltGap = flipperTip(leftFlip);
+      var rtGap = flipperTip(rightFlip);
+      if (ball.x > ltGap.x + 1 && ball.x < rtGap.x - 1) {
+        if (ball.vy < 0) ball.vy = Math.abs(ball.vy) * 0.2;
+        if (ball.vy < 70) ball.vy = 70;
+        return;
+      }
+    }
 
     state.flippers.forEach(function (flipper) {
       var tip = flipperTip(flipper);
@@ -1917,17 +1934,19 @@
       var cy = flipper.pivotY + uy * t;
       var dist = vecLen(ball.x - cx, ball.y - cy);
       var hitDist = ball.radius + flipper.width * 0.5;
+      var intoGap = flipper.side === 'left' ? 1 : -1;
 
       if (dist < hitDist + 3 && speed < 110) {
-        // Peel into the center hole; prefer x over huge vy so we don't loft
-        ball.vx += (centerX - ball.x) * 1.1;
-        if (ball.y >= flipper.pivotY - 4) {
-          ball.vy = Math.max(ball.vy, 90);
+        // Tip crawl: drop into the hole rather than oscillating forever on the bat face
+        if (t > segLen * 0.5 && Math.abs(ball.x - tip.x) < 28) {
+          ball.x = tip.x + intoGap * (ball.radius + 4);
+          ball.vx = intoGap * Math.max(55, Math.abs(ball.vx) * 0.35);
+          ball.vy = Math.max(Math.abs(ball.vy), 120);
+          return;
         }
-        // If parked on the tip, snap slightly into the drain gap
-        if (t > segLen * 0.55 && Math.abs(ball.x - tip.x) < 22) {
-          ball.x += (centerX - ball.x) * 0.2;
-        }
+        // Mid-bat crawl: decisive slide toward tip/gap (no loft assist)
+        ball.vx = intoGap * Math.max(90, Math.abs(ball.vx));
+        if (ball.y >= flipper.pivotY - 4 && ball.vy < 70) ball.vy = 70;
       }
     });
   }
@@ -2006,7 +2025,7 @@
     var ball = state.ball;
     var zones = getDrainBounds(state);
     var r = ball.radius;
-    // Return assist ABOVE flipper line only — never shelf-boost a true drain
+    // Return assist ABOVE flipper line only â€” never shelf-boost a true drain
     if (ball.y >= FLIPPER_ROW_Y - 8) return;
     if (
       ball.x + r < zones.leftOutlaneRight + 14 &&
@@ -2057,7 +2076,7 @@
     var nearFlipRow =
       ball.y > FLIPPER_ROW_Y - ball.radius - 8 && ball.y < FLIPPER_ROW_Y + ball.radius + 6;
     // On/near flipper row in an inlane: slide horizontally into the center hole.
-    // Never force +vy here — that fought deck bounce and pinned the ball.
+    // Never force +vy here â€” that fought deck bounce and pinned the ball.
     if (nearFlipRow && (inLeftInlane || inRightInlane) && speed < 160) {
       ball.vx += (centerX - ball.x) * 0.55;
       return;
@@ -2099,7 +2118,7 @@
         ball.vy = rv.vy;
 
         if (sweeping) {
-          // Contact-point bat velocity (omega × r), tip-weighted.
+          // Contact-point bat velocity (omega Ã— r), tip-weighted.
           var tipFrac = Math.pow(t / segLen, FLIPPER_TIP_POWER);
           var contactVx = -Math.sin(flipper.angle) * flipper.omega * t;
           var contactVy = Math.cos(flipper.angle) * flipper.omega * t;
@@ -2130,7 +2149,7 @@
     speed = ballSpeed(ball);
     if (speed > MAX_BALL_SPEED) {
       var soft = MAX_BALL_SPEED / speed;
-      // Soft blend rather than a hard wall — still clamps runaway speeds.
+      // Soft blend rather than a hard wall â€” still clamps runaway speeds.
       var blend = 0.55 + 0.45 * soft;
       ball.vx *= blend;
       ball.vy *= blend;
@@ -2228,7 +2247,7 @@
 
   function chargeLaunch(state, dt) {
     if (state.launchCharging && !state.ball.inPlay) {
-      // Hold at full power (1.0). Do NOT wrap — wrapping made the red max meter
+      // Hold at full power (1.0). Do NOT wrap â€” wrapping made the red max meter
       // drop to ~0 and launch weakly right when the bar looked full.
       state.launchPower = Math.min(1, state.launchPower + dt * LAUNCH_CHARGE_RATE);
     }
@@ -2259,7 +2278,7 @@
     state.ball.inPlay = true;
     state.ball.x = LAUNCH_LANE_X;
     state.ball.y = PLUNGER_REST_Y;
-    // Tiny lateral English from charge — aim skill without shoving into flippers.
+    // Tiny lateral English from charge â€” aim skill without shoving into flippers.
     state.ball.vx = 5 + (chargeU - 0.5) * 2 * LAUNCH_ENGLISH_MAX;
     state.ball.vy = -p;
     state.exitedLaunchLane = false;

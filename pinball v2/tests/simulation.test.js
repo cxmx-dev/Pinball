@@ -164,7 +164,7 @@ function slapSpeedAtFraction(frac) {
   var leftTip = sim.flipperTip(left);
   var rightTip = sim.flipperTip(right);
   var tipGap = rightTip.x - leftTip.x;
-  assert(tipGap > 35 && tipGap < 80, 'flipper tips leave a playable center gap');
+  assert(tipGap > 50 && tipGap < 90, 'flipper tips leave a fair, playable center gap');
   assert(left.pivotX < 140, 'left flipper sits near left inlane without a wide dead zone');
   console.log('PASS: flipper spacing matches standard ratio (spacing=' + spacing + ' tipGap=' + tipGap.toFixed(1) + ')');
 })();
@@ -527,6 +527,37 @@ function slapSpeedAtFraction(frac) {
     'flipper bat unsticks into drain or playfield'
   );
   console.log('PASS: flipper bat unsticks toward drain');
+})();
+(function testTipCrawlFallsThroughCenterGap() {
+  var state = fresh();
+  state.ballsRemaining = 2;
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.ballSaveTimer = 0;
+  var left = state.flippers.find(function (f) { return f.side === 'left'; });
+  var tip = sim.flipperTip(left);
+  // Parked on left tip — must fall into center hole, not loft forever
+  state.ball.x = tip.x;
+  state.ball.y = tip.y - state.ball.radius - 2;
+  state.ball.vx = 0;
+  state.ball.vy = 10;
+  var minY = state.ball.y;
+  var lofted = false;
+  for (var i = 0; i < 240; i++) {
+    sim.tick(state, 1 / 60);
+    if (state.ball && state.ball.inPlay) {
+      minY = Math.min(minY, state.ball.y);
+      if (i > 10 && state.ball.y < sim.FLIPPER_ROW_Y - 40) lofted = true;
+    }
+    if (!state.ball.inPlay || state.ballsRemaining < 2 || state.phase === 'eob_bonus') break;
+  }
+  assert(!lofted, 'tip crawl must not loft back above flippers');
+  assert(
+    state.ballsRemaining === 1 || state.phase === 'eob_bonus' || !state.ball.inPlay,
+    'tip crawl should drain through center gap'
+  );
+  console.log('PASS: tip crawl falls through center gap (minY=' + minY.toFixed(1) + ')');
 })();
 
 (function testBottomShooterApronUsesFlipperPhysics() {
