@@ -82,6 +82,23 @@
   var lastProcessedHitKey = null;
   var ready = false;
 
+  function getQualityHints() {
+    var D = typeof root !== 'undefined' ? root.DeviceProfile : null;
+    if (typeof window !== 'undefined' && window.DeviceProfile) D = window.DeviceProfile;
+    if (D && typeof D.quality === 'function') {
+      try { return D.quality(); } catch (e) { /* ignore */ }
+    }
+    if (D && typeof D.get === 'function') {
+      try {
+        var p = D.get();
+        if (p && (p.isPhone || (p.isTablet && p.coarsePointer))) {
+          return { tier: 'phone', ambient: false, maxSparks: 8, sparkScale: 0.85 };
+        }
+      } catch (e2) { /* ignore */ }
+    }
+    return { tier: 'desktop', ambient: true, maxSparks: 24, sparkScale: 1 };
+  }
+
   function theme() {
     return themesIndex.themes[currentThemeId] || themesIndex.themes[themesIndex.defaultTheme];
   }
@@ -241,11 +258,13 @@
       age: 0,
       frameDuration: 1 / (sp.fps || 18),
       frames: sp.frames || 6,
-      scale: (sp.scale || 1) * (scaleMul || 1),
+      scale: (sp.scale || 1) * (scaleMul || 1) * (getQualityHints().sparkScale || 1),
       active: true
     });
-    if (sparkBursts.length > 24) {
-      sparkBursts.splice(0, sparkBursts.length - 24);
+    var qh = getQualityHints();
+    var maxSp = (qh.maxSparks != null) ? qh.maxSparks : 24;
+    if (sparkBursts.length > maxSp) {
+      sparkBursts.splice(0, sparkBursts.length - maxSp);
     }
     return sparkBursts[sparkBursts.length - 1];
   }
@@ -316,14 +335,18 @@
     if (!drew) return false;
 
     // Optional ambient video underlay (when present + ready)
-    if (ambientVideo && isVideoReady(ambientVideo)) {
+    if (getQualityHints().ambient !== false && ambientVideo && isVideoReady(ambientVideo)) {
       try {
         ctx.save();
         ctx.globalAlpha = 0.28;
         ctx.drawImage(ambientVideo, 0, 0, tableW, tableH);
         ctx.restore();
       } catch (e) { /* ignore */ }
-    } else if (t.playfield.ambientFrames && t.playfield.ambientFrames.length) {
+    } else if (
+      getQualityHints().ambient !== false &&
+      t.playfield.ambientFrames &&
+      t.playfield.ambientFrames.length
+    ) {
       var fps = t.playfield.ambientFps || 6;
       var fi = Math.floor(ambientTime * fps) % t.playfield.ambientFrames.length;
       var frameImg = images[t.playfield.ambientFrames[fi]];

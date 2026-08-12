@@ -98,13 +98,17 @@
     // (fitCanvas must honor this on PC too — see device.js touchChrome, not touch-only)
     var chrome = 150;
     if (Device && Device.fitCanvas) {
-      // Desktop/tablet: grow past native 520x980 so the table fills available viewport
-      // (was capped at 1x CSS — looked tiny on wide monitors). Still shrinks on short windows.
-      Device.fitCanvas(canvas, {
-        touchChrome: chrome,
-        pad: 8,
-        allowUpscale: true
-      });
+      // Desktop: allow CSS grow past native 520x980 to fill the viewport.
+      // Phone/tablet: modest CSS upscale cap (maxScale ~1.25) so Android GPUs
+      // are not asked to composite huge CSS-scaled bitmaps every frame.
+      var fitOpts = { touchChrome: chrome, pad: 8 };
+      var q = Device.quality ? Device.quality() : null;
+      if (q && q.tier === 'phone') {
+        fitOpts.maxScale = q.maxScale != null ? q.maxScale : 1.25;
+      } else {
+        fitOpts.allowUpscale = true;
+      }
+      Device.fitCanvas(canvas, fitOpts);
     } else {
       canvas.style.width = targetW + 'px';
       canvas.style.height = targetH + 'px';

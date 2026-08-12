@@ -8,6 +8,67 @@
   var glowPulse = 0;
   var trail = [];
   var playfieldGlow = 0;
+  /** Cached per render() call — phone tier drops shadows / tube overdraw. */
+  var frameQuality = null;
+
+  function defaultQuality(tier) {
+    if (tier === 'phone') {
+      return {
+        tier: 'phone',
+        shadows: false,
+        ambient: false,
+        glassSheen: false,
+        tubeDetail: 'simple',
+        wallGlowPass: false,
+        maxParticles: 80,
+        particleShadow: false,
+        trailLen: 6
+      };
+    }
+    return {
+      tier: 'desktop',
+      shadows: true,
+      ambient: true,
+      glassSheen: true,
+      tubeDetail: 'full',
+      wallGlowPass: true,
+      maxParticles: 320,
+      particleShadow: true,
+      trailLen: 16
+    };
+  }
+
+  function getQuality() {
+    if (frameQuality) return frameQuality;
+    var D = root.DeviceProfile;
+    if (D && typeof D.quality === 'function') {
+      try { return D.quality(); } catch (e) { /* ignore */ }
+    }
+    if (D && typeof D.get === 'function') {
+      try {
+        var p = D.get();
+        if (p && (p.isPhone || (p.isTablet && p.coarsePointer))) {
+          return defaultQuality('phone');
+        }
+      } catch (e2) { /* ignore */ }
+    }
+    return defaultQuality('desktop');
+  }
+
+  function q() {
+    return frameQuality || getQuality();
+  }
+
+  /** No-op shadow on phone — shadowBlur is very expensive on Android GPU. */
+  function applyShadow(ctx, color, blur) {
+    if (!q().shadows) {
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
+      return;
+    }
+    ctx.shadowColor = color;
+    ctx.shadowBlur = blur;
+  }
 
   function addParticles(x, y, color, count, speedMul) {
     speedMul = speedMul || 1;
@@ -25,8 +86,9 @@
         size: 2 + Math.random() * 5
       });
     }
-    if (particles.length > 320) {
-      particles.splice(0, particles.length - 320);
+    var pMax = q().maxParticles || 320;
+    if (particles.length > pMax) {
+      particles.splice(0, particles.length - pMax);
     }
   }
 
@@ -102,8 +164,7 @@
     ctx.lineWidth = 3;
     ctx.strokeRect(8, 8, w - 16, h - 16);
 
-    ctx.shadowColor = 'rgba(255,180,60,0.4)';
-    ctx.shadowBlur = 24;
+    applyShadow(ctx, 'rgba(255,180,60,0.4)', 24);
     ctx.strokeStyle = 'rgba(255,200,100,0.25)';
     ctx.lineWidth = 1;
     ctx.strokeRect(14, 14, w - 28, h - 28);
@@ -223,10 +284,13 @@
       if (intensity > 0.02) {
         var a = intensity;
         ctx.globalAlpha = a;
-        ctx.shadowColor = hot
-          ? 'rgba(255,240,140,' + (0.5 + 0.5 * a) + ')'
-          : 'rgba(255,200,50,' + (0.25 + 0.55 * a) + ')';
-        ctx.shadowBlur = (hot ? 18 : 12) * (0.4 + 0.6 * a);
+        applyShadow(
+          ctx,
+          hot
+            ? 'rgba(255,240,140,' + (0.5 + 0.5 * a) + ')'
+            : 'rgba(255,200,50,' + (0.25 + 0.55 * a) + ')',
+          (hot ? 18 : 12) * (0.4 + 0.6 * a)
+        );
         var g = ctx.createLinearGradient(d.x, y0, d.x, y0 + h);
         g.addColorStop(0, hot ? '#fff6a0' : '#ffe066');
         g.addColorStop(0.45, '#ffcc22');
@@ -244,6 +308,7 @@
   }
 
   function drawGlassSheen(ctx, tw, th) {
+    if (!q().glassSheen) return;
     var sheen = ctx.createLinearGradient(0, 60, tw * 0.65, th * 0.55);
     sheen.addColorStop(0, 'rgba(255,255,255,0.07)');
     sheen.addColorStop(0.35, 'rgba(200,230,255,0.03)');
@@ -269,6 +334,26 @@
     ctx.save();
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
+    // Phone: 2 strokes (soft under + core) — full tube is 5 strokes + shadowBlur per segment.
+    if (q().tubeDetail === 'simple') {
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = glow;
+      ctx.lineWidth = w + 1.5;
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = core;
+      ctx.lineWidth = w;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
     ctx.strokeStyle = shadow;
     ctx.lineWidth = w + 4;
     ctx.shadowBlur = 0;
@@ -319,21 +404,23 @@
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    // Glow pass for rounded top arch / habitrail segments
-    state.walls.forEach(function (wall) {
-      var kind = wall.kind || 'rail';
-      if (kind === 'lane' || kind === 'chute') return;
-      if (wall.arc || kind === 'rail' || kind === 'habitrail') {
-        ctx.strokeStyle = kind === 'habitrail' ? 'rgba(255, 170, 60, 0.20)' : 'rgba(100, 200, 255, 0.22)';
-        ctx.lineWidth = 10;
-        ctx.shadowColor = kind === 'habitrail' ? 'rgba(255, 160, 40, 0.35)' : 'rgba(0, 220, 255, 0.35)';
-        ctx.shadowBlur = 12;
-        ctx.beginPath();
-        ctx.moveTo(wall.x1, wall.y1);
-        ctx.lineTo(wall.x2, wall.y2);
-        ctx.stroke();
-      }
-    });
+    // Glow pass for rounded top arch / habitrail segments (desktop only — shadowBlur overdraw)
+    if (q().wallGlowPass) {
+      state.walls.forEach(function (wall) {
+        var kind = wall.kind || 'rail';
+        if (kind === 'lane' || kind === 'chute') return;
+        if (wall.arc || kind === 'rail' || kind === 'habitrail') {
+          ctx.strokeStyle = kind === 'habitrail' ? 'rgba(255, 170, 60, 0.20)' : 'rgba(100, 200, 255, 0.22)';
+          ctx.lineWidth = 10;
+          ctx.shadowColor = kind === 'habitrail' ? 'rgba(255, 160, 40, 0.35)' : 'rgba(0, 220, 255, 0.35)';
+          ctx.shadowBlur = 12;
+          ctx.beginPath();
+          ctx.moveTo(wall.x1, wall.y1);
+          ctx.lineTo(wall.x2, wall.y2);
+          ctx.stroke();
+        }
+      });
+    }
     state.walls.forEach(function (wall) {
       var kind = wall.kind || 'rail';
       if (kind === 'lane' || kind === 'chute') return;
@@ -367,8 +454,7 @@
       } else {
         ctx.strokeStyle = wall.arc ? 'rgba(160, 230, 255, 0.95)' : 'rgba(180,200,230,0.85)';
         ctx.lineWidth = wall.arc ? 6 : 5;
-        ctx.shadowColor = 'rgba(100,150,255,0.5)';
-        ctx.shadowBlur = 8;
+        applyShadow(ctx, 'rgba(100,150,255,0.5)', 8);
       }
       ctx.beginPath();
       ctx.moveTo(wall.x1, wall.y1);
@@ -387,8 +473,7 @@
       ctx.strokeStyle = rubberGrad;
       ctx.lineWidth = 10;
       ctx.lineCap = 'round';
-      ctx.shadowColor = 'rgba(255,80,100,0.5)';
-      ctx.shadowBlur = 10;
+      applyShadow(ctx, 'rgba(255,80,100,0.5)', 10);
       ctx.beginPath();
       ctx.moveTo(sling.x1, sling.y1);
       ctx.lineTo(sling.x2, sling.y2);
@@ -406,8 +491,7 @@
     var cap = state.sideRoutes.leftCaptive;
     if (cap) {
       ctx.save();
-      ctx.shadowColor = 'rgba(120, 200, 255, 0.55)';
-      ctx.shadowBlur = 10 + Math.sin(pulse * 2) * 3;
+      applyShadow(ctx, 'rgba(120, 200, 255, 0.55)', 10 + Math.sin(pulse * 2) * 3);
       var g = ctx.createRadialGradient(cap.x - 3, cap.y - 3, 2, cap.x, cap.y, cap.radius);
       g.addColorStop(0, '#c8f0ff');
       g.addColorStop(0.5, '#48a0e0');
@@ -475,8 +559,7 @@
         ctx.fillRect(drop.x - halfW, drop.y - halfH * 0.4, drop.w, halfH * 0.7);
       } else {
         var hot = drop.flash > 0;
-        ctx.shadowColor = hot ? 'rgba(255, 220, 80, 0.9)' : 'rgba(255, 120, 60, 0.5)';
-        ctx.shadowBlur = hot ? 14 : 8;
+        applyShadow(ctx, hot ? 'rgba(255, 220, 80, 0.9)' : 'rgba(255, 120, 60, 0.5)', hot ? 14 : 8);
         var tg = ctx.createLinearGradient(drop.x, drop.y - halfH, drop.x, drop.y + halfH);
         tg.addColorStop(0, '#ffcc66');
         tg.addColorStop(1, '#cc5520');
@@ -495,8 +578,7 @@
       ctx.save();
       var lit = target.lit;
       var flash = target.flash > 0 ? 1 : 0;
-      ctx.shadowColor = lit ? 'rgba(255,200,80,0.9)' : 'rgba(100,150,200,0.4)';
-      ctx.shadowBlur = lit ? 14 + flash * 10 : 6;
+      applyShadow(ctx, lit ? 'rgba(255,200,80,0.9)' : 'rgba(100,150,200,0.4)', lit ? 14 + flash * 10 : 6);
       var tg = ctx.createLinearGradient(target.x - target.w, target.y, target.x + target.w, target.y);
       if (lit) {
         tg.addColorStop(0, '#ffee88');
@@ -521,8 +603,7 @@
       ctx.strokeStyle = lane.lit ? 'rgba(255,220,80,0.85)' : 'rgba(80,120,160,0.4)';
       ctx.lineWidth = lane.width;
       ctx.lineCap = 'round';
-      ctx.shadowColor = lane.lit ? 'rgba(255,200,60,0.6)' : 'transparent';
-      ctx.shadowBlur = lane.lit ? 12 : 0;
+      applyShadow(ctx, lane.lit ? 'rgba(255,200,60,0.6)' : 'transparent', lane.lit ? 12 : 0);
       ctx.beginPath();
       ctx.moveTo(lane.x1, lane.y1);
       ctx.lineTo(lane.x2, lane.y2);
@@ -537,8 +618,7 @@
       var hot = post.flash > 0;
       var glow = 0.5 + 0.5 * Math.sin(pulse * 3 + idx);
       ctx.save();
-      ctx.shadowColor = post.color || "rgba(160,220,255,0.7)";
-      ctx.shadowBlur = (hot ? 16 : 8) + glow * 6;
+      applyShadow(ctx, post.color || "rgba(160,220,255,0.7)", (hot ? 16 : 8) + glow * 6);
       var g = ctx.createRadialGradient(post.x - 2, post.y - 2, 1, post.x, post.y, post.radius);
       g.addColorStop(0, "#ffffff");
       g.addColorStop(0.45, post.color || "#88ccee");
@@ -569,8 +649,7 @@
         usedSprite = Assets.drawBumperSprite(ctx, bumper, idx);
       }
       if (!usedSprite) {
-        ctx.shadowColor = bumper.color;
-        ctx.shadowBlur = 20 + glow * 15;
+        applyShadow(ctx, bumper.color, 20 + glow * 15);
         var radGrad = ctx.createRadialGradient(
           bumper.x - bumper.radius * 0.3,
           bumper.y - bumper.radius * 0.3,
@@ -590,8 +669,7 @@
       // Always draw readable lit rings (sprites alone read as flat posts)
       var hitVis = Assets && Assets.getBumperHitVisual ? Assets.getBumperHitVisual(idx) : 0;
       var hot = hitVis > 0 || (bumper.hitCooldown && bumper.hitCooldown > 0.1);
-      ctx.shadowColor = bumper.saver ? "rgba(80,255,180,0.85)" : bumper.color;
-      ctx.shadowBlur = hot ? 26 : 12 + glow * 8;
+      applyShadow(ctx, bumper.saver ? "rgba(80,255,180,0.85)" : bumper.color, hot ? 26 : 12 + glow * 8);
       ctx.strokeStyle = bumper.saver
         ? 'rgba(120,255,200,' + (0.75 + glow * 0.2) + ')'
         : 'rgba(255,255,255,' + (0.55 + glow * 0.25) + ')';
@@ -627,8 +705,7 @@
     state.kickers.forEach(function (kicker, idx) {
       var glow = 0.5 + 0.5 * Math.sin(pulse * 4 + idx);
       ctx.save();
-      ctx.shadowColor = kicker.color;
-      ctx.shadowBlur = 12 + glow * 10;
+      applyShadow(ctx, kicker.color, 12 + glow * 10);
       var g = ctx.createRadialGradient(kicker.x, kicker.y, 2, kicker.x, kicker.y, kicker.radius);
       g.addColorStop(0, '#ffffff');
       g.addColorStop(0.5, kicker.color);
@@ -646,8 +723,7 @@
     ctx.save();
     ctx.translate(sp.x, sp.y);
     ctx.rotate(sp.angle);
-    ctx.shadowColor = 'rgba(180,220,255,0.6)';
-    ctx.shadowBlur = 8 + Math.sin(pulse * 5) * 4;
+    applyShadow(ctx, 'rgba(180,220,255,0.6)', 8 + Math.sin(pulse * 5) * 4);
     ctx.strokeStyle = 'rgba(200,220,255,0.85)';
     ctx.lineWidth = 3;
     for (var i = 0; i < 4; i++) {
@@ -694,8 +770,7 @@
       ctx.strokeStyle = grad;
       ctx.lineWidth = flipper.width + 2;
       ctx.lineCap = 'round';
-      ctx.shadowColor = flipper.active ? 'rgba(100,200,255,0.9)' : 'rgba(60,90,120,0.5)';
-      ctx.shadowBlur = flipper.active ? 20 : 8;
+      applyShadow(ctx, flipper.active ? 'rgba(100,200,255,0.9)' : 'rgba(60,90,120,0.5)', flipper.active ? 20 : 8);
       ctx.beginPath();
       ctx.moveTo(flipper.pivotX, flipper.pivotY);
       ctx.lineTo(tip.x, tip.y);
@@ -764,8 +839,7 @@
       grad.addColorStop(0.45, '#ffdd22');
       grad.addColorStop(1, '#ff3344');
       ctx.fillStyle = grad;
-      ctx.shadowColor = state.launchCharging ? 'rgba(255,200,60,0.5)' : 'transparent';
-      ctx.shadowBlur = state.launchCharging ? 10 : 0;
+      applyShadow(ctx, state.launchCharging ? 'rgba(255,200,60,0.5)' : 'transparent', state.launchCharging ? 10 : 0);
       ctx.fillRect(mx + 3, mb - fill, mw - 6, fill);
     }
 
@@ -805,8 +879,7 @@
     ctx.strokeStyle = railGrad;
     ctx.lineWidth = 5;
     ctx.lineCap = 'round';
-    ctx.shadowColor = 'rgba(120,180,255,0.55)';
-    ctx.shadowBlur = 10;
+    applyShadow(ctx, 'rgba(120,180,255,0.55)', 10);
     ctx.beginPath();
     ctx.moveTo(x, 60);
     ctx.lineTo(x, wireY1);
@@ -830,8 +903,7 @@
     ctx.save();
 
     function slot(x, w, color) {
-      ctx.shadowColor = color;
-      ctx.shadowBlur = 8 + glow * 6;
+      applyShadow(ctx, color, 8 + glow * 6);
       ctx.fillStyle = 'rgba(0,0,0,0.9)';
       ctx.fillRect(x, y, w, h);
       ctx.fillStyle = color;
@@ -855,7 +927,8 @@
     var speed = Math.sqrt(state.ball.vx * state.ball.vx + state.ball.vy * state.ball.vy);
 
     trail.push({ x: bx, y: by, life: 0.15 });
-    if (trail.length > 16) trail.shift();
+    var tLen = q().trailLen || 16;
+    if (trail.length > tLen) trail.shift();
 
     ctx.save();
     for (var i = 0; i < trail.length; i++) {
@@ -869,8 +942,7 @@
     }
     trail = trail.filter(function (t) { return t.life > 0; });
 
-    ctx.shadowColor = 'rgba(200,220,255,0.9)';
-    ctx.shadowBlur = 14 + Math.min(speed * 0.02, 12);
+    applyShadow(ctx, 'rgba(200,220,255,0.9)', 14 + Math.min(speed * 0.02, 12));
     var ballGrad = ctx.createRadialGradient(bx - 4, by - 4, 1, bx, by, state.ball.radius);
     ballGrad.addColorStop(0, '#ffffff');
     ballGrad.addColorStop(0.45, '#c8d8f0');
@@ -900,8 +972,7 @@
           : p.type === 'combo' || p.merged
             ? '#aaff88'
             : '#aaffcc';
-    ctx.shadowColor = ctx.fillStyle;
-    ctx.shadowBlur = 12;
+    applyShadow(ctx, ctx.fillStyle, 12);
     ctx.textAlign = 'center';
     ctx.fillText('+' + formatScore(p.points), offset.ox + p.x, offset.oy + p.y - (1.2 - p.life) * 30);
     ctx.restore();
@@ -914,8 +985,7 @@
 
     ctx.font = 'bold 28px Orbitron, monospace';
     ctx.fillStyle = themeAccent();
-    ctx.shadowColor = themeAccent();
-    ctx.shadowBlur = 12;
+    applyShadow(ctx, themeAccent(), 12);
     ctx.textAlign = 'left';
     ctx.fillText(formatScore(state.score), 24, 46);
 
@@ -927,7 +997,7 @@
     ctx.font = 'bold 12px Orbitron, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#ff88cc';
-    ctx.shadowBlur = 8;
+    applyShadow(ctx, '#ff88cc', 8);
     ctx.fillText(state.multiplier + 'X', canvas.width * 0.5, 18);
 
     ctx.font = '10px Orbitron, sans-serif';
@@ -944,21 +1014,20 @@
     ctx.fillStyle = 'rgba(160,180,220,0.45)';
     if (state.skillShotBanner && state.skillShotBannerLife > 0) {
       ctx.fillStyle = state.skillShotGrade === 'near' ? '#ffd088' : '#ffee66';
-      ctx.shadowBlur = 12;
+      applyShadow(ctx, ctx.fillStyle, 12);
       ctx.fillText(state.skillShotBanner, canvas.width - 24, 64);
     } else if (state.skillShotWindow) {
       ctx.fillStyle = '#ffcc44';
-      ctx.shadowBlur = 10;
+      applyShadow(ctx, '#ffcc44', 10);
       ctx.fillText('SKILL SHOT!', canvas.width - 24, 64);
     } else if (state.rushTimer > 0 && state.rushName) {
       var isEmber = /EMBER/i.test(state.rushName);
       ctx.fillStyle = isEmber ? '#ff8844' : '#44e0ff';
-      ctx.shadowColor = isEmber ? '#ff6622' : '#22c8ff';
-      ctx.shadowBlur = 14;
+      applyShadow(ctx, isEmber ? '#ff6622' : '#22c8ff', 14);
       ctx.fillText(state.rushName + ' ' + Math.ceil(state.rushTimer) + 's · ' + (state.rushMult || 2) + 'X', canvas.width - 24, 64);
     } else if (state.ballSaveArmed && state.ball.inPlay && !state.ballSaveUsed) {
       ctx.fillStyle = '#88ffcc';
-      ctx.shadowBlur = 8;
+      applyShadow(ctx, '#88ffcc', 8);
       ctx.fillText('BALL SAVE READY', canvas.width - 24, 64);
     } else {
       ctx.fillText(themeTitle() + ' · T theme', canvas.width - 24, 64);
@@ -968,7 +1037,7 @@
       ctx.textAlign = 'center';
       ctx.font = 'bold 12px Orbitron, sans-serif';
       ctx.fillStyle = '#ffdd22';
-      ctx.shadowBlur = 14;
+      applyShadow(ctx, '#ffdd22', 14);
       ctx.fillText('JACKPOT LIT', canvas.width * 0.5, 86);
     }
 
@@ -976,7 +1045,7 @@
       ctx.textAlign = 'center';
       ctx.font = 'bold 12px Orbitron, sans-serif';
       ctx.fillStyle = state.tiltWarnings > 1 ? '#ff6644' : '#ffaa44';
-      ctx.shadowBlur = 10;
+      applyShadow(ctx, ctx.fillStyle, 10);
       ctx.fillText(
         'TILT WARNING ' + state.tiltWarnings + '/' + root.PinballSim.MAX_TILT_WARNINGS,
         canvas.width * 0.5,
@@ -990,8 +1059,7 @@
         ctx.textAlign = 'center';
         ctx.font = 'bold 22px Orbitron, sans-serif';
         ctx.fillStyle = popup.type === 'tiltout' ? '#ff4466' : '#ffaa55';
-        ctx.shadowBlur = 16;
-        ctx.shadowColor = popup.type === 'tiltout' ? 'rgba(255,60,80,0.9)' : 'rgba(255,180,60,0.8)';
+        applyShadow(ctx, popup.type === 'tiltout' ? 'rgba(255,60,80,0.9)' : 'rgba(255,180,60,0.8)', 16);
         ctx.fillText(popup.type === 'tiltout' ? 'TILT — BALL LOST' : 'TILT!', canvas.width * 0.5, state.tableH * 0.42);
         ctx.font = 'bold 13px Orbitron, sans-serif';
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
@@ -1006,8 +1074,7 @@
       ctx.textAlign = 'center';
       ctx.font = 'bold 36px Orbitron, sans-serif';
       ctx.fillStyle = '#ff6688';
-      ctx.shadowBlur = 24;
-      ctx.shadowColor = 'rgba(255,80,120,0.9)';
+      applyShadow(ctx, 'rgba(255,80,120,0.9)', 24);
       ctx.fillText('GAME OVER', canvas.width / 2, canvas.height * 0.38);
       ctx.font = '18px Orbitron, sans-serif';
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
@@ -1046,7 +1113,8 @@
     var color = colors[state.lastHitType] || '#ffffff';
     var x = offset.ox + (state.lastScorePopup ? state.lastScorePopup.x : state.ball.x);
     var y = offset.oy + (state.lastScorePopup ? state.lastScorePopup.y : state.ball.y);
-    var count = state.lastHitType === 'bumper' ? 18 : state.lastHitType === 'jackpot' ? 28 : 10;
+    var low = q().tier === 'phone';
+    var count = state.lastHitType === 'bumper' ? (low ? 8 : 18) : state.lastHitType === 'jackpot' ? (low ? 12 : 28) : (low ? 5 : 10);
     addParticles(x - offset.ox, y - offset.oy, color, count, state.lastHitType === 'bumper' ? 1.3 : 1);
     playfieldGlow += 0.4;
     state.lastHitType = null;
@@ -1055,6 +1123,7 @@
   function render(canvas, state, dt) {
     var ctx = canvas.getContext('2d');
     var Assets = getAssets();
+    frameQuality = getQuality();
     glowPulse += dt * 2;
     playfieldGlow += dt;
     updateParticles(dt);
@@ -1068,7 +1137,7 @@
     if (state.lastHitBumper != null) {
       var bumper = state.bumpers[state.lastHitBumper];
       if (bumper) {
-        addParticles(bumper.x, bumper.y, bumper.color, 14, 1.2);
+        addParticles(bumper.x, bumper.y, bumper.color, q().tier === 'phone' ? 6 : 14, 1.2);
       }
       // keep lastHitBumper until processHitEvents + particles consumed; clear after
       state.lastHitBumper = null;
@@ -1084,8 +1153,8 @@
       var alpha = p.life / p.maxLife;
       ctx.save();
       ctx.globalAlpha = alpha;
-      ctx.shadowColor = p.color;
-      ctx.shadowBlur = 8;
+      if (q().particleShadow) applyShadow(ctx, p.color, 8);
+      else { ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; }
       ctx.fillStyle = p.color;
       ctx.beginPath();
       ctx.arc(offset.ox + p.x, offset.oy + p.y, p.size * alpha, 0, Math.PI * 2);
@@ -1106,8 +1175,7 @@
         ctx.font = 'bold 22px Orbitron, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillStyle = 'rgba(180,255,230,' + Math.min(1, state.ballSaveFlash / 0.5) + ')';
-        ctx.shadowColor = '#66ffcc';
-        ctx.shadowBlur = 16;
+        applyShadow(ctx, '#66ffcc', 16);
         ctx.fillText('BALL SAVED!', canvas.width * 0.5, canvas.height * 0.38);
       } else if (state.drainFlash > 0) {
         var da = Math.min(1, state.drainFlash / 0.55) * 0.4;
@@ -1125,8 +1193,7 @@
       ctx.textAlign = 'center';
       ctx.font = 'bold 20px Orbitron, sans-serif';
       ctx.fillStyle = '#88e0ff';
-      ctx.shadowColor = '#44a0ff';
-      ctx.shadowBlur = 12;
+      applyShadow(ctx, '#44a0ff', 12);
       ctx.fillText('END OF BALL', canvas.width * 0.5, canvas.height * 0.28);
       ctx.shadowBlur = 0;
       ctx.font = '13px Orbitron, sans-serif';
@@ -1164,9 +1231,10 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
     }
+    frameQuality = null;
   }
 
-  var api = { render: render, addParticles: addParticles, themeTitle: themeTitle };
+  var api = { render: render, addParticles: addParticles, themeTitle: themeTitle, getQuality: getQuality };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;

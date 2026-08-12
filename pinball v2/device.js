@@ -53,7 +53,7 @@
       isTablet ? 'tablet' :
       'desktop';
 
-    return {
+    var base = {
       form: form,
       isPhone: isPhone,
       isTablet: isTablet,
@@ -64,6 +64,49 @@
       narrow: narrow,
       short: short,
       dpr: (global.devicePixelRatio || 1)
+    };
+    base.quality = qualityFromProfile(base);
+    return base;
+  }
+
+  /**
+   * Render/GPU quality hints derived from form factor.
+   * Phone + coarse-touch tablet: cut shadows/tube overdraw + CSS upscale.
+   * Desktop keeps full fidelity (allowUpscale uncapped).
+   */
+  function qualityFromProfile(p) {
+    var phoneLike = !!(p && (p.isPhone || (p.isTablet && p.coarsePointer)));
+    if (phoneLike) {
+      return {
+        tier: 'phone',
+        shadows: false,
+        ambient: false,
+        glassSheen: false,
+        tubeDetail: 'simple',
+        wallGlowPass: false,
+        allowUpscale: false,
+        maxScale: 1.25,
+        maxSparks: 8,
+        maxParticles: 80,
+        particleShadow: false,
+        trailLen: 6,
+        sparkScale: 0.85
+      };
+    }
+    return {
+      tier: 'desktop',
+      shadows: true,
+      ambient: true,
+      glassSheen: true,
+      tubeDetail: 'full',
+      wallGlowPass: true,
+      allowUpscale: true,
+      maxScale: null,
+      maxSparks: 24,
+      maxParticles: 320,
+      particleShadow: true,
+      trailLen: 16,
+      sparkScale: 1
     };
   }
 
@@ -123,6 +166,7 @@
     var scale = Math.min(maxW / iw, maxH / ih, opts.maxScale != null ? opts.maxScale : 1);
     if (opts.allowUpscale) {
       scale = Math.min(maxW / iw, maxH / ih);
+      if (opts.maxScale != null) scale = Math.min(scale, opts.maxScale);
     }
     var cssW = Math.floor(iw * scale);
     var cssH = Math.floor(ih * scale);
@@ -164,7 +208,11 @@
     refresh: refresh,
     onChange: onChange,
     fitCanvas: fitCanvas,
-    detect: detect
+    detect: detect,
+    quality: function () {
+      return (profile && profile.quality) || qualityFromProfile(profile || detect());
+    },
+    qualityFromProfile: qualityFromProfile
   };
 
   global.DeviceProfile = api;
