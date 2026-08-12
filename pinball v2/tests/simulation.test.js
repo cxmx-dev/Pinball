@@ -22,7 +22,8 @@ console.log('=============================');
   var state = fresh();
   state.ball.inPlay = true;
   state.ball.x = 240;
-  state.ball.y = 400;
+  // Clear of mid toys / feeder (240,455) / posts — pace fixture (was 240,400)
+  state.ball.y = 520;
   state.ball.vx = 50;
   state.ball.vy = 0;
   var y0 = state.ball.y;

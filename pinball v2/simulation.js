@@ -5,7 +5,7 @@
 (function (root) {
   'use strict';
 
-  var GRAVITY = 980;
+  var GRAVITY = 1150;
   var BALL_RADIUS = 12;
   var TABLE_W = 480;
   var TABLE_H = 860;
@@ -22,24 +22,31 @@
   /** Powered bat slap only while |omega| exceeds this (rad/s). */
   var FLIPPER_OMEGA_DEAD = 2;
   /** Scales tip velocity → ball Δv while sweeping. */
-  var FLIPPER_IMPULSE_GAIN = 0.65;
+  var FLIPPER_IMPULSE_GAIN = 0.78;
   /** Cap on powered add-speed from a flipper slap (px/s). */
-  var FLIPPER_MAX_ADD_SPEED = 900;
+  var FLIPPER_MAX_ADD_SPEED = 1050;
   /** Tip-weight exponent on contact fraction t/segLen. */
   var FLIPPER_TIP_POWER = 1.2;
   var FLIPPER_RESTITUTION_SWEEP = 1.26;
   var FLIPPER_RESTITUTION_PASSIVE = 1.05;
   var DECK_DRAIN_SPEED = 220;
   var WALL_RESTITUTION = 0.72;
-  var BUMPER_RESTITUTION = 1.15;
+  /** Habitrail/guide bounce — livelier than cabinet rails so channels do not crawl. */
+  var HABITRAIL_RESTITUTION = 0.92;
+  var GUIDE_RESTITUTION = 0.88;
+  /** Min along-rail speed (px/s) while ball is inside a habitrail channel. */
+  var HABITRAIL_MIN_SPEED = 240;
+  /** Continuous along-path assist while riding a habitrail (px/s^2). */
+  var HABITRAIL_ASSIST = 520;
+  var BUMPER_RESTITUTION = 1.08;
   var FLIPPER_RESTITUTION = FLIPPER_RESTITUTION_PASSIVE;
   var SLING_RESTITUTION = 1.08;
   var KICKER_RESTITUTION = 1.2;
   /** Soft ball speed ceiling (px/s). */
-  var MAX_BALL_SPEED = 1500;
+  var MAX_BALL_SPEED = 1600;
   /** Base linear damp per physics step (~16ms); rises with speed. */
-  var BALL_DRAG_BASE = 0.0012;
-  var BALL_DRAG_SPEED = 0.0024;
+  var BALL_DRAG_BASE = 0.0009;
+  var BALL_DRAG_SPEED = 0.0018;
   var MAX_LAUNCH_POWER = 1400;
   var MIN_LAUNCH_POWER = 200;
   var LAUNCH_CHARGE_RATE = 1.1;
@@ -59,9 +66,9 @@
   var SLING_KICK_MAX = 300;
   var SLING_UP_BIAS = 0.38;
   var HIT_COOLDOWN_BUMPER = 0.24;
-  var MIN_BUMPER_EXIT_SPEED = 130;
-  var SAVER_BUMPER_EXIT_SPEED = 112;
-  var BUMPER_UNSTICK_SPEED = 85;
+  var MIN_BUMPER_EXIT_SPEED = 155;
+  var SAVER_BUMPER_EXIT_SPEED = 125;
+  var BUMPER_UNSTICK_SPEED = 95;
   var MAX_TILT_WARNINGS = 2;
   var TILT_COOLDOWN = 0.55;
   var LAUNCH_LANE_X = TABLE_W - 62;
@@ -140,13 +147,13 @@
    */
   function createBumpers() {
     return [
-      // Skill / apex
-      { x: 240, y: 168, radius: 32, score: 500, color: '#ff3366', kind: 'bumper', hitCooldown: 0 },
-      // Upper wings — clear orbit bands outside ~x 140–340 mid-table
-      { x: 170, y: 228, radius: 26, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0 },
-      { x: 310, y: 228, radius: 26, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
-      // Single lower feeder (keeps mid open; sits above drop bank)
-      { x: 240, y: 448, radius: 17, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0 },
+      // Skill / apex — lower + slightly smaller so arch pocket cannot pinch
+      { x: 240, y: 192, radius: 28, score: 500, color: '#ff3366', kind: 'bumper', hitCooldown: 0 },
+      // Upper wings — inset from side orbits; below arch flare
+      { x: 178, y: 248, radius: 24, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0 },
+      { x: 302, y: 248, radius: 24, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
+      // Single lower feeder (above drop bank; mid toys fill empty band above)
+      { x: 240, y: 455, radius: 16, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0 },
       {
         // Weaker / smaller saver — outlane tension
         x: 138,
@@ -190,7 +197,11 @@
     return [
       { id: 'standup-l', x: 118, y: 540, w: 10, h: 30, score: 1000, lit: true, flash: 0, occupied: false },
       { id: 'standup-r', x: 362, y: 540, w: 10, h: 30, score: 1000, lit: true, flash: 0, occupied: false },
-      { id: 'standup-c', x: 240, y: 575, w: 10, h: 26, score: 1500, lit: false, flash: 0, occupied: false }
+      { id: 'standup-c', x: 240, y: 575, w: 10, h: 26, score: 1500, lit: false, flash: 0, occupied: false },
+      // Mid-field standup bank (readable toys; keeps side orbits clear)
+      { id: 'standup-m1', x: 200, y: 338, w: 10, h: 26, score: 800, lit: true, flash: 0, occupied: false },
+      { id: 'standup-m2', x: 240, y: 338, w: 10, h: 26, score: 800, lit: false, flash: 0, occupied: false },
+      { id: 'standup-m3', x: 280, y: 338, w: 10, h: 26, score: 800, lit: true, flash: 0, occupied: false }
     ];
   }
 
@@ -235,23 +246,23 @@
         id: 'ramp-l',
         score: 800,
         cooldown: 0,
-        // Entry gate (ball crosses upward from below)
         entry: { x: 78, y: 545, w: 36, h: 40 },
-        exit: { x: 145, y: 155 },
-        boost: 220,
+        exit: { x: 150, y: 148 },
+        boost: 340,
+        // Wider outer/inner gap so ball cannot pinch & crawl
         segments: [
-          { x1: 72, y1: 560, x2: 58, y2: 470 },
-          { x1: 58, y1: 470, x2: 50, y2: 360 },
-          { x1: 50, y1: 360, x2: 48, y2: 250 },
-          { x1: 48, y1: 250, x2: 58, y2: 185 },
-          { x1: 58, y1: 185, x2: 95, y2: 150 },
-          { x1: 95, y1: 150, x2: 145, y2: 145 }
+          { x1: 68, y1: 560, x2: 50, y2: 470 },
+          { x1: 50, y1: 470, x2: 40, y2: 360 },
+          { x1: 40, y1: 360, x2: 38, y2: 245 },
+          { x1: 38, y1: 245, x2: 52, y2: 175 },
+          { x1: 52, y1: 175, x2: 100, y2: 140 },
+          { x1: 100, y1: 140, x2: 150, y2: 136 }
         ],
         guides: [
-          { x1: 100, y1: 555, x2: 88, y2: 465 },
-          { x1: 88, y1: 465, x2: 80, y2: 355 },
-          { x1: 80, y1: 355, x2: 78, y2: 255 },
-          { x1: 78, y1: 255, x2: 92, y2: 190 }
+          { x1: 112, y1: 555, x2: 100, y2: 465 },
+          { x1: 100, y1: 465, x2: 94, y2: 355 },
+          { x1: 94, y1: 355, x2: 92, y2: 250 },
+          { x1: 92, y1: 250, x2: 110, y2: 180 }
         ]
       },
       rightRamp: {
@@ -259,24 +270,22 @@
         score: 750,
         cooldown: 0,
         entry: { x: 355, y: 540, w: 34, h: 44 },
-        // Dump upper-right / mid — keep clear of spinner at (240,118)
-        exit: { x: 285, y: 155 },
-        boost: 240,
-        // Stay left of shooter lane (LAUNCH_LANE_LEFT ≈ 392)
+        exit: { x: 285, y: 150 },
+        boost: 360,
+        // Stay left of shooter lane; widen channel vs crawl
         segments: [
-          { x1: 378, y1: 555, x2: 372, y2: 450 },
-          { x1: 372, y1: 450, x2: 366, y2: 330 },
-          { x1: 366, y1: 330, x2: 355, y2: 220 },
-          { x1: 355, y1: 220, x2: 330, y2: 165 },
-          { x1: 330, y1: 165, x2: 295, y2: 150 }
+          { x1: 384, y1: 555, x2: 378, y2: 450 },
+          { x1: 378, y1: 450, x2: 372, y2: 330 },
+          { x1: 372, y1: 330, x2: 360, y2: 215 },
+          { x1: 360, y1: 215, x2: 332, y2: 158 },
+          { x1: 332, y1: 158, x2: 295, y2: 142 }
         ],
         guides: [
-          { x1: 348, y1: 550, x2: 342, y2: 445 },
-          { x1: 342, y1: 445, x2: 336, y2: 330 },
-          { x1: 336, y1: 330, x2: 328, y2: 230 },
-          { x1: 328, y1: 230, x2: 312, y2: 175 }
+          { x1: 340, y1: 550, x2: 334, y2: 445 },
+          { x1: 334, y1: 445, x2: 328, y2: 330 },
+          { x1: 328, y1: 330, x2: 318, y2: 225 },
+          { x1: 318, y1: 225, x2: 300, y2: 168 }
         ],
-        // Legacy diagonal fields kept for any old consumers / tests
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 540,
         x2: LAUNCH_LANE_LEFT - 60,
@@ -312,8 +321,10 @@
   function createRollovers() {
     return [
       { id: 'lane-l', x1: 72, y1: 180, x2: 72, y2: 280, width: 18, score: 500, lit: false, occupied: false },
-      // Playfield side of launch wall (not inside shooter lane); mid table so top spinner path is free
-      { id: 'lane-r', x1: LAUNCH_LANE_LEFT - 36, y1: 260, x2: LAUNCH_LANE_LEFT - 36, y2: 360, width: 18, score: 500, lit: false, occupied: false }
+      // Playfield side of launch wall (not inside shooter lane)
+      { id: 'lane-r', x1: LAUNCH_LANE_LEFT - 36, y1: 260, x2: LAUNCH_LANE_LEFT - 36, y2: 360, width: 18, score: 500, lit: false, occupied: false },
+      // Mid-field rollover — shot path without bumper party
+      { id: 'lane-mid', x1: 195, y1: 412, x2: 285, y2: 412, width: 16, score: 600, lit: false, occupied: false }
     ];
   }
 
@@ -357,6 +368,14 @@
     return [
       { id: 'kicker-l', x: 148, y: 575, radius: 14, score: 750, color: '#ff8844' },
       { id: 'kicker-r', x: 332, y: 575, radius: 14, score: 750, color: '#44ffaa' }
+    ];
+  }
+
+  /** Small mid-field posts — deflect without recreating bumper chaos. */
+  function createPosts() {
+    return [
+      { id: 'post-ml', x: 175, y: 385, radius: 9, score: 200, color: '#88ccee', flash: 0 },
+      { id: 'post-mr', x: 305, y: 385, radius: 9, score: 200, color: '#eecc88', flash: 0 }
     ];
   }
 
@@ -516,6 +535,7 @@
       launchDashReverseI: -1,
       launchDashFadeT: 0,
       kickers: createKickers(),
+      posts: createPosts(),
       spinner: createSpinner(),
       walls: createWalls(),
       score: 0,
@@ -917,6 +937,7 @@
     state.dropTargets = createDropTargets();
     state.sideRoutes = createSideRoutes();
     state.rollovers = createRollovers();
+    state.posts = createPosts();
     state.launchLaneDashes = createLaunchLaneDashes();
     resetLaunchDashSequence(state);
     state.launchDashRewarded = false;
@@ -1008,21 +1029,78 @@
     );
   }
 
-  /** Mild along-path boost when entering a habitrail from below (one-way feel). */
+  /** Along-path boost when entering a habitrail from below (carry through, not crawl). */
   function tryHabitrailEntry(state, route, towardCenterSign) {
     if (!route || route.cooldown > 0) return false;
     var ball = state.ball;
     if (!pointInRouteEntry(ball, route.entry)) return false;
-    // Prefer upward / into-route entries
     if (ball.vy > 40) return false;
-    var boost = route.boost || 200;
-    if (ball.vy > -boost * 0.35) ball.vy = -boost;
-    ball.vx += towardCenterSign * 40;
-    route.cooldown = SIDE_ROUTE_COOLDOWN * 1.6;
+    var boost = route.boost || 280;
     var ex = route.exit ? route.exit.x : ball.x;
-    var ey = route.exit ? route.exit.y : ball.y - 40;
+    var ey = route.exit ? route.exit.y : ball.y - 80;
+    var dir = normalize(ex - ball.x, ey - ball.y);
+    var along = Math.max(boost, HABITRAIL_MIN_SPEED + 40);
+    ball.vx = dir.x * along + towardCenterSign * 25;
+    ball.vy = Math.min(ball.vy, dir.y * along);
+    if (ball.vy > -boost * 0.45) ball.vy = dir.y * along;
+    route.cooldown = SIDE_ROUTE_COOLDOWN * 1.6;
     awardScore(state, route.score, 'route', route.id, (ball.x + ex) * 0.5, (ball.y + ey) * 0.5);
     return true;
+  }
+
+  function nearestPointOnSegments(px, py, segs) {
+    if (!segs || !segs.length) return null;
+    var best = null;
+    var i;
+    for (i = 0; i < segs.length; i++) {
+      var s = segs[i];
+      var dx = s.x2 - s.x1;
+      var dy = s.y2 - s.y1;
+      var lenSq = dx * dx + dy * dy;
+      if (lenSq < 1e-6) continue;
+      var t = clamp(((px - s.x1) * dx + (py - s.y1) * dy) / lenSq, 0, 1);
+      var cx = s.x1 + t * dx;
+      var cy = s.y1 + t * dy;
+      var d = vecLen(px - cx, py - cy);
+      if (!best || d < best.dist) best = { dist: d, x: cx, y: cy, t: t, seg: s };
+    }
+    return best;
+  }
+
+  /** Keep ball moving through habitrail/guide channels; kill multi-second crawls. */
+  function assistHabitrails(state, dt) {
+    if (!state.sideRoutes || !state.ball.inPlay || !state.exitedLaunchLane) return;
+    var ball = state.ball;
+    var routes = [state.sideRoutes.leftRamp, state.sideRoutes.rightRamp];
+    var ri;
+    for (ri = 0; ri < routes.length; ri++) {
+      var route = routes[ri];
+      if (!route || !route.segments) continue;
+      var nearOuter = nearestPointOnSegments(ball.x, ball.y, route.segments);
+      var nearGuide = nearestPointOnSegments(ball.x, ball.y, route.guides);
+      if (!nearOuter) continue;
+      var channelDist = nearOuter.dist;
+      if (nearGuide) channelDist = Math.min(channelDist, nearGuide.dist);
+      if (channelDist > ball.radius + 22) continue;
+      var ex = route.exit ? route.exit.x : ball.x;
+      var ey = route.exit ? route.exit.y : ball.y - 60;
+      var dir = normalize(ex - ball.x, ey - ball.y);
+      var speed = ballSpeed(ball);
+      var along = dot(ball.vx, ball.vy, dir.x, dir.y);
+      ball.vx += dir.x * HABITRAIL_ASSIST * dt;
+      ball.vy += dir.y * HABITRAIL_ASSIST * dt;
+      if (speed < HABITRAIL_MIN_SPEED || along < HABITRAIL_MIN_SPEED * 0.35) {
+        var need = HABITRAIL_MIN_SPEED - Math.max(0, along);
+        ball.vx += dir.x * need;
+        ball.vy += dir.y * need;
+        var wall = nearGuide && nearGuide.dist < nearOuter.dist ? nearGuide : nearOuter;
+        var n = normalize(ball.x - wall.x, ball.y - wall.y);
+        ball.x += n.x * 1.5;
+        ball.y += n.y * 1.5;
+        ball.vx += n.x * 40;
+        ball.vy += n.y * 20;
+      }
+    }
   }
 
   function resolveSideRouteCollisions(state) {
@@ -1301,7 +1379,10 @@
     state.walls.forEach(function (wall) {
       if (!state.exitedLaunchLane && (wall.wireform || wall.kind === 'lane')) return;
       // Soft short deck stubs — less bounce so they don't steal lower play
-      var rest = wall.kind === 'deck' ? WALL_RESTITUTION * 0.55 : WALL_RESTITUTION;
+      var rest = WALL_RESTITUTION;
+      if (wall.kind === 'deck') rest = WALL_RESTITUTION * 0.55;
+      else if (wall.kind === 'habitrail') rest = HABITRAIL_RESTITUTION;
+      else if (wall.kind === 'guide') rest = GUIDE_RESTITUTION;
       segmentCollision(ball, wall.x1, wall.y1, wall.x2, wall.y2, rest, null);
     });
 
@@ -1489,6 +1570,30 @@
       }
     }
 
+    // Apex / wing bumper vs top-arch pinch (playtest stop ~upper-left)
+    if (state.bumpers && state.bumpers.length && speed <= 85) {
+      var bi;
+      for (bi = 0; bi < Math.min(3, state.bumpers.length); bi++) {
+        var bum = state.bumpers[bi];
+        if (!bum || bum.saver) continue;
+        var bdx = ball.x - bum.x;
+        var bdy = ball.y - bum.y;
+        var bdist = vecLen(bdx, bdy);
+        var bmin = ball.radius + bum.radius;
+        var archY = topArchFloorY(ball.x);
+        var nearArch = ball.y - r < archY + 36;
+        var nearBump = bdist < bmin + 18;
+        if (nearArch && nearBump && ball.y < bum.y + 8) {
+          var kickN = normalize(bdx || 0.15, Math.max(0.35, bdy + 0.5));
+          ball.x = bum.x + kickN.x * (bmin + 10);
+          ball.y = Math.max(bum.y + kickN.y * (bmin + 10), archY + r + 14);
+          ball.vx = kickN.x * 200 + (ball.x < TABLE_W * 0.5 ? 40 : -40);
+          ball.vy = Math.max(140, Math.abs(kickN.y) * 180);
+          return;
+        }
+      }
+    }
+
     // Generic upper-slow only near rails (not center spinner / top bumper zone)
     var nearRail =
       ball.x - r < 36 + 30 ||
@@ -1502,6 +1607,37 @@
       ball.vy = n.y * 150;
       if (ball.y - r < 60 + 4) ball.y = 60 + r + 10;
     }
+  }
+
+  function resolvePostCollisions(state) {
+    if (!state.posts || !state.ball.inPlay) return;
+    var ball = state.ball;
+    state.posts.forEach(function (post) {
+      var dx = ball.x - post.x;
+      var dy = ball.y - post.y;
+      var dist = vecLen(dx, dy);
+      var minDist = ball.radius + post.radius;
+      if (dist < minDist && dist > 1e-6) {
+        var n = normalize(dx, dy);
+        ball.x = post.x + n.x * minDist;
+        ball.y = post.y + n.y * minDist;
+        var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, WALL_RESTITUTION + 0.08);
+        ball.vx = rv.vx;
+        ball.vy = rv.vy;
+        if (ballSpeed(ball) < 90) {
+          ball.vx += n.x * 70;
+          ball.vy += n.y * 70 - 30;
+        }
+        if (!post._hitLock) {
+          post._hitLock = true;
+          post.flash = 0.3;
+          awardScore(state, post.score, 'post', post.id, post.x, post.y);
+        }
+      } else {
+        post._hitLock = false;
+      }
+      if (post.flash > 0) post.flash = Math.max(0, post.flash - 0.016);
+    });
   }
 
   function resolveKickerCollisions(state) {
@@ -1864,11 +2000,13 @@
     guideShooterLane(state, dt);
     blockShooterLaneIntrusion(state);
     resolveWallCollisions(state);
+    assistHabitrails(state, dt);
     guardLeftOutlaneShelf(state);
     resolveSlingshotCollisions(state);
     resolveBumperCollisions(state);
     unstickFromBumpers(state);
     unstickFromCorners(state);
+    resolvePostCollisions(state);
     resolveKickerCollisions(state);
     resolveTargetCollisions(state);
     resolveDropTargetCollisions(state);
@@ -2032,6 +2170,10 @@
 
   var api = {
     GRAVITY: GRAVITY,
+    HABITRAIL_RESTITUTION: HABITRAIL_RESTITUTION,
+    HABITRAIL_MIN_SPEED: HABITRAIL_MIN_SPEED,
+    BALL_DRAG_BASE: BALL_DRAG_BASE,
+    BALL_DRAG_SPEED: BALL_DRAG_SPEED,
     BALL_RADIUS: BALL_RADIUS,
     TABLE_W: TABLE_W,
     TABLE_H: TABLE_H,

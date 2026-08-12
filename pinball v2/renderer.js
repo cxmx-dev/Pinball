@@ -158,6 +158,7 @@
     drawDropTargets(ctx, state);
     drawSlingshots(ctx, state);
     drawTargets(ctx, state);
+    drawPosts(ctx, state, glowPulse);
     drawBumpers(ctx, state, glowPulse);
     drawKickers(ctx, state, glowPulse);
     drawSpinner(ctx, state, glowPulse);
@@ -258,6 +259,62 @@
     ctx.fillRect(0, 60, tw, th - 120);
   }
 
+  function strokeTubeSegment(ctx, x1, y1, x2, y2, opts) {
+    opts = opts || {};
+    var core = opts.core || "rgba(255,180,80,0.9)";
+    var glow = opts.glow || "rgba(255,150,40,0.4)";
+    var hi = opts.hi || "rgba(255,255,255,0.55)";
+    var shadow = opts.shadow || "rgba(0,0,0,0.45)";
+    var w = opts.width || 6;
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = shadow;
+    ctx.lineWidth = w + 4;
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 0.55;
+    ctx.beginPath();
+    ctx.moveTo(x1 + 1.2, y1 + 1.5);
+    ctx.lineTo(x2 + 1.2, y2 + 1.5);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = glow;
+    ctx.lineWidth = w + 3;
+    ctx.shadowColor = glow;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.shadowBlur = 4;
+    ctx.strokeStyle = core;
+    ctx.lineWidth = w;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = hi;
+    ctx.lineWidth = Math.max(1.2, w * 0.28);
+    ctx.globalAlpha = 0.75;
+    ctx.beginPath();
+    ctx.moveTo(x1 - 0.8, y1 - 0.9);
+    ctx.lineTo(x2 - 0.8, y2 - 0.9);
+    ctx.stroke();
+    if (opts.dashed !== false) {
+      ctx.setLineDash([5, 6]);
+      ctx.strokeStyle = opts.groove || "rgba(255,255,255,0.22)";
+      ctx.lineWidth = Math.max(1, w * 0.22);
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.restore();
+  }
+
   function drawWalls(ctx, state) {
     ctx.save();
     ctx.lineCap = 'round';
@@ -280,21 +337,30 @@
     state.walls.forEach(function (wall) {
       var kind = wall.kind || 'rail';
       if (kind === 'lane' || kind === 'chute') return;
+      if (kind === 'habitrail') {
+        strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, {
+          core: 'rgba(255, 190, 90, 0.92)',
+          glow: 'rgba(255, 150, 40, 0.42)',
+          hi: 'rgba(255, 245, 210, 0.65)',
+          width: 6
+        });
+        return;
+      }
       if (kind === 'guide') {
-        ctx.strokeStyle = 'rgba(255, 210, 120, 0.42)';
-        ctx.lineWidth = 3;
-        ctx.shadowBlur = 0;
-      } else if (kind === 'habitrail') {
-        ctx.strokeStyle = 'rgba(255, 180, 80, 0.88)';
-        ctx.lineWidth = 5;
-        ctx.shadowColor = 'rgba(255, 150, 40, 0.45)';
-        ctx.shadowBlur = 8;
-      } else if (kind === 'inlane') {
+        strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, {
+          core: 'rgba(255, 220, 140, 0.55)',
+          glow: 'rgba(255, 180, 60, 0.22)',
+          hi: 'rgba(255,255,255,0.4)',
+          width: 3.5,
+          dashed: true
+        });
+        return;
+      }
+      if (kind === 'inlane') {
         ctx.strokeStyle = 'rgba(140,170,210,0.45)';
         ctx.lineWidth = 3;
         ctx.shadowBlur = 0;
       } else if (kind === 'deck') {
-        // Subtle stubs only — full gray bars used to block lower bumpers/kickers
         ctx.strokeStyle = 'rgba(160,180,210,0.28)';
         ctx.lineWidth = 2;
         ctx.shadowBlur = 0;
@@ -358,21 +424,16 @@
 
     function strokeRoutePath(segs, color, width, glow) {
       if (!segs || !segs.length) return;
-      ctx.save();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.shadowColor = glow;
-      ctx.shadowBlur = 8 + Math.sin(pulse * 2) * 2;
-      ctx.beginPath();
-      ctx.moveTo(segs[0].x1, segs[0].y1);
       var i;
       for (i = 0; i < segs.length; i++) {
-        ctx.lineTo(segs[i].x2, segs[i].y2);
+        strokeTubeSegment(ctx, segs[i].x1, segs[i].y1, segs[i].x2, segs[i].y2, {
+          core: color,
+          glow: glow,
+          width: width,
+          hi: "rgba(255,255,255,0.5)",
+          dashed: width >= 5
+        });
       }
-      ctx.stroke();
-      ctx.restore();
     }
 
     var left = state.sideRoutes.leftRamp;
@@ -470,6 +531,33 @@
     });
   }
 
+  function drawPosts(ctx, state, pulse) {
+    if (!state.posts) return;
+    state.posts.forEach(function (post, idx) {
+      var hot = post.flash > 0;
+      var glow = 0.5 + 0.5 * Math.sin(pulse * 3 + idx);
+      ctx.save();
+      ctx.shadowColor = post.color || "rgba(160,220,255,0.7)";
+      ctx.shadowBlur = (hot ? 16 : 8) + glow * 6;
+      var g = ctx.createRadialGradient(post.x - 2, post.y - 2, 1, post.x, post.y, post.radius);
+      g.addColorStop(0, "#ffffff");
+      g.addColorStop(0.45, post.color || "#88ccee");
+      g.addColorStop(1, "#223344");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(post.x, post.y, post.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = hot ? "rgba(255,255,255,0.95)" : "rgba(220,240,255,0.7)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(post.x, post.y, post.radius * 0.35, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.fill();
+      ctx.restore();
+    });
+  }
+
   function drawBumpers(ctx, state, pulse) {
     var Assets = getAssets();
     state.bumpers.forEach(function (bumper, idx) {
@@ -498,22 +586,33 @@
         ctx.arc(bumper.x, bumper.y, bumper.radius, 0, Math.PI * 2);
         ctx.fillStyle = radGrad;
         ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      } else {
-        // hit flash ring over sprite
-        var hitVis = Assets && Assets.getBumperHitVisual ? Assets.getBumperHitVisual(idx) : 0;
-        if (hitVis > 0 || (bumper.hitCooldown && bumper.hitCooldown > 0.1)) {
-          ctx.shadowColor = bumper.color;
-          ctx.shadowBlur = 28;
-          ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.arc(bumper.x, bumper.y, bumper.radius + 4, 0, Math.PI * 2);
-          ctx.stroke();
-        }
       }
+      // Always draw readable lit rings (sprites alone read as flat posts)
+      var hitVis = Assets && Assets.getBumperHitVisual ? Assets.getBumperHitVisual(idx) : 0;
+      var hot = hitVis > 0 || (bumper.hitCooldown && bumper.hitCooldown > 0.1);
+      ctx.shadowColor = bumper.saver ? "rgba(80,255,180,0.85)" : bumper.color;
+      ctx.shadowBlur = hot ? 26 : 12 + glow * 8;
+      ctx.strokeStyle = bumper.saver
+        ? 'rgba(120,255,200,' + (0.75 + glow * 0.2) + ')'
+        : 'rgba(255,255,255,' + (0.55 + glow * 0.25) + ')';
+      ctx.lineWidth = bumper.saver ? 3.5 : 2.8;
+      ctx.beginPath();
+      ctx.arc(bumper.x, bumper.y, bumper.radius + (bumper.saver ? 3 : 2), 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = bumper.saver
+        ? 'rgba(200,255,230,0.9)'
+        : 'rgba(255,240,200,' + (0.5 + glow * 0.3) + ')';
+      ctx.lineWidth = 1.6;
+      if (bumper.saver) ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.arc(bumper.x, bumper.y, Math.max(4, bumper.radius * 0.62), 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "rgba(255,255,255,0.28)";
+      ctx.beginPath();
+      ctx.arc(bumper.x - bumper.radius * 0.28, bumper.y - bumper.radius * 0.28, bumper.radius * 0.28, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
       ctx.font = 'bold 11px Orbitron, sans-serif';
       ctx.textAlign = 'center';
