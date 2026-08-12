@@ -134,21 +134,18 @@
   }
 
   /**
-   * Fun bumper layout: upper skill triangle under the arch, mid cluster for combos,
-   * lower posts feeding flippers; saver sits near left outlane.
+   * Classic 3-bumper triangle high on the table + optional lower feeder.
+   * Clears mid-table for left/right orbits; saver stays near left outlane.
+   * bumpers[0] remains the skill-shot apex.
    */
   function createBumpers() {
     return [
-      // Skill / top (still bumpers[0] for skill-shot grading)
-      { x: 240, y: 168, radius: 34, score: 500, color: '#ff3366', kind: 'bumper', hitCooldown: 0 },
-      // Upper wings — wider spacing for swoop under arch
-      { x: 155, y: 248, radius: 27, score: 320, color: '#33ccff', kind: 'bumper', hitCooldown: 0 },
-      { x: 325, y: 248, radius: 27, score: 320, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
-      // Mid diamond — bounce party
-      { x: 240, y: 318, radius: 24, score: 280, color: '#aa66ff', kind: 'bumper', hitCooldown: 0 },
-      { x: 175, y: 372, radius: 20, score: 220, color: '#66ddff', kind: 'bumper', hitCooldown: 0 },
-      { x: 305, y: 372, radius: 20, score: 220, color: '#ffaa44', kind: 'bumper', hitCooldown: 0 },
-      // Lower feeder (kept clear of y≈400 open space used by unit tests)
+      // Skill / apex
+      { x: 240, y: 168, radius: 32, score: 500, color: '#ff3366', kind: 'bumper', hitCooldown: 0 },
+      // Upper wings — clear orbit bands outside ~x 140–340 mid-table
+      { x: 170, y: 228, radius: 26, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0 },
+      { x: 310, y: 228, radius: 26, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
+      // Single lower feeder (keeps mid open; sits above drop bank)
       { x: 240, y: 448, radius: 17, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0 },
       {
         // Weaker / smaller saver — outlane tension
@@ -220,28 +217,96 @@
   }
 
   /**
-   * Side routes: left captive post (kick into playfield), right ramp return segment.
+   * Side routes: left captive post, left orbit/slide ramp, right habitrail.
+   * Travel geometry lives as wall segments (see createHabitrailWalls);
+   * routes hold entry sensors + draw polylines + mild ride boosts.
    */
   function createSideRoutes() {
     return {
       leftCaptive: {
         id: 'captive-l',
-        x: 58,
-        y: 300,
-        radius: 13,
+        x: 62,
+        y: 318,
+        radius: 12,
         score: 650,
         cooldown: 0
       },
+      leftRamp: {
+        id: 'ramp-l',
+        score: 800,
+        cooldown: 0,
+        // Entry gate (ball crosses upward from below)
+        entry: { x: 78, y: 545, w: 36, h: 40 },
+        exit: { x: 145, y: 155 },
+        boost: 220,
+        segments: [
+          { x1: 72, y1: 560, x2: 58, y2: 470 },
+          { x1: 58, y1: 470, x2: 50, y2: 360 },
+          { x1: 50, y1: 360, x2: 48, y2: 250 },
+          { x1: 48, y1: 250, x2: 58, y2: 185 },
+          { x1: 58, y1: 185, x2: 95, y2: 150 },
+          { x1: 95, y1: 150, x2: 145, y2: 145 }
+        ],
+        guides: [
+          { x1: 100, y1: 555, x2: 88, y2: 465 },
+          { x1: 88, y1: 465, x2: 80, y2: 355 },
+          { x1: 80, y1: 355, x2: 78, y2: 255 },
+          { x1: 78, y1: 255, x2: 92, y2: 190 }
+        ]
+      },
       rightRamp: {
         id: 'ramp-r',
-        x1: LAUNCH_LANE_LEFT - 10,
-        y1: 400,
-        x2: LAUNCH_LANE_LEFT - 55,
-        y2: 260,
         score: 750,
-        cooldown: 0
+        cooldown: 0,
+        entry: { x: 355, y: 540, w: 34, h: 44 },
+        // Dump upper-right / mid — keep clear of spinner at (240,118)
+        exit: { x: 285, y: 155 },
+        boost: 240,
+        // Stay left of shooter lane (LAUNCH_LANE_LEFT ≈ 392)
+        segments: [
+          { x1: 378, y1: 555, x2: 372, y2: 450 },
+          { x1: 372, y1: 450, x2: 366, y2: 330 },
+          { x1: 366, y1: 330, x2: 355, y2: 220 },
+          { x1: 355, y1: 220, x2: 330, y2: 165 },
+          { x1: 330, y1: 165, x2: 295, y2: 150 }
+        ],
+        guides: [
+          { x1: 348, y1: 550, x2: 342, y2: 445 },
+          { x1: 342, y1: 445, x2: 336, y2: 330 },
+          { x1: 336, y1: 330, x2: 328, y2: 230 },
+          { x1: 328, y1: 230, x2: 312, y2: 175 }
+        ],
+        // Legacy diagonal fields kept for any old consumers / tests
+        x1: LAUNCH_LANE_LEFT - 14,
+        y1: 540,
+        x2: LAUNCH_LANE_LEFT - 60,
+        y2: 200
       }
     };
+  }
+
+  /** Habitrail / orbit wall segments shared by createWalls. */
+  function createHabitrailWalls() {
+    var routes = createSideRoutes();
+    var walls = [];
+    function pushPath(segs, kind) {
+      if (!segs) return;
+      var i;
+      for (i = 0; i < segs.length; i++) {
+        walls.push({
+          x1: segs[i].x1,
+          y1: segs[i].y1,
+          x2: segs[i].x2,
+          y2: segs[i].y2,
+          kind: kind
+        });
+      }
+    }
+    pushPath(routes.leftRamp.segments, 'habitrail');
+    pushPath(routes.leftRamp.guides, 'guide');
+    pushPath(routes.rightRamp.segments, 'habitrail');
+    pushPath(routes.rightRamp.guides, 'guide');
+    return walls;
   }
 
   function createRollovers() {
@@ -414,14 +479,14 @@
     walls.push({ x1: FLIPPER_INLANE_X + 6, y1: 520, x2: FLIPPER_INLANE_X + 6, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' });
     walls.push({ x1: FLIPPER_INLANE_X + 6, y1: FLIPPER_ROW_Y - 20, x2: FLIPPER_INLANE_X + 6, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: 36, y1: 540, x2: FLIPPER_INLANE_X + 10, y2: LEFT_INLANE_POST_TOP + 20, kind: 'chute' });
-    // Upper-left deflector under arch
-    walls.push({ x1: 70, y1: 200, x2: 130, y2: 125, kind: 'chute' });
-    walls.push({ x1: 48, y1: 360, x2: 70, y2: 280, kind: 'chute' });
+    // Right inlane chute post
     walls.push({ x1: rightInlaneX - 4, y1: FLIPPER_ROW_Y - 20, x2: rightInlaneX - 4, y2: chuteBottom, kind: 'chute' });
-    walls.push({ x1: LAUNCH_LANE_LEFT - 8, y1: 420, x2: LAUNCH_LANE_LEFT - 52, y2: 280, kind: 'chute' });
     walls.push({ x1: bounds.centerLeft, y1: FLIPPER_ROW_Y, x2: bounds.centerLeft, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: bounds.centerRight, y1: FLIPPER_ROW_Y, x2: bounds.centerRight, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: bounds.rightOutlaneLeft, y1: FLIPPER_ROW_Y, x2: bounds.rightOutlaneLeft, y2: chuteBottom, kind: 'chute' });
+
+    // Real left orbit / right habitrail travel paths (replaces token diagonal kick chutes)
+    walls = walls.concat(createHabitrailWalls());
 
     return walls;
   }
@@ -659,6 +724,9 @@
     if (state.sideRoutes) {
       if (state.sideRoutes.leftCaptive && state.sideRoutes.leftCaptive.cooldown > 0) {
         state.sideRoutes.leftCaptive.cooldown -= dt;
+      }
+      if (state.sideRoutes.leftRamp && state.sideRoutes.leftRamp.cooldown > 0) {
+        state.sideRoutes.leftRamp.cooldown -= dt;
       }
       if (state.sideRoutes.rightRamp && state.sideRoutes.rightRamp.cooldown > 0) {
         state.sideRoutes.rightRamp.cooldown -= dt;
@@ -928,6 +996,35 @@
     });
   }
 
+  function pointInRouteEntry(ball, entry) {
+    if (!entry) return false;
+    var hw = (entry.w || 30) * 0.5;
+    var hh = (entry.h || 36) * 0.5;
+    return (
+      ball.x > entry.x - hw &&
+      ball.x < entry.x + hw &&
+      ball.y > entry.y - hh &&
+      ball.y < entry.y + hh
+    );
+  }
+
+  /** Mild along-path boost when entering a habitrail from below (one-way feel). */
+  function tryHabitrailEntry(state, route, towardCenterSign) {
+    if (!route || route.cooldown > 0) return false;
+    var ball = state.ball;
+    if (!pointInRouteEntry(ball, route.entry)) return false;
+    // Prefer upward / into-route entries
+    if (ball.vy > 40) return false;
+    var boost = route.boost || 200;
+    if (ball.vy > -boost * 0.35) ball.vy = -boost;
+    ball.vx += towardCenterSign * 40;
+    route.cooldown = SIDE_ROUTE_COOLDOWN * 1.6;
+    var ex = route.exit ? route.exit.x : ball.x;
+    var ey = route.exit ? route.exit.y : ball.y - 40;
+    awardScore(state, route.score, 'route', route.id, (ball.x + ex) * 0.5, (ball.y + ey) * 0.5);
+    return true;
+  }
+
   function resolveSideRouteCollisions(state) {
     if (!state.sideRoutes || !state.ball.inPlay || !state.exitedLaunchLane) return;
     var ball = state.ball;
@@ -948,25 +1045,9 @@
         awardScore(state, cap.score, 'route', cap.id, cap.x, cap.y);
       }
     }
-    var ramp = state.sideRoutes.rightRamp;
-    if (ramp && ramp.cooldown <= 0) {
-      var hit = segmentCollision(
-        ball,
-        ramp.x1,
-        ramp.y1,
-        ramp.x2,
-        ramp.y2,
-        WALL_RESTITUTION * 1.05,
-        null
-      );
-      if (hit) {
-        // Launch back into playfield (left/up)
-        ball.vx = -Math.max(Math.abs(ball.vx), 260);
-        ball.vy = -Math.max(Math.abs(ball.vy), 300);
-        ramp.cooldown = SIDE_ROUTE_COOLDOWN;
-        awardScore(state, ramp.score, 'route', ramp.id, (ramp.x1 + ramp.x2) * 0.5, (ramp.y1 + ramp.y2) * 0.5);
-      }
-    }
+    // Real travel paths: walls guide the ball; entry sensors award + mild boost
+    tryHabitrailEntry(state, state.sideRoutes.leftRamp, 1);
+    tryHabitrailEntry(state, state.sideRoutes.rightRamp, -1);
   }
 
   function beginEndOfBallBonus(state) {

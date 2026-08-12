@@ -44,7 +44,9 @@ function runOnce(runNum) {
   return failed;
 }
 
-var anyFail = runOnce(1) || runOnce(2);
+var fail1 = runOnce(1);
+var fail2 = runOnce(2);
+var anyFail = fail1 || fail2;
 
 var combined = [];
 combined.push(fs.readFileSync(path.join(scratch, 'tests-run1.log'), 'utf8'));

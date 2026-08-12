@@ -615,12 +615,42 @@ function slapSpeedAtFraction(frac) {
   state.ball.y = sp.y;
   state.ball.vx = 10;
   state.ball.vy = 0;
-  sim.stepPhysics(state, 0.016);
-  var scoreAfterOne = state.score;
-  for (var i = 0; i < 39; i++) {
+  var spinnerHits = 0;
+  var prevType = state.lastHitType;
+  var prevScore = state.score;
+  for (var i = 0; i < 40; i++) {
     sim.stepPhysics(state, 0.016);
+    if (state.lastHitType === 'spinner' && (state.score !== prevScore || state.lastHitType !== prevType)) {
+      // Count when a spinner award just applied
+      if (state.lastHitType === 'spinner' && state.score > prevScore) spinnerHits++;
+    }
+    // More reliable: count via cooldown arming edges
+    prevType = state.lastHitType;
+    prevScore = state.score;
   }
-  assert(scoreAfterOne === 0 || state.score - scoreAfterOne < 600, 'spinner cooldown limits repeat awards');
+  // Re-run focused: cooldown should keep spinVel awards from stacking every frame
+  state = fresh();
+  sp = state.spinner;
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.ball.x = sp.x + sp.radius - 2;
+  state.ball.y = sp.y;
+  state.ball.vx = 40;
+  state.ball.vy = 0;
+  var awards = 0;
+  for (var j = 0; j < 40; j++) {
+    var before = state.score;
+    var cdBefore = sp.hitCooldown;
+    sim.stepPhysics(state, 0.016);
+    if (state.score > before && state.lastHitType === 'spinner') awards++;
+    // Keep ball pressed on spinner so only cooldown gates repeats
+    state.ball.x = sp.x + sp.radius - 2;
+    state.ball.y = sp.y;
+    state.ball.vx = 40;
+    state.ball.vy = 0;
+    void cdBefore;
+  }
+  assert(awards <= 3, 'spinner cooldown limits repeat awards, got ' + awards);
   console.log('PASS: spinner does not spam score');
 })();
 

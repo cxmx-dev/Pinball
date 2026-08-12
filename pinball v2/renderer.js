@@ -262,14 +262,14 @@
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    // Glow pass for rounded top arch segments
+    // Glow pass for rounded top arch / habitrail segments
     state.walls.forEach(function (wall) {
       var kind = wall.kind || 'rail';
-      if (kind === 'lane' || kind === 'chute' || kind === 'guide') return;
-      if (wall.arc || kind === 'rail') {
-        ctx.strokeStyle = 'rgba(100, 200, 255, 0.22)';
+      if (kind === 'lane' || kind === 'chute') return;
+      if (wall.arc || kind === 'rail' || kind === 'habitrail') {
+        ctx.strokeStyle = kind === 'habitrail' ? 'rgba(255, 170, 60, 0.20)' : 'rgba(100, 200, 255, 0.22)';
         ctx.lineWidth = 10;
-        ctx.shadowColor = 'rgba(0, 220, 255, 0.35)';
+        ctx.shadowColor = kind === 'habitrail' ? 'rgba(255, 160, 40, 0.35)' : 'rgba(0, 220, 255, 0.35)';
         ctx.shadowBlur = 12;
         ctx.beginPath();
         ctx.moveTo(wall.x1, wall.y1);
@@ -279,9 +279,16 @@
     });
     state.walls.forEach(function (wall) {
       var kind = wall.kind || 'rail';
-      if (kind === 'lane') return;
-      if (kind === 'chute' || kind === 'guide') {
-        return;
+      if (kind === 'lane' || kind === 'chute') return;
+      if (kind === 'guide') {
+        ctx.strokeStyle = 'rgba(255, 210, 120, 0.42)';
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 0;
+      } else if (kind === 'habitrail') {
+        ctx.strokeStyle = 'rgba(255, 180, 80, 0.88)';
+        ctx.lineWidth = 5;
+        ctx.shadowColor = 'rgba(255, 150, 40, 0.45)';
+        ctx.shadowBlur = 8;
       } else if (kind === 'inlane') {
         ctx.strokeStyle = 'rgba(140,170,210,0.45)';
         ctx.lineWidth = 3;
@@ -348,22 +355,50 @@
       ctx.stroke();
       ctx.restore();
     }
-    var ramp = state.sideRoutes.rightRamp;
-    if (ramp) {
+
+    function strokeRoutePath(segs, color, width, glow) {
+      if (!segs || !segs.length) return;
       ctx.save();
-      ctx.strokeStyle = 'rgba(255, 180, 80, 0.75)';
-      ctx.lineWidth = 8;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
       ctx.lineCap = 'round';
-      ctx.shadowColor = 'rgba(255, 160, 40, 0.45)';
-      ctx.shadowBlur = 8;
+      ctx.lineJoin = 'round';
+      ctx.shadowColor = glow;
+      ctx.shadowBlur = 8 + Math.sin(pulse * 2) * 2;
       ctx.beginPath();
-      ctx.moveTo(ramp.x1, ramp.y1);
-      ctx.lineTo(ramp.x2, ramp.y2);
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(255, 220, 140, 0.5)';
-      ctx.lineWidth = 3;
+      ctx.moveTo(segs[0].x1, segs[0].y1);
+      var i;
+      for (i = 0; i < segs.length; i++) {
+        ctx.lineTo(segs[i].x2, segs[i].y2);
+      }
       ctx.stroke();
       ctx.restore();
+    }
+
+    var left = state.sideRoutes.leftRamp;
+    if (left) {
+      strokeRoutePath(left.segments, 'rgba(120, 220, 255, 0.78)', 7, 'rgba(80, 200, 255, 0.4)');
+      strokeRoutePath(left.guides, 'rgba(160, 230, 255, 0.35)', 3, 'rgba(80, 180, 255, 0.2)');
+      if (left.entry) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(120, 220, 255, 0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(left.entry.x - left.entry.w * 0.5, left.entry.y - left.entry.h * 0.5, left.entry.w, left.entry.h);
+        ctx.restore();
+      }
+    }
+
+    var ramp = state.sideRoutes.rightRamp;
+    if (ramp) {
+      strokeRoutePath(ramp.segments, 'rgba(255, 180, 80, 0.82)', 7, 'rgba(255, 160, 40, 0.45)');
+      strokeRoutePath(ramp.guides, 'rgba(255, 220, 140, 0.38)', 3, 'rgba(255, 180, 60, 0.2)');
+      if (ramp.entry) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 180, 80, 0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(ramp.entry.x - ramp.entry.w * 0.5, ramp.entry.y - ramp.entry.h * 0.5, ramp.entry.w, ramp.entry.h);
+        ctx.restore();
+      }
     }
   }
 
