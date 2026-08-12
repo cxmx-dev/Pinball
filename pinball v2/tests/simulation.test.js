@@ -66,6 +66,71 @@ console.log('=============================');
   console.log('PASS: flipper collision response');
 })();
 
+/**
+ * Drop a ball onto the left flipper at fraction along the bat while the bat
+ * is mid-sweep toward active. Returns post-collision speed.
+ */
+function slapSpeedAtFraction(frac) {
+  var state = fresh();
+  var flipper = state.flippers.find(function (f) { return f.side === 'left'; });
+  flipper.active = true;
+  // Mid-stroke: halfway from rest toward active so omega stays large.
+  flipper.angle = flipper.restAngle + (flipper.activeAngle - flipper.restAngle) * 0.45;
+  flipper.omega = -sim.FLIPPER_SPEED; // left bat rises with negative omega
+  var ux = Math.cos(flipper.angle);
+  var uy = Math.sin(flipper.angle);
+  var t = flipper.length * frac;
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.ball.x = flipper.pivotX + ux * t;
+  state.ball.y = flipper.pivotY + uy * t - (state.ball.radius + flipper.width * 0.5) + 2;
+  state.ball.vx = 0;
+  state.ball.vy = 180;
+  sim.stepPhysics(state, 0.016);
+  return Math.sqrt(state.ball.vx * state.ball.vx + state.ball.vy * state.ball.vy);
+}
+
+(function testFlipperTipStrongerThanBase() {
+  var tipSpeed = slapSpeedAtFraction(0.92);
+  var baseSpeed = slapSpeedAtFraction(0.22);
+  assert(tipSpeed > baseSpeed * 1.25, 'tip slap should outrun base slap (' + tipSpeed.toFixed(1) + ' vs ' + baseSpeed.toFixed(1) + ')');
+  console.log('PASS: flipper tip stronger than base (tip=' + tipSpeed.toFixed(1) + ' base=' + baseSpeed.toFixed(1) + ')');
+})();
+
+(function testFlipperSweepStrongerThanDeadHold() {
+  // Sweeping mid-stroke tip contact
+  var sweepSpeed = slapSpeedAtFraction(0.9);
+
+  // Dead-hold at apex: omega ~0, active=true — restitution only, no powered boost
+  var state = fresh();
+  var flipper = state.flippers.find(function (f) { return f.side === 'left'; });
+  flipper.active = true;
+  flipper.angle = flipper.activeAngle;
+  flipper.omega = 0;
+  var tip = sim.flipperTip(flipper);
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.ball.x = tip.x;
+  state.ball.y = tip.y - (state.ball.radius + flipper.width * 0.5) + 2;
+  state.ball.vx = 0;
+  state.ball.vy = 180;
+  sim.stepPhysics(state, 0.016);
+  var holdSpeed = Math.sqrt(state.ball.vx * state.ball.vx + state.ball.vy * state.ball.vy);
+
+  assert(sweepSpeed > holdSpeed * 1.35, 'rising stroke should beat dead-hold (' + sweepSpeed.toFixed(1) + ' vs ' + holdSpeed.toFixed(1) + ')');
+  assert(holdSpeed < 450, 'dead-hold must not magnetically boost, got ' + holdSpeed.toFixed(1));
+  console.log('PASS: flipper sweep stronger than dead-hold (sweep=' + sweepSpeed.toFixed(1) + ' hold=' + holdSpeed.toFixed(1) + ')');
+})();
+
+(function testLaunchMeterEaseKeepsFullPower() {
+  var full = sim.meterToLaunchPower(1);
+  assert.strictEqual(full, sim.MAX_LAUNCH_POWER, 'full meter still maps to MAX_LAUNCH_POWER');
+  var mid = sim.meterToLaunchPower(0.5);
+  var linearMid = sim.MIN_LAUNCH_POWER + 0.5 * (sim.MAX_LAUNCH_POWER - sim.MIN_LAUNCH_POWER);
+  assert(mid < linearMid, 'eased mid-charge should be softer than linear');
+  console.log('PASS: launch meter ease keeps full power');
+})();
+
 (function testLaunchBallSetsVelocityAndPhase() {
   var state = fresh();
   assert.strictEqual(state.ball.inPlay, false);

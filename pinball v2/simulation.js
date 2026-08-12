@@ -19,20 +19,45 @@
   var FLIPPER_W = 14;
   var FLIPPER_PIVOT_R = 16;
   var FLIPPER_SPEED = 14;
+  /** Powered bat slap only while |omega| exceeds this (rad/s). */
+  var FLIPPER_OMEGA_DEAD = 2;
+  /** Scales tip velocity → ball Δv while sweeping. */
+  var FLIPPER_IMPULSE_GAIN = 0.65;
+  /** Cap on powered add-speed from a flipper slap (px/s). */
+  var FLIPPER_MAX_ADD_SPEED = 900;
+  /** Tip-weight exponent on contact fraction t/segLen. */
+  var FLIPPER_TIP_POWER = 1.2;
+  var FLIPPER_RESTITUTION_SWEEP = 1.26;
+  var FLIPPER_RESTITUTION_PASSIVE = 1.05;
   var DECK_DRAIN_SPEED = 220;
   var WALL_RESTITUTION = 0.72;
   var BUMPER_RESTITUTION = 1.15;
-  var FLIPPER_RESTITUTION = 1.05;
+  var FLIPPER_RESTITUTION = FLIPPER_RESTITUTION_PASSIVE;
   var SLING_RESTITUTION = 1.08;
   var KICKER_RESTITUTION = 1.2;
+  /** Soft ball speed ceiling (px/s). */
+  var MAX_BALL_SPEED = 1500;
+  /** Base linear damp per physics step (~16ms); rises with speed. */
+  var BALL_DRAG_BASE = 0.0012;
+  var BALL_DRAG_SPEED = 0.0024;
   var MAX_LAUNCH_POWER = 1400;
   var MIN_LAUNCH_POWER = 200;
-  var LAUNCH_CHARGE_RATE = 0.9;
+  var LAUNCH_CHARGE_RATE = 1.1;
+  /** Meter→power ease exponent (1 = linear). */
+  var LAUNCH_METER_EASE = 1.25;
+  /** Frames of plunger follow thrust while still in shooter lane. */
+  var PLUNGER_FOLLOW_FRAMES = 3;
+  /** Max |vx| English from launch charge (aim skill). */
+  var LAUNCH_ENGLISH_MAX = 12;
   var DRAIN_SLOT_TOP = TABLE_H - 14;
   var DRAIN_SLOT_H = 12;
   var DRAIN_Y = DRAIN_SLOT_TOP - BALL_RADIUS;
   var HIT_COOLDOWN_SPINNER = 0.35;
-  var HIT_COOLDOWN_SLING = 0.25;
+  var HIT_COOLDOWN_SLING = 0.18;
+  var SLING_KICK_GAIN = 1.05;
+  var SLING_KICK_MIN = 90;
+  var SLING_KICK_MAX = 300;
+  var SLING_UP_BIAS = 0.38;
   var HIT_COOLDOWN_BUMPER = 0.24;
   var MIN_BUMPER_EXIT_SPEED = 130;
   var SAVER_BUMPER_EXIT_SPEED = 112;
@@ -103,7 +128,8 @@
       targetAngle: isLeft ? 0.42 : Math.PI - 0.42,
       length: FLIPPER_LEN,
       width: FLIPPER_W,
-      active: false
+      active: false,
+      omega: 0
     };
   }
 
@@ -440,6 +466,8 @@
       launchTick: 0,
       launchRailT: null,
       activeLaunchPower: 0,
+      plungerFollowFrames: 0,
+      plungerFollowPower: 0,
       multiplier: 1,
       comboCount: 0,
       comboTimer: 0,
@@ -657,6 +685,7 @@
 
   function updateFlippers(state, dt) {
     state.flippers.forEach(function (f) {
+      var prevAngle = f.angle;
       f.targetAngle = f.active ? f.activeAngle : f.restAngle;
       var diff = f.targetAngle - f.angle;
       var maxStep = FLIPPER_SPEED * dt;
@@ -665,7 +694,15 @@
       } else {
         f.angle += Math.sign(diff) * maxStep;
       }
+      f.omega = dt > 1e-8 ? (f.angle - prevAngle) / dt : 0;
     });
+  }
+
+  /** True while the bat is sweeping toward the raised (active) pose. */
+  function flipperIsSweeping(flipper) {
+    var towardActive = Math.sign(flipper.activeAngle - flipper.restAngle);
+    if (towardActive === 0) return false;
+    return Math.abs(flipper.omega) > FLIPPER_OMEGA_DEAD && Math.sign(flipper.omega) === towardActive;
   }
 
   function reflectVelocity(vx, vy, nx, ny, restitution) {
@@ -1115,6 +1152,8 @@
     state.launchPower = 0;
     state.launchRailT = null;
     state.activeLaunchPower = 0;
+    state.plungerFollowFrames = 0;
+    state.plungerFollowPower = 0;
     state.phase = 'ready';
     state.tiltWarnings = 0;
     state.tiltCooldown = 0;
@@ -1209,13 +1248,18 @@
     var ball = state.ball;
     state.slingshots.forEach(function (sling) {
       var scored = false;
-      var hit = segmentCollision(ball, sling.x1, sling.y1, sling.x2, sling.y2, SLING_RESTITUTION, function () {
+      var preVx = ball.vx;
+      var preVy = ball.vy;
+      var hit = segmentCollision(ball, sling.x1, sling.y1, sling.x2, sling.y2, SLING_RESTITUTION, function (n) {
+        var incident = Math.max(0, -dot(preVx, preVy, n.x, n.y));
+        var kick = clamp(incident * SLING_KICK_GAIN, SLING_KICK_MIN, SLING_KICK_MAX);
+        var up = kick * SLING_UP_BIAS;
         if (sling.side === 'left') {
-          ball.vx += 200;
-          ball.vy -= 80;
+          ball.vx += kick;
+          ball.vy -= up;
         } else {
-          ball.vx -= 200;
-          ball.vy -= 80;
+          ball.vx -= kick;
+          ball.vy -= up;
         }
         if (sling.cooldown <= 0) {
           awardScore(state, sling.score, 'sling', sling.side, (sling.x1 + sling.x2) * 0.5, (sling.y1 + sling.y2) * 0.5);
@@ -1655,19 +1699,73 @@
         var n = normalize(ball.x - cx, ball.y - cy);
         ball.x = cx + n.x * hitDist;
         ball.y = cy + n.y * hitDist;
-        var rest = flipper.active ? FLIPPER_RESTITUTION * 1.2 : FLIPPER_RESTITUTION;
+        var sweeping = flipperIsSweeping(flipper);
+        var rest = sweeping ? FLIPPER_RESTITUTION_SWEEP : FLIPPER_RESTITUTION_PASSIVE;
         var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, rest);
         ball.vx = rv.vx;
         ball.vy = rv.vy;
-        if (flipper.active) {
-          var impulse = 720;
-          ball.vx += Math.cos(flipper.angle) * impulse * 0.022;
-          ball.vy += Math.sin(flipper.angle) * impulse * 0.022;
+
+        if (sweeping) {
+          // Contact-point bat velocity (omega × r), tip-weighted.
+          var tipFrac = Math.pow(t / segLen, FLIPPER_TIP_POWER);
+          var contactVx = -Math.sin(flipper.angle) * flipper.omega * t;
+          var contactVy = Math.cos(flipper.angle) * flipper.omega * t;
+          var addVx = contactVx * FLIPPER_IMPULSE_GAIN * tipFrac;
+          var addVy = contactVy * FLIPPER_IMPULSE_GAIN * tipFrac;
+          var addSpeed = vecLen(addVx, addVy);
+          if (addSpeed > FLIPPER_MAX_ADD_SPEED && addSpeed > 1e-6) {
+            var scale = FLIPPER_MAX_ADD_SPEED / addSpeed;
+            addVx *= scale;
+            addVy *= scale;
+          }
+          ball.vx += addVx;
+          ball.vy += addVy;
           state.lastHitType = 'flipper';
           state.lastHitId = flipper.side;
         }
       }
     });
+  }
+
+  function applyBallDragAndSpeedCeiling(ball) {
+    var speed = ballSpeed(ball);
+    var speedRatio = clamp(speed / MAX_BALL_SPEED, 0, 1.5);
+    var damp = 1 - (BALL_DRAG_BASE + BALL_DRAG_SPEED * speedRatio);
+    if (damp < 0.97) damp = 0.97;
+    ball.vx *= damp;
+    ball.vy *= damp;
+    speed = ballSpeed(ball);
+    if (speed > MAX_BALL_SPEED) {
+      var soft = MAX_BALL_SPEED / speed;
+      // Soft blend rather than a hard wall — still clamps runaway speeds.
+      var blend = 0.55 + 0.45 * soft;
+      ball.vx *= blend;
+      ball.vy *= blend;
+      speed = ballSpeed(ball);
+      if (speed > MAX_BALL_SPEED * 1.08) {
+        var hard = (MAX_BALL_SPEED * 1.08) / speed;
+        ball.vx *= hard;
+        ball.vy *= hard;
+      }
+    }
+  }
+
+  function applyPlungerFollow(state) {
+    if (!state.plungerFollowFrames || state.plungerFollowFrames <= 0) return;
+    if (state.exitedLaunchLane || !state.ball.inPlay) {
+      state.plungerFollowFrames = 0;
+      return;
+    }
+    if (!isBallInLaunchLane(state)) {
+      state.plungerFollowFrames = 0;
+      return;
+    }
+    var ball = state.ball;
+    var target = -state.plungerFollowPower;
+    if (ball.vy > target * 0.92) {
+      ball.vy = Math.min(ball.vy, target * 0.94);
+    }
+    state.plungerFollowFrames -= 1;
   }
 
   function stepPhysics(state, dt) {
@@ -1681,6 +1779,7 @@
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
 
+    applyPlungerFollow(state);
     guideShooterLane(state, dt);
     blockShooterLaneIntrusion(state);
     resolveWallCollisions(state);
@@ -1713,8 +1812,7 @@
       }
     }
 
-    ball.vx *= 0.9995;
-    ball.vy *= 0.9995;
+    applyBallDragAndSpeedCeiling(ball);
     return state;
   }
 
@@ -1740,28 +1838,40 @@
     return state;
   }
 
+  function easeLaunchMeter(meter) {
+    var m = clamp(meter, 0, 1);
+    // pow ease keeps full-meter = max power; softens mid-charge feel.
+    return Math.pow(m, LAUNCH_METER_EASE);
+  }
+
   function meterToLaunchPower(meter) {
-    return MIN_LAUNCH_POWER + clamp(meter, 0, 1) * (MAX_LAUNCH_POWER - MIN_LAUNCH_POWER);
+    return MIN_LAUNCH_POWER + easeLaunchMeter(meter) * (MAX_LAUNCH_POWER - MIN_LAUNCH_POWER);
   }
 
   function launchBall(state, power) {
     if (state.ball.inPlay || state.ballsRemaining <= 0) return state;
     var p;
+    var chargeU;
     if (power != null && power > 1) {
       p = clamp(power, MIN_LAUNCH_POWER, MAX_LAUNCH_POWER);
+      chargeU = (p - MIN_LAUNCH_POWER) / (MAX_LAUNCH_POWER - MIN_LAUNCH_POWER);
     } else {
-      p = meterToLaunchPower(state.launchPower);
+      chargeU = easeLaunchMeter(state.launchPower);
+      p = MIN_LAUNCH_POWER + chargeU * (MAX_LAUNCH_POWER - MIN_LAUNCH_POWER);
     }
     state.ball.inPlay = true;
     state.ball.x = LAUNCH_LANE_X;
     state.ball.y = PLUNGER_REST_Y;
-    state.ball.vx = 5;
+    // Tiny lateral English from charge — aim skill without shoving into flippers.
+    state.ball.vx = 5 + (chargeU - 0.5) * 2 * LAUNCH_ENGLISH_MAX;
     state.ball.vy = -p;
     state.exitedLaunchLane = false;
     state.skillShotWindow = false;
     state.launchTick = 0;
     state.launchRailT = null;
     state.activeLaunchPower = p;
+    state.plungerFollowFrames = PLUNGER_FOLLOW_FRAMES;
+    state.plungerFollowPower = p;
     state.phase = 'playing';
     state.launchPower = 0;
     state.launchCharging = false;
@@ -1858,11 +1968,19 @@
     LEFT_INLANE_POST_TOP: LEFT_INLANE_POST_TOP,
     FLIPPER_INLANE_X: FLIPPER_INLANE_X,
     MAX_LAUNCH_POWER: MAX_LAUNCH_POWER,
+    MIN_LAUNCH_POWER: MIN_LAUNCH_POWER,
     LAUNCH_CHARGE_RATE: LAUNCH_CHARGE_RATE,
+    MAX_BALL_SPEED: MAX_BALL_SPEED,
+    FLIPPER_SPEED: FLIPPER_SPEED,
+    FLIPPER_OMEGA_DEAD: FLIPPER_OMEGA_DEAD,
+    FLIPPER_IMPULSE_GAIN: FLIPPER_IMPULSE_GAIN,
+    FLIPPER_MAX_ADD_SPEED: FLIPPER_MAX_ADD_SPEED,
+    FLIPPER_TIP_POWER: FLIPPER_TIP_POWER,
     FLIPPER_PIVOT_SPACING: FLIPPER_PIVOT_SPACING,
     FLIPPER_LEFT_PIVOT_X: FLIPPER_LEFT_PIVOT_X,
     FLIPPER_RIGHT_PIVOT_X: FLIPPER_RIGHT_PIVOT_X,
     FLIPPER_ROW_Y: FLIPPER_ROW_Y,
+    flipperIsSweeping: flipperIsSweeping,
     MAX_MULTIPLIER: MAX_MULTIPLIER,
     SKILL_SHOT_BONUS: SKILL_SHOT_BONUS,
     SKILL_SHOT_CENTER_BONUS: SKILL_SHOT_CENTER_BONUS,
