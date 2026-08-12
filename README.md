@@ -37,7 +37,7 @@ Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / d
 |--------|------|
 | `index.html` | Pages root → redirects to **v2** (VOID PULSE) |
 | `pinball v1/` | **NEON NEXUS** — solid physics, audio, tests (no theme packs) |
-| `pinball v2/` | **VOID PULSE** — v1-class play + layered theme art |
+| `pinball v2/` | **VOID PULSE** — v1-class play + layered theme art + cabinet-style flipper/plunger feel |
 | `backup/` | Untouched reference snapshot — do not modify |
 
 ## Quick play
