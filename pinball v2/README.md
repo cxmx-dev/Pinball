@@ -21,7 +21,7 @@ In-game **legend** slides from the **right** (**L**, **Legend** button, or swipe
 
 **Dock:** L Flip · Launch · R Flip, then centered **Theme \| Legend** split (away from flippers). No top key-hint strip — use legend.
 
-Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / desktop (`device.js`).
+Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / desktop (`device.js`). Phones use a lighter quality tier (simpler rail draw, capped upscale) so play stays smooth; desktop keeps full effects.
 
 ## What This Is
 
