@@ -124,6 +124,7 @@ console.log('==========================');
   state.ballsRemaining = 3;
   state.ballSaveArmed = true;
   state.ballSaveUsed = false;
+  state.ballSaveTimer = sim.BALL_SAVE_DURATION;
   state.ball.x = 240;
   state.ball.y = sim.DRAIN_Y + 5;
   state.ball.vy = 200;
@@ -149,6 +150,21 @@ console.log('==========================');
   while (state.phase === 'eob_bonus' && g++ < 80) sim.tick(state, 0.05);
   assert.strictEqual(state.phase, 'ready');
   console.log('PASS: ball-save once then real drain');
+})();
+
+
+(function testNearSkillShotNoBallSave() {
+  var state = fresh();
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.skillShotWindow = true;
+  var top = state.bumpers[0];
+  var touch = top.radius + 12;
+  var g = sim.gradeSkillShot({ x: top.x + touch + 18, y: top.y, radius: 12 }, top);
+  assert.strictEqual(g.grade, 'near');
+  sim.applySkillShot(state, g);
+  assert.strictEqual(state.ballSaveArmed, false, 'near must not arm save');
+  console.log('PASS: near skill shot does not arm ball-save');
 })();
 
 console.log('==========================');

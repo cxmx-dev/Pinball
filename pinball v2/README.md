@@ -25,6 +25,8 @@ Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / d
 
 ## What This Is
 
+The **spinner** sits under the left arch and visually spins when hit.
+
 A playable vertical pinball table: gravity, flippers, charge launch, scoring modes, tilt, and procedural audio — plus a **theme asset layer** (playfield still, bumper hit sprites, multi-frame spark VFX, ambient glow frames). Physics never depends on art loading; missing images fail soft and procedural draw still runs. Physics includes sweep-gated tip-weighted flippers, soft speed limiting, incident-scaled sling kicks, and an eased plunger charge curve.
 
 **Table identity:** **Void Pulse** (default) — cyan / magenta cyber rail. Alternate pack: **Ember Rail** (molten copper).

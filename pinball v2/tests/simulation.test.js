@@ -379,6 +379,7 @@ function slapSpeedAtFraction(frac) {
   state.exitedLaunchLane = true;
   state.ballSaveArmed = true;
   state.ballSaveUsed = false;
+  state.ballSaveTimer = sim.BALL_SAVE_DURATION;
   var zones = sim.getDrainBounds(state);
   state.ball.x = (zones.centerLeft + zones.centerRight) / 2;
   state.ball.y = sim.DRAIN_Y + sim.BALL_RADIUS + 2;
@@ -387,6 +388,7 @@ function slapSpeedAtFraction(frac) {
   assert.strictEqual(state.ball.inPlay, true, 'ball-save keeps ball in play');
   assert.strictEqual(state.ballSaveUsed, true);
   assert.strictEqual(state.ballSaveArmed, false);
+  assert.strictEqual(state.ballSaveTimer, 0, 'save consumes timer');
   assert(state.ball.y < sim.FLIPPER_ROW_Y, 'save respawns above flippers');
   assert.strictEqual(state.ballsRemaining, balls);
   state.ball.x = (zones.centerLeft + zones.centerRight) / 2;
@@ -786,6 +788,156 @@ function slapSpeedAtFraction(frac) {
   assert.notStrictEqual(state.ball.y, startY, 'tick should move ball vertically');
   assert.notStrictEqual(state.ball.vy, startVy, 'tick should update velocity via gravity');
   console.log('PASS: tick integrates physics pipeline');
+})();
+
+
+(function testDrainDisarmedNeverLoftsAboveFlippers() {
+  var zones = sim.getDrainBounds(fresh());
+  var cases = [
+    { x: (zones.centerLeft + zones.centerRight) / 2, y: sim.FLIPPER_ROW_Y + 16, vx: 0, vy: 80, label: 'center' },
+    { x: (zones.leftOutlaneLeft + zones.leftOutlaneRight) / 2, y: sim.FLIPPER_ROW_Y + 16, vx: 0, vy: 80, label: 'left' },
+    { x: (zones.rightOutlaneLeft + zones.rightOutlaneRight) / 2, y: sim.FLIPPER_ROW_Y + 16, vx: 10, vy: 80, label: 'right' },
+    { x: 385, y: sim.FLIPPER_ROW_Y + 5, vx: 10, vy: 80, label: 'near-lane' }
+  ];
+  cases.forEach(function (c) {
+    var state = fresh();
+    state.ball.inPlay = true;
+    state.exitedLaunchLane = true;
+    state.phase = 'playing';
+    state.ballSaveArmed = false;
+    state.ballSaveUsed = false;
+    state.ballSaveTimer = 0;
+    state.ball.x = c.x;
+    state.ball.y = c.y;
+    state.ball.vx = c.vx;
+    state.ball.vy = c.vy;
+    var minY = state.ball.y;
+    var drainedAt = -1;
+    var i;
+    for (i = 0; i < 120; i++) {
+      sim.tick(state, 0.016);
+      minY = Math.min(minY, state.ball.y);
+      if (!state.ball.inPlay) {
+        drainedAt = i;
+        break;
+      }
+    }
+    assert(drainedAt >= 0, c.label + ' should drain with save disarmed');
+    assert(
+      minY >= sim.FLIPPER_ROW_Y - 8,
+      c.label + ' must not reappear above flippers (minY=' + minY.toFixed(1) + ')'
+    );
+    assert.strictEqual(state.lastHitType === 'ballsave', false, c.label + ' no ballsave hit');
+  });
+  console.log('PASS: drain with save disarmed never lofts above flippers');
+})();
+
+(function testNearSkillShotDoesNotArmBallSave() {
+  var state = fresh();
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.skillShotWindow = true;
+  var top = state.bumpers[0];
+  var touch = top.radius + state.ball.radius;
+  var g = sim.gradeSkillShot(
+    { x: top.x + touch + 18, y: top.y, radius: state.ball.radius },
+    top
+  );
+  assert(g && g.grade === 'near', 'near grade');
+  sim.applySkillShot(state, g);
+  assert.strictEqual(state.ballSaveArmed, false, 'near skill shot must not arm save');
+  assert.strictEqual(state.ballSaveTimer, 0, 'near leaves timer at 0');
+  console.log('PASS: near skill shot does not arm ball-save');
+})();
+
+(function testCenterSkillShotArmsTimedSaveThenExpires() {
+  var state = fresh();
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.skillShotWindow = true;
+  var top = state.bumpers[0];
+  var g = sim.gradeSkillShot(
+    { x: top.x, y: top.y, radius: state.ball.radius },
+    top
+  );
+  assert(g && g.grade === 'center', 'center grade');
+  sim.applySkillShot(state, g);
+  assert.strictEqual(state.ballSaveArmed, true);
+  assert.strictEqual(state.ballSaveTimer, sim.BALL_SAVE_DURATION);
+  // Expire without draining
+  var steps = Math.ceil(sim.BALL_SAVE_DURATION / 0.05) + 2;
+  var i;
+  for (i = 0; i < steps; i++) sim.tick(state, 0.05);
+  assert.strictEqual(state.ballSaveArmed, false, 'save expires after timer');
+  assert.strictEqual(state.ballSaveTimer, 0);
+  // Drain must stick (no teleport)
+  var zones = sim.getDrainBounds(state);
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.ball.x = (zones.centerLeft + zones.centerRight) / 2;
+  state.ball.y = sim.DRAIN_Y + 2;
+  state.ball.vy = 100;
+  var balls = state.ballsRemaining;
+  var yBefore = state.ball.y;
+  sim.checkDrain(state);
+  assert.strictEqual(state.ball.inPlay, false, 'expired save does not fire');
+  assert.strictEqual(state.ballsRemaining, balls - 1);
+  assert(state.ball.y >= yBefore || state.ball.y > sim.TABLE_H, 'no apron teleport after expiry');
+  console.log('PASS: center skill shot arms timed save then expires');
+})();
+
+(function testArmedSaveExactlyOneKickThenDrainSticksViaTick() {
+  var state = fresh();
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.ballSaveArmed = true;
+  state.ballSaveUsed = false;
+  state.ballSaveTimer = sim.BALL_SAVE_DURATION;
+  var zones = sim.getDrainBounds(state);
+  state.ball.x = (zones.centerLeft + zones.centerRight) / 2;
+  state.ball.y = sim.FLIPPER_ROW_Y + 20;
+  state.ball.vx = 0;
+  state.ball.vy = 100;
+  var sawSave = false;
+  var saveY = null;
+  var i;
+  for (i = 0; i < 200; i++) {
+    sim.tick(state, 0.016);
+    if (state.lastHitType === 'ballsave' || state.ballSaveUsed) {
+      sawSave = true;
+      saveY = state.ball.y;
+      break;
+    }
+    if (!state.ball.inPlay) break;
+  }
+  assert(sawSave, 'armed save should fire once');
+  assert(saveY < sim.FLIPPER_ROW_Y, 'save kick places ball above flippers');
+  assert.strictEqual(state.ballSaveArmed, false);
+  // Second drain via physics must stick — no second loft above flippers from save
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.ball.x = (zones.centerLeft + zones.centerRight) / 2;
+  state.ball.y = sim.FLIPPER_ROW_Y + 20;
+  state.ball.vx = 0;
+  state.ball.vy = 100;
+  var balls = state.ballsRemaining;
+  var minY = state.ball.y;
+  var drainedAt = -1;
+  for (i = 0; i < 160; i++) {
+    sim.tick(state, 0.016);
+    minY = Math.min(minY, state.ball.y);
+    if (!state.ball.inPlay) {
+      drainedAt = i;
+      break;
+    }
+  }
+  assert(drainedAt >= 0, 'second drain should stick');
+  assert.strictEqual(state.ballsRemaining, balls - 1);
+  assert(minY >= sim.FLIPPER_ROW_Y - 8, 'no second save loft (minY=' + minY.toFixed(1) + ')');
+  console.log('PASS: armed save exactly one kick then drain sticks via tick');
 })();
 
 console.log('=============================');

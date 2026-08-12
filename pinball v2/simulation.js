@@ -59,6 +59,8 @@
   var DRAIN_SLOT_TOP = TABLE_H - 14;
   var DRAIN_SLOT_H = 12;
   var DRAIN_Y = DRAIN_SLOT_TOP - BALL_RADIUS;
+  /** Seconds of ball-save after a CENTER skill shot before it expires unused. */
+  var BALL_SAVE_DURATION = 8;
   var HIT_COOLDOWN_SPINNER = 0.35;
   var HIT_COOLDOWN_SLING = 0.18;
   var SLING_KICK_GAIN = 1.05;
@@ -574,6 +576,7 @@
       drainFlash: 0,
       ballSaveArmed: false,
       ballSaveUsed: false,
+      ballSaveTimer: 0,
       ballSaveFlash: 0,
       launchDashRewarded: false,
       themeId: 'void-pulse',
@@ -700,11 +703,12 @@
     state.skillShotBannerLife = 2.2;
     if (gradeInfo.grade === 'center') {
       state.multiplier = Math.min(MAX_MULTIPLIER, state.multiplier + 1);
+      // Explicit arm: CENTER skill shot only — one timed save, then drain sticks
       state.ballSaveArmed = true;
-    } else {
-      // Near-miss still arms a weaker save? Plan: optional after skill shot — arm for both grades
-      state.ballSaveArmed = true;
+      state.ballSaveUsed = false;
+      state.ballSaveTimer = BALL_SAVE_DURATION;
     }
+    // Near grade: points/banner only — does NOT arm ball-save
     return true;
   }
 
@@ -731,6 +735,13 @@
     }
     if (state.ballSaveFlash > 0) {
       state.ballSaveFlash = Math.max(0, state.ballSaveFlash - dt);
+    }
+    if (state.ballSaveArmed && !state.ballSaveUsed && state.ballSaveTimer > 0) {
+      state.ballSaveTimer = Math.max(0, state.ballSaveTimer - dt);
+      if (state.ballSaveTimer <= 0) {
+        state.ballSaveArmed = false;
+        state.ballSaveTimer = 0;
+      }
     }
     if (state.rushTimer > 0) {
       state.rushTimer = Math.max(0, state.rushTimer - dt);
@@ -825,7 +836,12 @@
     var r = ball.radius;
     ball.x = LAUNCH_LANE_LEFT - r - 2;
     ball.vx = -Math.max(Math.abs(ball.vx), 220);
-    ball.vy = Math.min(ball.vy, -120);
+    // Never loft when already at/below flipper line or draining
+    if (ball.y >= FLIPPER_ROW_Y - 8 || apronAssistsBlocked(state)) {
+      if (ball.vy < 0) ball.vy = Math.abs(ball.vy) * 0.25;
+    } else {
+      ball.vy = Math.min(ball.vy, -120);
+    }
   }
 
   function canChargePlunger(state) {
@@ -1332,6 +1348,7 @@
     state.tiltCooldown = 0;
     state.ballSaveArmed = false;
     state.ballSaveUsed = false;
+    state.ballSaveTimer = 0;
     state.multiplier = Math.max(1, state.multiplier - 1);
     resetBallProgress(state);
   }
@@ -1346,18 +1363,38 @@
     return state;
   }
 
+  /**
+   * Apron / inlane assists must never loft a ball that is already draining.
+   * Block when inside a drain slot near/below the flipper line, or clearly
+   past the bats with downward velocity on the playfield side of the plunger.
+   */
+  function apronAssistsBlocked(state) {
+    var ball = state.ball;
+    if (!ball || !ball.inPlay || !state.exitedLaunchLane) return true;
+    var zones = getDrainBounds(state);
+    if (ball.y > FLIPPER_ROW_Y + 20) return true;
+    if (ball.y >= FLIPPER_ROW_Y - 4 && ball.vy > 0 && isBallInDrainZone(ball, zones)) {
+      return true;
+    }
+    if (ball.y > FLIPPER_ROW_Y + 8 && ball.vy > 40 && ball.x < LAUNCH_LANE_LEFT) {
+      return true;
+    }
+    return false;
+  }
+
   function blockShooterLaneIntrusion(state) {
     if (!state.ball.inPlay || !state.exitedLaunchLane) return;
     var ball = state.ball;
     var r = ball.radius;
-    // Keep playfield balls out of the plunger lane near the apron, but never
-    // loft a draining / below-flipper ball back above the flipper row.
+    // Keep playfield balls out of the plunger lane near the apron.
+    // Always allow a horizontal eject; never loft when draining / below bats.
     if (ball.x + r >= LAUNCH_LANE_LEFT - 1 && ball.y > FLIPPER_ROW_Y - 44) {
       ball.x = LAUNCH_LANE_LEFT - r - 2;
       if (ball.vx > -40) {
         ball.vx = -Math.max(Math.abs(ball.vx), 200) * WALL_RESTITUTION;
       }
-      if (ball.y >= FLIPPER_ROW_Y - 8) {
+      if (ball.y >= FLIPPER_ROW_Y - 8 || apronAssistsBlocked(state)) {
+        // Drain/apron: kill upward kick only
         if (ball.vy < 0) ball.vy = Math.abs(ball.vy) * 0.25;
       } else if (ball.vy > -80) {
         ball.vy = -Math.max(Math.abs(ball.vy), 140);
@@ -1773,10 +1810,11 @@
   }
 
   function performDrain(state) {
-    // One ball-save after a skill shot (any grade), then consume
+    // One save only when explicitly armed (center skill shot) and not yet used/expired
     if (state.ballSaveArmed && !state.ballSaveUsed && state.ball.inPlay) {
       state.ballSaveUsed = true;
       state.ballSaveArmed = false;
+      state.ballSaveTimer = 0;
       state.ballSaveFlash = 0.7;
       state.drainFlash = 0.35;
       state.lastHitType = 'ballsave';
@@ -1805,6 +1843,13 @@
     state.exitedLaunchLane = false;
     state.skillShotWindow = false;
     state.ballSaveArmed = false;
+    state.ballSaveUsed = true;
+    state.ballSaveTimer = 0;
+    // Park off-table so nothing can soft-kick the lost ball back into the apron
+    state.ball.x = TABLE_W * 0.5;
+    state.ball.y = TABLE_H + 80;
+    state.ball.vx = 0;
+    state.ball.vy = 0;
     // SFX via drainEvents in audio.processState (avoid double-fire from lastHitType)
     // End-of-ball bonus sequence (then plunger or game over)
     return beginEndOfBallBonus(state);
@@ -1845,6 +1890,7 @@
 
   function unstickFromFlippers(state) {
     if (!state.ball.inPlay || !state.exitedLaunchLane) return;
+    if (apronAssistsBlocked(state)) return;
     var ball = state.ball;
     var speed = ballSpeed(ball);
     // Crawl / tip-trap rescue only — no rocket impulses (those caused apron jumps)
@@ -1956,6 +2002,7 @@
 
   function guardLeftOutlaneShelf(state) {
     if (!state.ball.inPlay || !state.exitedLaunchLane) return;
+    if (apronAssistsBlocked(state)) return;
     var ball = state.ball;
     var zones = getDrainBounds(state);
     var r = ball.radius;
@@ -1979,6 +2026,7 @@
 
   function guardRightOutlaneShelf(state) {
     if (!state.ball.inPlay || !state.exitedLaunchLane) return;
+    if (apronAssistsBlocked(state)) return;
     var ball = state.ball;
     var zones = getDrainBounds(state);
     var r = ball.radius;
@@ -1998,6 +2046,7 @@
 
   function nudgeInlaneApron(state) {
     if (!state.ball.inPlay || !state.exitedLaunchLane) return;
+    if (apronAssistsBlocked(state)) return;
     var ball = state.ball;
     var speed = ballSpeed(ball);
     if (speed > DECK_DRAIN_SPEED) return;
@@ -2309,6 +2358,7 @@
     TABLE_W: TABLE_W,
     TABLE_H: TABLE_H,
     DRAIN_Y: DRAIN_Y,
+    BALL_SAVE_DURATION: BALL_SAVE_DURATION,
     DRAIN_SLOT_TOP: DRAIN_SLOT_TOP,
     DRAIN_SLOT_H: DRAIN_SLOT_H,
     LAUNCH_LANE_X: LAUNCH_LANE_X,
