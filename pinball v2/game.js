@@ -98,14 +98,20 @@
     // (fitCanvas must honor this on PC too — see device.js touchChrome, not touch-only)
     var chrome = 150;
     if (Device && Device.fitCanvas) {
+      // Desktop/tablet: grow past native 520x980 so the table fills available viewport
+      // (was capped at 1x CSS — looked tiny on wide monitors). Still shrinks on short windows.
       Device.fitCanvas(canvas, {
         touchChrome: chrome,
         pad: 8,
-        allowUpscale: false
+        allowUpscale: true
       });
     } else {
       canvas.style.width = targetW + 'px';
       canvas.style.height = targetH + 'px';
+    }
+    // Keep bottom dock the same CSS width as the upscaled canvas
+    if (touchUi) {
+      touchUi.style.width = canvas.style.width || (targetW + 'px');
     }
   }
 
