@@ -720,22 +720,46 @@
 
   function drawSpinner(ctx, state, pulse) {
     var sp = state.spinner;
+    if (!sp) return;
+    var spinGlow = Math.min(1, Math.abs(sp.spinVel) * 1.6);
     ctx.save();
     ctx.translate(sp.x, sp.y);
     ctx.rotate(sp.angle);
-    applyShadow(ctx, 'rgba(180,220,255,0.6)', 8 + Math.sin(pulse * 5) * 4);
-    ctx.strokeStyle = 'rgba(200,220,255,0.85)';
-    ctx.lineWidth = 3;
-    for (var i = 0; i < 4; i++) {
+    applyShadow(
+      ctx,
+      'rgba(180,220,255,' + (0.45 + spinGlow * 0.45) + ')',
+      8 + spinGlow * 10 + Math.sin(pulse * 5) * 3
+    );
+    // 4-point star — rotates with sp.angle each frame while spinVel coasts
+    var R = sp.radius + 2;
+    var rInner = sp.radius * 0.38;
+    ctx.beginPath();
+    for (var i = 0; i < 8; i++) {
+      var rad = i % 2 === 0 ? R : rInner;
+      var a = (i / 8) * Math.PI * 2 - Math.PI / 2;
+      var px = Math.cos(a) * rad;
+      var py = Math.sin(a) * rad;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = spinGlow > 0.05 ? '#d0e8ff' : '#9aabbc';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(220,235,255,0.95)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(160,190,220,0.9)';
+    ctx.lineWidth = 2.5;
+    for (var j = 0; j < 4; j++) {
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.lineTo(sp.radius, 0);
+      ctx.lineTo(sp.radius * 0.92, 0);
       ctx.stroke();
       ctx.rotate(Math.PI / 2);
     }
     ctx.beginPath();
-    ctx.arc(0, 0, 5, 0, Math.PI * 2);
-    ctx.fillStyle = '#aabbcc';
+    ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = spinGlow > 0.08 ? '#ffffff' : '#8899aa';
     ctx.fill();
     ctx.restore();
   }

@@ -329,15 +329,73 @@ function slapSpeedAtFraction(frac) {
   state.ball.y = sim.DRAIN_Y + sim.BALL_RADIUS + 2;
   sim.checkDrain(state);
   assert.strictEqual(state.ballsRemaining, 2);
+  // Deep past flippers in former inlane dead-zone must still drain cleanly
   state = fresh();
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
+  state.ballSaveArmed = false;
   state.ball.x = zones.leftOutlaneRight + 20;
   state.ball.y = sim.DRAIN_Y + sim.BALL_RADIUS + 2;
   var before = state.ballsRemaining;
   sim.checkDrain(state);
-  assert.strictEqual(state.ballsRemaining, before, 'inlane apron should not instantly drain');
+  assert.strictEqual(state.ballsRemaining, before - 1, 'deep apron past flippers should drain');
   console.log('PASS: drain uses center hole and outlanes');
+})();
+
+(function testSpinnerMovedLeftUnderArch() {
+  var state = fresh();
+  var sp = state.spinner;
+  assert(sp.x >= 140 && sp.x <= 175, 'spinner x left under arch, got ' + sp.x);
+  assert(sp.y >= 110 && sp.y <= 140, 'spinner y under arch, got ' + sp.y);
+  assert(sp.x < 200, 'spinner clear of apex bumper x');
+  console.log('PASS: spinner relocated left under arch');
+})();
+
+(function testSpinnerCoastsAngleAfterHit() {
+  var state = fresh();
+  var sp = state.spinner;
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.ball.x = sp.x + sp.radius - 1;
+  state.ball.y = sp.y;
+  state.ball.vx = 320;
+  state.ball.vy = -40;
+  sim.stepPhysics(state, 0.016);
+  var angleAfterHit = sp.angle;
+  var velAfterHit = sp.spinVel;
+  assert(velAfterHit > 0.2, 'hit should impart spinVel, got ' + velAfterHit);
+  state.ball.x = sp.x + 80;
+  state.ball.y = sp.y + 80;
+  state.ball.vx = 10;
+  state.ball.vy = 10;
+  for (var i = 0; i < 12; i++) sim.stepPhysics(state, 0.016);
+  assert(Math.abs(sp.angle - angleAfterHit) > 0.15, 'spinner angle should keep changing while coasting');
+  console.log('PASS: spinner coasts/rotates after hit');
+})();
+
+(function testBallSaveKicksOnceThenDrainSticks() {
+  var state = fresh();
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.ballSaveArmed = true;
+  state.ballSaveUsed = false;
+  var zones = sim.getDrainBounds(state);
+  state.ball.x = (zones.centerLeft + zones.centerRight) / 2;
+  state.ball.y = sim.DRAIN_Y + sim.BALL_RADIUS + 2;
+  var balls = state.ballsRemaining;
+  sim.checkDrain(state);
+  assert.strictEqual(state.ball.inPlay, true, 'ball-save keeps ball in play');
+  assert.strictEqual(state.ballSaveUsed, true);
+  assert.strictEqual(state.ballSaveArmed, false);
+  assert(state.ball.y < sim.FLIPPER_ROW_Y, 'save respawns above flippers');
+  assert.strictEqual(state.ballsRemaining, balls);
+  state.ball.x = (zones.centerLeft + zones.centerRight) / 2;
+  state.ball.y = sim.DRAIN_Y + sim.BALL_RADIUS + 2;
+  state.ball.vy = 100;
+  sim.checkDrain(state);
+  assert.strictEqual(state.ball.inPlay, false);
+  assert.strictEqual(state.ballsRemaining, balls - 1);
+  console.log('PASS: ball-save once then drain sticks');
 })();
 
 (function testDrainDecrementsBallsAndResets() {

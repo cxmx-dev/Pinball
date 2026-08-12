@@ -417,8 +417,8 @@
   }
 
   function createSpinner() {
-    // Under the arch peak — skill-shot neighbor
-    return { x: TABLE_W * 0.5, y: 118, radius: 16, angle: 0, score: 200, spinVel: 0, hitCooldown: 0 };
+    // Left under arch — clear of apex bumper (240,198) and left habitrail exit (~150,136)
+    return { x: 168, y: 124, radius: 16, angle: 0, score: 200, spinVel: 0, hitCooldown: 0 };
   }
 
   function getRestDrainBounds() {
@@ -480,20 +480,20 @@
       ellipseArcSegments(LAUNCH_LANE_LEFT - 8, 118, 42, 38, -Math.PI * 0.15, Math.PI * 0.55, 8, 'rail')
     );
 
-    // Short deck stubs under flipper pivots only — full-length gray bars blocked lower toys
+    // Tiny deck stubs under pivots only — longer stubs shelved balls in the inlanes
     var leftPivot = FLIPPER_LEFT_PIVOT_X;
     var rightPivot = FLIPPER_RIGHT_PIVOT_X;
     walls.push({
-      x1: leftPivot - 18,
+      x1: leftPivot - 16,
       y1: FLIPPER_ROW_Y,
-      x2: Math.min(drainL, leftPivot + FLIPPER_LEN * 0.55),
+      x2: leftPivot + 16,
       y2: FLIPPER_ROW_Y,
       kind: 'deck'
     });
     walls.push({
-      x1: Math.max(drainR, rightPivot - FLIPPER_LEN * 0.55),
+      x1: rightPivot - 16,
       y1: FLIPPER_ROW_Y,
-      x2: rightPivot + 18,
+      x2: rightPivot + 16,
       y2: FLIPPER_ROW_Y,
       kind: 'deck'
     });
@@ -1350,10 +1350,18 @@
     if (!state.ball.inPlay || !state.exitedLaunchLane) return;
     var ball = state.ball;
     var r = ball.radius;
+    // Keep playfield balls out of the plunger lane near the apron, but never
+    // loft a draining / below-flipper ball back above the flipper row.
     if (ball.x + r >= LAUNCH_LANE_LEFT - 1 && ball.y > FLIPPER_ROW_Y - 44) {
       ball.x = LAUNCH_LANE_LEFT - r - 2;
-      ball.vx = -Math.max(Math.abs(ball.vx), 220) * WALL_RESTITUTION;
-      if (ball.vy > -80) ball.vy = -Math.max(Math.abs(ball.vy), 140);
+      if (ball.vx > -40) {
+        ball.vx = -Math.max(Math.abs(ball.vx), 200) * WALL_RESTITUTION;
+      }
+      if (ball.y >= FLIPPER_ROW_Y - 8) {
+        if (ball.vy < 0) ball.vy = Math.abs(ball.vy) * 0.25;
+      } else if (ball.vy > -80) {
+        ball.vy = -Math.max(Math.abs(ball.vy), 140);
+      }
     }
   }
 
@@ -1610,7 +1618,7 @@
       }
     }
 
-    // Generic upper-slow only near rails (not center spinner / top bumper zone)
+    // Generic upper-slow only near rails (not left spinner / top bumper zone)
     var nearRail =
       ball.x - r < 36 + 30 ||
       ball.x + r > LAUNCH_LANE_LEFT - 20 ||
@@ -1738,28 +1746,30 @@
   function resolveSpinnerCollision(state) {
     var ball = state.ball;
     var sp = state.spinner;
+    if (!sp) return;
     var dx = ball.x - sp.x;
     var dy = ball.y - sp.y;
     var dist = vecLen(dx, dy);
     var minDist = ball.radius + sp.radius;
     if (dist < minDist && dist > 1e-6) {
-      var n = normalize(dx, dy);
-      ball.x = sp.x + n.x * minDist;
-      ball.y = sp.y + n.y * minDist;
-      var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, 0.9);
+      var nrm = normalize(dx, dy);
+      ball.x = sp.x + nrm.x * minDist;
+      ball.y = sp.y + nrm.y * minDist;
+      var rv = reflectVelocity(ball.vx, ball.vy, nrm.x, nrm.y, 0.9);
       ball.vx = rv.vx;
       ball.vy = rv.vy;
       var spinImpulse = Math.abs(ball.vx) + Math.abs(ball.vy);
-      sp.spinVel += spinImpulse * 0.004;
-      sp.angle += sp.spinVel;
-      sp.spinVel *= 0.985;
+      var tangential = Math.abs(ball.vx * nrm.y - ball.vy * nrm.x);
+      sp.spinVel += Math.max(0.55, spinImpulse * 0.0055 + tangential * 0.004);
       if (sp.hitCooldown <= 0) {
         awardScore(state, sp.score, 'spinner', 'spinner', sp.x, sp.y);
         sp.hitCooldown = HIT_COOLDOWN_SPINNER;
       }
-    } else {
-      sp.spinVel *= 0.99;
     }
+    // Coast: keep star rotating after contact (renderer reads sp.angle each frame)
+    sp.angle += sp.spinVel;
+    if (Math.abs(sp.spinVel) < 0.0015) sp.spinVel = 0;
+    else sp.spinVel *= 0.978;
   }
 
   function performDrain(state) {
@@ -1805,10 +1815,12 @@
     if (ball.x < zones.leftOutlaneRight) return 'left';
     if (ball.x > zones.centerLeft && ball.x < zones.centerRight) return 'center';
     if (ball.x > zones.rightOutlaneLeft && ball.x < LAUNCH_LANE_LEFT) return 'right';
-    if (ball.y > FLIPPER_ROW_Y + 20) {
-      if (ball.x < zones.leftOutlaneRight + r) return 'left';
-      if (ball.x > zones.centerLeft - r && ball.x < zones.centerRight + r) return 'center';
-      if (ball.x > zones.rightOutlaneLeft - r && ball.x < LAUNCH_LANE_LEFT + r) return 'right';
+    // Past flipper line: widen slots so apron dead-zones drain instead of looping
+    if (ball.y > FLIPPER_ROW_Y + 12) {
+      if (ball.x < zones.leftOutlaneRight + r + 8) return 'left';
+      if (ball.x > zones.centerLeft - r - 10 && ball.x < zones.centerRight + r + 10) return 'center';
+      if (ball.x > zones.rightOutlaneLeft - r - 8 && ball.x < LAUNCH_LANE_LEFT + r) return 'right';
+      if (ball.y > FLIPPER_ROW_Y + 36 && ball.x < LAUNCH_LANE_LEFT) return 'center';
     }
     return null;
   }
@@ -1835,8 +1847,12 @@
     if (!state.ball.inPlay || !state.exitedLaunchLane) return;
     var ball = state.ball;
     var speed = ballSpeed(ball);
-    if (speed > DECK_DRAIN_SPEED || ball.y < FLIPPER_ROW_Y - 24) return;
+    // Crawl / tip-trap rescue only — no rocket impulses (those caused apron jumps)
+    if (speed > 120) return;
+    if (ball.y < FLIPPER_ROW_Y - 16 || ball.y > FLIPPER_ROW_Y + 40) return;
     var zones = getDrainBounds(state);
+    // Already deep in a drain slot — let checkDrain finish the job
+    if (ball.y > FLIPPER_ROW_Y + 24 && isBallInDrainZone(ball, zones)) return;
     var centerX = (zones.centerLeft + zones.centerRight) * 0.5;
 
     state.flippers.forEach(function (flipper) {
@@ -1856,10 +1872,16 @@
       var dist = vecLen(ball.x - cx, ball.y - cy);
       var hitDist = ball.radius + flipper.width * 0.5;
 
-      if (dist < hitDist + 6 && speed < 170 && ball.y >= flipper.pivotY - 20) {
-        ball.vy += 380;
-        ball.vx += (centerX - ball.x) * 2.4;
-        ball.vx += flipper.side === 'left' ? 110 : -110;
+      if (dist < hitDist + 3 && speed < 110) {
+        // Peel into the center hole; prefer x over huge vy so we don't loft
+        ball.vx += (centerX - ball.x) * 1.1;
+        if (ball.y >= flipper.pivotY - 4) {
+          ball.vy = Math.max(ball.vy, 90);
+        }
+        // If parked on the tip, snap slightly into the drain gap
+        if (t > segLen * 0.55 && Math.abs(ball.x - tip.x) < 22) {
+          ball.x += (centerX - ball.x) * 0.2;
+        }
       }
     });
   }
@@ -1937,7 +1959,8 @@
     var ball = state.ball;
     var zones = getDrainBounds(state);
     var r = ball.radius;
-    // Return assist above flipper line - intentional outlane below still drains
+    // Return assist ABOVE flipper line only — never shelf-boost a true drain
+    if (ball.y >= FLIPPER_ROW_Y - 8) return;
     if (
       ball.x + r < zones.leftOutlaneRight + 14 &&
       ball.y > LEFT_INLANE_POST_TOP - 40 &&
@@ -1959,6 +1982,7 @@
     var ball = state.ball;
     var zones = getDrainBounds(state);
     var r = ball.radius;
+    if (ball.y >= FLIPPER_ROW_Y - 8) return;
     if (
       ball.x - r > zones.rightOutlaneLeft - 14 &&
       ball.x < LAUNCH_LANE_LEFT + 4 &&
@@ -1975,16 +1999,24 @@
   function nudgeInlaneApron(state) {
     if (!state.ball.inPlay || !state.exitedLaunchLane) return;
     var ball = state.ball;
-    if (ball.y + ball.radius < FLIPPER_ROW_Y - 2) return;
     var speed = ballSpeed(ball);
     if (speed > DECK_DRAIN_SPEED) return;
     var zones = getDrainBounds(state);
+    var centerX = (zones.centerLeft + zones.centerRight) * 0.5;
     var inLeftInlane = ball.x >= zones.leftOutlaneRight && ball.x <= zones.centerLeft;
     var inRightInlane = ball.x >= zones.centerRight && ball.x <= zones.rightOutlaneLeft;
-    if ((inLeftInlane || inRightInlane) && speed < 140) {
-      var targetX = inRightInlane ? zones.rightOutlaneLeft + 36 : zones.centerLeft - 12;
-      ball.vx += (targetX - ball.x) * 0.45;
-      ball.vy += Math.max(ball.vy, 200);
+    var nearFlipRow =
+      ball.y > FLIPPER_ROW_Y - ball.radius - 8 && ball.y < FLIPPER_ROW_Y + ball.radius + 6;
+    // On/near flipper row in an inlane: slide horizontally into the center hole.
+    // Never force +vy here — that fought deck bounce and pinned the ball.
+    if (nearFlipRow && (inLeftInlane || inRightInlane) && speed < 160) {
+      ball.vx += (centerX - ball.x) * 0.55;
+      return;
+    }
+    // Fully below the bats: feed toward center drain with a mild downward floor
+    if (ball.y >= FLIPPER_ROW_Y + ball.radius + 2 && (inLeftInlane || inRightInlane) && speed < 160) {
+      ball.vx += (centerX - ball.x) * 0.4;
+      if (ball.vy < 100) ball.vy = 100;
     }
   }
 
