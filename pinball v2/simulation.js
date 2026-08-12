@@ -5,7 +5,7 @@
 (function (root) {
   'use strict';
 
-  var GRAVITY = 1150;
+  var GRAVITY = 1240;
   var BALL_RADIUS = 12;
   var TABLE_W = 480;
   var TABLE_H = 860;
@@ -22,9 +22,9 @@
   /** Powered bat slap only while |omega| exceeds this (rad/s). */
   var FLIPPER_OMEGA_DEAD = 2;
   /** Scales tip velocity → ball Δv while sweeping. */
-  var FLIPPER_IMPULSE_GAIN = 0.78;
+  var FLIPPER_IMPULSE_GAIN = 0.85;
   /** Cap on powered add-speed from a flipper slap (px/s). */
-  var FLIPPER_MAX_ADD_SPEED = 1050;
+  var FLIPPER_MAX_ADD_SPEED = 1150;
   /** Tip-weight exponent on contact fraction t/segLen. */
   var FLIPPER_TIP_POWER = 1.2;
   var FLIPPER_RESTITUTION_SWEEP = 1.26;
@@ -38,15 +38,15 @@
   var HABITRAIL_MIN_SPEED = 240;
   /** Continuous along-path assist while riding a habitrail (px/s^2). */
   var HABITRAIL_ASSIST = 520;
-  var BUMPER_RESTITUTION = 1.08;
+  var BUMPER_RESTITUTION = 1.15;
   var FLIPPER_RESTITUTION = FLIPPER_RESTITUTION_PASSIVE;
   var SLING_RESTITUTION = 1.08;
   var KICKER_RESTITUTION = 1.2;
   /** Soft ball speed ceiling (px/s). */
   var MAX_BALL_SPEED = 1600;
   /** Base linear damp per physics step (~16ms); rises with speed. */
-  var BALL_DRAG_BASE = 0.0009;
-  var BALL_DRAG_SPEED = 0.0018;
+  var BALL_DRAG_BASE = 0.0007;
+  var BALL_DRAG_SPEED = 0.0014;
   var MAX_LAUNCH_POWER = 1400;
   var MIN_LAUNCH_POWER = 200;
   var LAUNCH_CHARGE_RATE = 1.1;
@@ -66,9 +66,9 @@
   var SLING_KICK_MAX = 300;
   var SLING_UP_BIAS = 0.38;
   var HIT_COOLDOWN_BUMPER = 0.24;
-  var MIN_BUMPER_EXIT_SPEED = 155;
-  var SAVER_BUMPER_EXIT_SPEED = 125;
-  var BUMPER_UNSTICK_SPEED = 95;
+  var MIN_BUMPER_EXIT_SPEED = 185;
+  var SAVER_BUMPER_EXIT_SPEED = 150;
+  var BUMPER_UNSTICK_SPEED = 125;
   var MAX_TILT_WARNINGS = 2;
   var TILT_COOLDOWN = 0.55;
   var LAUNCH_LANE_X = TABLE_W - 62;
@@ -147,15 +147,15 @@
    */
   function createBumpers() {
     return [
-      // Skill / apex — lower + slightly smaller so arch pocket cannot pinch
-      { x: 240, y: 192, radius: 28, score: 500, color: '#ff3366', kind: 'bumper', hitCooldown: 0 },
-      // Upper wings — inset from side orbits; below arch flare
-      { x: 178, y: 248, radius: 24, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0 },
-      { x: 302, y: 248, radius: 24, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
+      // Skill / apex - keep clear of arch pocket
+      { x: 240, y: 198, radius: 26, score: 500, color: '#ff3366', kind: 'bumper', hitCooldown: 0 },
+      // Upper wings - inset so ball cannot pinch vs outer rail / habitrail guide
+      { x: 200, y: 252, radius: 22, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0 },
+      { x: 268, y: 252, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
       // Single lower feeder (above drop bank; mid toys fill empty band above)
       { x: 240, y: 455, radius: 16, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0 },
       {
-        // Weaker / smaller saver — outlane tension
+        // Weaker / smaller saver - outlane tension
         x: 138,
         y: 478,
         radius: 14,
@@ -259,10 +259,10 @@
           { x1: 100, y1: 140, x2: 150, y2: 136 }
         ],
         guides: [
-          { x1: 112, y1: 555, x2: 100, y2: 465 },
-          { x1: 100, y1: 465, x2: 94, y2: 355 },
-          { x1: 94, y1: 355, x2: 92, y2: 250 },
-          { x1: 92, y1: 250, x2: 110, y2: 180 }
+          { x1: 108, y1: 555, x2: 96, y2: 465 },
+          { x1: 96, y1: 465, x2: 90, y2: 355 },
+          { x1: 90, y1: 355, x2: 88, y2: 250 },
+          { x1: 88, y1: 250, x2: 106, y2: 180 }
         ]
       },
       rightRamp: {
@@ -281,10 +281,10 @@
           { x1: 332, y1: 158, x2: 295, y2: 142 }
         ],
         guides: [
-          { x1: 340, y1: 550, x2: 334, y2: 445 },
-          { x1: 334, y1: 445, x2: 328, y2: 330 },
-          { x1: 328, y1: 330, x2: 318, y2: 225 },
-          { x1: 318, y1: 225, x2: 300, y2: 168 }
+          { x1: 346, y1: 550, x2: 340, y2: 445 },
+          { x1: 340, y1: 445, x2: 334, y2: 330 },
+          { x1: 334, y1: 330, x2: 326, y2: 225 },
+          { x1: 326, y1: 225, x2: 308, y2: 168 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 540,
@@ -375,7 +375,10 @@
   function createPosts() {
     return [
       { id: 'post-ml', x: 175, y: 385, radius: 9, score: 200, color: '#88ccee', flash: 0 },
-      { id: 'post-mr', x: 305, y: 385, radius: 9, score: 200, color: '#eecc88', flash: 0 }
+      { id: 'post-mr', x: 305, y: 385, radius: 9, score: 200, color: '#eecc88', flash: 0 },
+      // Above outlanes: kick outer-wall slides inward (not 100% death)
+      { id: 'post-ol-l', x: 66, y: 500, radius: 11, score: 150, color: '#88ffcc', flash: 0 },
+      { id: 'post-ol-r', x: LAUNCH_LANE_LEFT - 44, y: 500, radius: 11, score: 150, color: '#ffcc88', flash: 0 }
     ];
   }
 
@@ -494,12 +497,17 @@
       y2: FLIPPER_ROW_Y,
       kind: 'deck'
     });
-    // Inlane post starts lower so mid bumpers/kickers stay open
-    walls.push({ x1: FLIPPER_INLANE_X + 6, y1: 520, x2: FLIPPER_INLANE_X + 6, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' });
+    // Inlane posts + return plastics: wall-hug must hit shelf/post before free outlane fall
+    walls.push({ x1: FLIPPER_INLANE_X + 6, y1: 440, x2: FLIPPER_INLANE_X + 6, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' });
     walls.push({ x1: FLIPPER_INLANE_X + 6, y1: FLIPPER_ROW_Y - 20, x2: FLIPPER_INLANE_X + 6, y2: chuteBottom, kind: 'chute' });
-    walls.push({ x1: 36, y1: 540, x2: FLIPPER_INLANE_X + 10, y2: LEFT_INLANE_POST_TOP + 20, kind: 'chute' });
-    // Right inlane chute post
+    // Left return shelf (outer rail -> inlane): kicks inward/down toward flipper
+    walls.push({ x1: 42, y1: 455, x2: FLIPPER_INLANE_X + 4, y2: FLIPPER_ROW_Y - 40, kind: 'guide' });
+    walls.push({ x1: 36, y1: 420, x2: 72, y2: 505, kind: 'guide' });
+    // Right inlane post (mirror left) + return plastics
+    walls.push({ x1: rightInlaneX - 4, y1: 440, x2: rightInlaneX - 4, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' });
     walls.push({ x1: rightInlaneX - 4, y1: FLIPPER_ROW_Y - 20, x2: rightInlaneX - 4, y2: chuteBottom, kind: 'chute' });
+    walls.push({ x1: LAUNCH_LANE_LEFT - 10, y1: 455, x2: rightInlaneX, y2: FLIPPER_ROW_Y - 40, kind: 'guide' });
+    walls.push({ x1: LAUNCH_LANE_LEFT - 4, y1: 420, x2: rightInlaneX + 6, y2: 505, kind: 'guide' });
     walls.push({ x1: bounds.centerLeft, y1: FLIPPER_ROW_Y, x2: bounds.centerLeft, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: bounds.centerRight, y1: FLIPPER_ROW_Y, x2: bounds.centerRight, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: bounds.rightOutlaneLeft, y1: FLIPPER_ROW_Y, x2: bounds.rightOutlaneLeft, y2: chuteBottom, kind: 'chute' });
@@ -1082,6 +1090,12 @@
       var channelDist = nearOuter.dist;
       if (nearGuide) channelDist = Math.min(channelDist, nearGuide.dist);
       if (channelDist > ball.radius + 22) continue;
+      // Must sit between outer rail and inner guide - not playfield-side wall hug
+      if (nearGuide) {
+        var loX = Math.min(nearOuter.x, nearGuide.x) - 6;
+        var hiX = Math.max(nearOuter.x, nearGuide.x) + 6;
+        if (ball.x < loX || ball.x > hiX) continue;
+      }
       var ex = route.exit ? route.exit.x : ball.x;
       var ey = route.exit ? route.exit.y : ball.y - 60;
       var dir = normalize(ex - ball.x, ey - ball.y);
@@ -1458,11 +1472,13 @@
         var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, BUMPER_RESTITUTION);
         ball.vx = rv.vx;
         ball.vy = rv.vy;
-        if (bumper.saver && ballSpeed(ball) < 120) {
-          ball.vx += 70;
-          ball.vy -= 20;
+        if (bumper.saver) {
+          if (ballSpeed(ball) < 140) {
+            ball.vx += 80;
+            ball.vy -= 30;
+          }
           applyBumperExitSpeed(ball, n.x, n.y, SAVER_BUMPER_EXIT_SPEED);
-        } else if (!bumper.saver && ballSpeed(ball) < 70) {
+        } else {
           applyBumperExitSpeed(ball, n.x, n.y, MIN_BUMPER_EXIT_SPEED);
         }
         bumper.hitCooldown = HIT_COOLDOWN_BUMPER;
@@ -1570,8 +1586,8 @@
       }
     }
 
-    // Apex / wing bumper vs top-arch pinch (playtest stop ~upper-left)
-    if (state.bumpers && state.bumpers.length && speed <= 85) {
+    // Apex / wing bumper vs top-arch pinch (playtest soft-trap)
+    if (state.bumpers && state.bumpers.length && speed <= 120) {
       var bi;
       for (bi = 0; bi < Math.min(3, state.bumpers.length); bi++) {
         var bum = state.bumpers[bi];
@@ -1581,14 +1597,14 @@
         var bdist = vecLen(bdx, bdy);
         var bmin = ball.radius + bum.radius;
         var archY = topArchFloorY(ball.x);
-        var nearArch = ball.y - r < archY + 36;
-        var nearBump = bdist < bmin + 18;
-        if (nearArch && nearBump && ball.y < bum.y + 8) {
-          var kickN = normalize(bdx || 0.15, Math.max(0.35, bdy + 0.5));
-          ball.x = bum.x + kickN.x * (bmin + 10);
-          ball.y = Math.max(bum.y + kickN.y * (bmin + 10), archY + r + 14);
-          ball.vx = kickN.x * 200 + (ball.x < TABLE_W * 0.5 ? 40 : -40);
-          ball.vy = Math.max(140, Math.abs(kickN.y) * 180);
+        var nearArch = ball.y - r < archY + 42;
+        var nearBump = bdist < bmin + 22;
+        if (nearArch && nearBump && ball.y < bum.y + 12) {
+          var kickN = normalize(bdx || 0.15, Math.max(0.45, bdy + 0.55));
+          ball.x = bum.x + kickN.x * (bmin + 14);
+          ball.y = Math.max(bum.y + kickN.y * (bmin + 14), archY + r + 18);
+          ball.vx = kickN.x * 260 + (ball.x < TABLE_W * 0.5 ? 60 : -60);
+          ball.vy = Math.max(180, Math.abs(kickN.y) * 220);
           return;
         }
       }
@@ -1848,6 +1864,67 @@
     });
   }
 
+  /**
+   * Kill multi-second crawls on outer left rail (x~36) and playfield-side launch wall.
+   * Also frees wing-bumper + outer-wall pinches with an inward (toward playfield) impulse.
+   */
+  function unstickWallSlide(state) {
+    var ball = state.ball;
+    if (!ball.inPlay || !state.exitedLaunchLane) return;
+    var r = ball.radius;
+    var speed = ballSpeed(ball);
+    var absVx = Math.abs(ball.vx);
+    var absVy = Math.abs(ball.vy);
+    var crawling = speed < 160 || (absVx < 55 && absVy < 180);
+    if (!crawling) return;
+
+    if (state.bumpers && state.bumpers.length) {
+      var wi;
+      for (wi = 1; wi <= 2 && wi < state.bumpers.length; wi++) {
+        var wing = state.bumpers[wi];
+        if (!wing || wing.saver) continue;
+        var wdx = ball.x - wing.x;
+        var wdy = ball.y - wing.y;
+        var wdist = vecLen(wdx, wdy);
+        var wmin = r + wing.radius;
+        if (wdist > wmin + 16) continue;
+        var leftSide = wing.x < TABLE_W * 0.5;
+        var nearOuter = leftSide
+          ? ball.x - r < 36 + 36
+          : ball.x + r > LAUNCH_LANE_LEFT - 40;
+        if (!nearOuter && speed > 90) continue;
+        if (!nearOuter && wdist > wmin + 6) continue;
+        var inward = leftSide ? 1 : -1;
+        var n = normalize(Math.max(0.35, Math.abs(wdx)) * inward, wdy < 0 ? -0.15 : 0.55);
+        if (leftSide && n.x < 0.25) n = normalize(0.85, 0.35);
+        if (!leftSide && n.x > -0.25) n = normalize(-0.85, 0.35);
+        ball.x = wing.x + n.x * (wmin + 12);
+        ball.y = wing.y + n.y * (wmin + 12);
+        ball.vx = n.x * 280 + inward * 40;
+        ball.vy = Math.min(ball.vy, 60) + n.y * 120;
+        return;
+      }
+    }
+
+    var onLeftRail = ball.x - r <= 36 + 8 && ball.y > 155 && ball.y < FLIPPER_ROW_Y - 24;
+    var onRightPlay =
+      ball.x + r >= LAUNCH_LANE_LEFT - 8 &&
+      ball.x < LAUNCH_LANE_LEFT + r + 2 &&
+      ball.y > 155 &&
+      ball.y < FLIPPER_ROW_Y - 24;
+    if (onLeftRail && (absVx < 50 || speed < 130)) {
+      ball.x = 36 + r + 18;
+      ball.vx = Math.max(ball.vx, 240);
+      if (ball.vy > 120) ball.vy *= 0.55;
+      return;
+    }
+    if (onRightPlay && (absVx < 50 || speed < 130)) {
+      ball.x = LAUNCH_LANE_LEFT - r - 18;
+      ball.vx = -Math.max(Math.abs(ball.vx), 240);
+      if (ball.vy > 120) ball.vy *= 0.55;
+    }
+  }
+
   function getOutlaneSaverBumper(state) {
     for (var i = 0; i < state.bumpers.length; i++) {
       if (state.bumpers[i].saver) return state.bumpers[i];
@@ -1860,20 +1937,38 @@
     var ball = state.ball;
     var zones = getDrainBounds(state);
     var r = ball.radius;
-    // Weaker shelf assist (P1 outlane tension) — still prevents hard freeze only
+    // Return assist above flipper line - intentional outlane below still drains
     if (
-      ball.x + r < zones.leftOutlaneRight + 8 &&
-      ball.y > LEFT_INLANE_POST_TOP - 20 &&
-      ball.y < FLIPPER_ROW_Y + 4
+      ball.x + r < zones.leftOutlaneRight + 14 &&
+      ball.y > LEFT_INLANE_POST_TOP - 40 &&
+      ball.y < FLIPPER_ROW_Y - 8
     ) {
-      var safeX = zones.leftOutlaneRight + r + 2;
+      var safeX = zones.leftOutlaneRight + r + 6;
       var saver = getOutlaneSaverBumper(state);
-      if (saver && ball.y > saver.y - saver.radius - r - 16 && ball.y < saver.y + saver.radius + r + 16) {
-        safeX = Math.max(safeX, saver.x + saver.radius + r + 4);
+      if (saver && ball.y > saver.y - saver.radius - r - 20 && ball.y < saver.y + saver.radius + r + 20) {
+        safeX = Math.max(safeX, saver.x + saver.radius + r + 6);
       }
       if (ball.x < safeX) ball.x = safeX;
-      if (ball.vx < 50) ball.vx = 50;
-      if (ball.vy > 160) ball.vy -= 20;
+      if (ball.vx < 90) ball.vx = 90;
+      if (ball.vy > 140) ball.vy -= 40;
+    }
+  }
+
+  function guardRightOutlaneShelf(state) {
+    if (!state.ball.inPlay || !state.exitedLaunchLane) return;
+    var ball = state.ball;
+    var zones = getDrainBounds(state);
+    var r = ball.radius;
+    if (
+      ball.x - r > zones.rightOutlaneLeft - 14 &&
+      ball.x < LAUNCH_LANE_LEFT + 4 &&
+      ball.y > LEFT_INLANE_POST_TOP - 40 &&
+      ball.y < FLIPPER_ROW_Y - 8
+    ) {
+      var safeXr = zones.rightOutlaneLeft - r - 6;
+      if (ball.x > safeXr) ball.x = safeXr;
+      if (ball.vx > -90) ball.vx = -90;
+      if (ball.vy > 140) ball.vy -= 40;
     }
   }
 
@@ -2002,10 +2097,12 @@
     resolveWallCollisions(state);
     assistHabitrails(state, dt);
     guardLeftOutlaneShelf(state);
+    guardRightOutlaneShelf(state);
     resolveSlingshotCollisions(state);
     resolveBumperCollisions(state);
     unstickFromBumpers(state);
     unstickFromCorners(state);
+    unstickWallSlide(state);
     resolvePostCollisions(state);
     resolveKickerCollisions(state);
     resolveTargetCollisions(state);
@@ -2170,6 +2267,8 @@
 
   var api = {
     GRAVITY: GRAVITY,
+    BUMPER_RESTITUTION: BUMPER_RESTITUTION,
+    MIN_BUMPER_EXIT_SPEED: MIN_BUMPER_EXIT_SPEED,
     HABITRAIL_RESTITUTION: HABITRAIL_RESTITUTION,
     HABITRAIL_MIN_SPEED: HABITRAIL_MIN_SPEED,
     BALL_DRAG_BASE: BALL_DRAG_BASE,
