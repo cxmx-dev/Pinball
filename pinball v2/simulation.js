@@ -249,16 +249,16 @@
         score: 800,
         cooldown: 0,
         entry: { x: 78, y: 545, w: 36, h: 40 },
-        exit: { x: 150, y: 148 },
+        exit: { x: 122, y: 168 },
         boost: 340,
-        // Wider outer/inner gap so ball cannot pinch & crawl
+        // Dump below-left of spinner so the last wall is not a shelf in the left cusp
         segments: [
           { x1: 68, y1: 560, x2: 50, y2: 470 },
           { x1: 50, y1: 470, x2: 40, y2: 360 },
           { x1: 40, y1: 360, x2: 38, y2: 245 },
           { x1: 38, y1: 245, x2: 52, y2: 175 },
-          { x1: 52, y1: 175, x2: 100, y2: 140 },
-          { x1: 100, y1: 140, x2: 150, y2: 136 }
+          { x1: 52, y1: 175, x2: 86, y2: 154 },
+          { x1: 86, y1: 154, x2: 118, y2: 170 }
         ],
         guides: [
           { x1: 108, y1: 555, x2: 96, y2: 465 },
@@ -276,11 +276,11 @@
         boost: 360,
         // Stay left of shooter lane; widen channel vs crawl
         segments: [
-          { x1: 384, y1: 555, x2: 378, y2: 450 },
-          { x1: 378, y1: 450, x2: 372, y2: 330 },
-          { x1: 372, y1: 330, x2: 360, y2: 215 },
-          { x1: 360, y1: 215, x2: 332, y2: 158 },
-          { x1: 332, y1: 158, x2: 295, y2: 142 }
+          { x1: 384, y1: 555, x2: 380, y2: 450 },
+          { x1: 380, y1: 450, x2: 378, y2: 330 },
+          { x1: 378, y1: 330, x2: 376, y2: 175 },
+          { x1: 376, y1: 175, x2: 338, y2: 152 },
+          { x1: 338, y1: 152, x2: 298, y2: 144 }
         ],
         guides: [
           { x1: 346, y1: 550, x2: 340, y2: 445 },
@@ -420,7 +420,7 @@
 
   function createSpinner() {
     // Left under arch â€” clear of apex bumper (240,198) and left habitrail exit (~150,136)
-    return { x: 168, y: 124, radius: 16, angle: 0, score: 200, spinVel: 0, hitCooldown: 0 };
+    return { x: 172, y: 118, radius: 15, angle: 0, score: 200, spinVel: 0, hitCooldown: 0 };
   }
 
   function getRestDrainBounds() {
@@ -1106,6 +1106,11 @@
       var channelDist = nearOuter.dist;
       if (nearGuide) channelDist = Math.min(channelDist, nearGuide.dist);
       if (channelDist > ball.radius + 22) continue;
+      // Do not drag a ball sitting on the spinner (left dump used to feed that cusp)
+      if (state.spinner && route.id === 'ramp-l') {
+        var spAssist = state.spinner;
+        if (vecLen(ball.x - spAssist.x, ball.y - spAssist.y) < spAssist.radius + ball.radius + 30) continue;
+      }
       // Must sit between outer rail and inner guide - not playfield-side wall hug
       if (nearGuide) {
         var loX = Math.min(nearOuter.x, nearGuide.x) - 6;
@@ -1569,10 +1574,32 @@
     var ball = state.ball;
     if (!ball.inPlay || !state.exitedLaunchLane) return;
     var speed = ballSpeed(ball);
-    if (speed > 70) return;
     var r = ball.radius;
     var upper = ball.y < 300;
     if (!upper) return;
+
+    // Spinner-left cusp vs habitrail/arch: kick into playfield (right+down), never outlane.
+    // Live bounce-loops here can exceed the slow-crawl speed gate.
+    var spn = state.spinner;
+    if (spn && ball.x < spn.x + 6 && ball.x > spn.x - 70 && ball.y < spn.y + 42 && ball.y > spn.y - 40) {
+      var sdist = vecLen(ball.x - spn.x, ball.y - spn.y);
+      var nearSp = sdist < spn.radius + r + 24;
+      var nearShelf = false;
+      var leftRt = state.sideRoutes && state.sideRoutes.leftRamp;
+      if (leftRt && leftRt.segments) {
+        var np = nearestPointOnSegments(ball.x, ball.y, leftRt.segments);
+        nearShelf = np && np.dist < r + 18;
+      }
+      if (nearSp && (nearShelf || speed <= 160 || sdist < spn.radius + r + 4)) {
+        ball.x = spn.x + 12;
+        ball.y = Math.max(spn.y + spn.radius + r + 6, ball.y + 10);
+        ball.vx = Math.max(200, Math.abs(ball.vx) * 0.35 + 140);
+        ball.vy = Math.max(170, Math.abs(ball.vy) * 0.35 + 90);
+        return;
+      }
+    }
+
+    if (speed > 70) return;
 
     // Top-left pocket: near left rail + upper third
     var nearLeft = ball.x - r < 36 + 28;
@@ -1685,9 +1712,17 @@
         var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, WALL_RESTITUTION + 0.08);
         ball.vx = rv.vx;
         ball.vy = rv.vy;
-        if (ballSpeed(ball) < 90) {
-          ball.vx += n.x * 70;
-          ball.vy += n.y * 70 - 30;
+        if (ballSpeed(ball) < 120) {
+          var inwardP = post.x < TABLE_W * 0.5 ? 1 : -1;
+          if (n.y < -0.35) {
+            ball.x = post.x + inwardP * (minDist + 10);
+            ball.y = post.y + 2;
+            ball.vx = inwardP * 150;
+            ball.vy = Math.max(ball.vy, 100);
+          } else {
+            ball.vx += n.x * 80 + inwardP * 40;
+            ball.vy += n.y * 70 + 40;
+          }
         }
         if (!post._hitLock) {
           post._hitLock = true;
@@ -1715,6 +1750,13 @@
         var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, KICKER_RESTITUTION);
         ball.vx = rv.vx * 1.1;
         ball.vy = rv.vy * 1.1;
+        if (ballSpeed(ball) < 130 && n.y < -0.35) {
+          var inwardK = kicker.x < TABLE_W * 0.5 ? 1 : -1;
+          ball.x = kicker.x + inwardK * (minDist + 10);
+          ball.y = Math.max(ball.y, kicker.y + 4);
+          ball.vx = inwardK * Math.max(160, Math.abs(ball.vx));
+          ball.vy = Math.max(ball.vy, 110);
+        }
         awardScore(state, kicker.score, 'kicker', kicker.id, kicker.x, kicker.y);
       }
     });
@@ -1963,6 +2005,24 @@
     var absVx = Math.abs(ball.vx);
     var absVy = Math.abs(ball.vy);
     var crawling = speed < 160 || (absVx < 55 && absVy < 180);
+
+    // Right orbit vs shooter slot: live bounce-loops are often faster than the crawl gate.
+    var rightRtEarly = state.sideRoutes && state.sideRoutes.rightRamp;
+    if (rightRtEarly && rightRtEarly.segments && ball.y > 140 && ball.y < 420 && ball.x < LAUNCH_LANE_LEFT) {
+      var npRE = nearestPointOnSegments(ball.x, ball.y, rightRtEarly.segments);
+      var inSlotEarly =
+        ball.x + r > LAUNCH_LANE_LEFT - 40 &&
+        npRE &&
+        npRE.dist < r + 22 &&
+        ball.x > npRE.x;
+      if (inSlotEarly) {
+        ball.x = npRE.x - r - 12;
+        ball.vx = -Math.max(Math.abs(ball.vx), 220);
+        ball.vy = Math.max(ball.vy, 140);
+        return;
+      }
+    }
+
     if (!crawling) return;
 
     if (state.bumpers && state.bumpers.length) {
@@ -2009,6 +2069,23 @@
       ball.x = LAUNCH_LANE_LEFT - r - 18;
       ball.vx = -Math.max(Math.abs(ball.vx), 240);
       if (ball.vy > 120) ball.vy *= 0.55;
+      return;
+    }
+    // Live ping-pong in the slot between right orbit outer and shooter wall
+    var rightRt = state.sideRoutes && state.sideRoutes.rightRamp;
+    if (rightRt && rightRt.segments && ball.y > 140 && ball.y < 420 && ball.x < LAUNCH_LANE_LEFT) {
+      var npR = nearestPointOnSegments(ball.x, ball.y, rightRt.segments);
+      var inSlot =
+        ball.x + r > LAUNCH_LANE_LEFT - 36 &&
+        npR &&
+        npR.dist < r + 20 &&
+        ball.x > npR.x;
+      if (inSlot) {
+        ball.x = Math.min(ball.x, LAUNCH_LANE_LEFT - r - 20);
+        if (npR.x + r + 8 > ball.x) ball.x = npR.x - r - 10;
+        ball.vx = -Math.max(Math.abs(ball.vx), 220);
+        ball.vy = Math.max(ball.vy, 140);
+      }
     }
   }
 
