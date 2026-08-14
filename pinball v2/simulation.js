@@ -2375,12 +2375,17 @@
       var next = !!active;
       if (next && !f.active) {
         f.pressAge = 0;
-        if ((f.sinceLastPress != null ? f.sinceLastPress : 99) <= FLIPPER_DBL_TAP_WINDOW) {
+        if (f.chargeLeft > 0) {
+          // Already flashing — flip only; do not re-arm or chain into a new charge.
+          f.sinceLastPress = 99;
+        } else if ((f.sinceLastPress != null ? f.sinceLastPress : 99) <= FLIPPER_DBL_TAP_WINDOW) {
           f.chargeLeft = FLIPPER_CHARGE_SEC;
           f.glowPhase = 0;
           f.tapBoost = true;
+          f.sinceLastPress = 0;
+        } else {
+          f.sinceLastPress = 0;
         }
-        f.sinceLastPress = 0;
       }
       f.active = next;
     });

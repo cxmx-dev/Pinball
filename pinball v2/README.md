@@ -17,9 +17,12 @@ In-game **legend** slides from the **right** (**L**, **Legend** button, or swipe
 | Close legend | **L** · **Esc** · **[X]** | **[X]** · **Esc** |
 | Game over | Spinning pinball · NumPad **7** | **Press here to Restart** · spin pinball |
 
-**Double-tap charge:** double-tap a flipper to charge **2×** hits for 15s. That bat glows through green / yellow / cyan / orange / blue / white; the pulse starts at 4×/sec and slows as the charge fades.
+**Double-tap charge:** double-tap a flipper to charge **2×** hits for 15s. That bat glows through green / yellow / cyan / orange / blue / white; the pulse starts at 4×/sec and slows as the charge fades. A double-tap on a bat that is already glowing does not re-charge. A double-tap on a bat that is already glowing does not re-charge.
 
 **PC theme:** press **`T`** (or left half of dock split). Cycles Void Pulse ↔ Ember Rail — art only.
+
+
+**Gamepad** (Xbox layout in the browser; PlayStation / Switch equivalents in the in-game legend): left flipper **LT · LB · A**; right **RT · RB · B**; plunger **X · Select/View · R3**; theme **Y**; tilt **LT+RT+LB+RB**; pause **Start**. D-pad and left analog are reserved for menu navigation.
 
 **Dock:** L Flip · Launch · R Flip, then centered **Theme \| Legend** split (away from flippers). No top key-hint strip — use legend.
 

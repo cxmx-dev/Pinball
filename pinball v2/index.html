@@ -197,6 +197,27 @@
       content: "PC: T = theme · L = legend · ";
       color: #7dffb0;
     }
+
+    #pause-overlay {
+      position: fixed; inset: 0; z-index: 35;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(2, 4, 12, 0.62);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    #pause-overlay.open { opacity: 1; pointer-events: auto; }
+    #pause-overlay .pause-card {
+      min-width: min(280px, 80vw);
+      padding: 22px 26px;
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      background: rgba(8, 10, 24, 0.95);
+      color: #e8f6ff;
+      text-align: center;
+      box-shadow: 0 0 28px rgba(0, 220, 255, 0.18);
+    }
+    #pause-overlay h2 { margin: 0 0 8px; letter-spacing: 0.12em; color: #00f0ff; }
+    #pause-overlay p { margin: 6px 0; font-size: 14px; }
+    #pause-overlay .pause-hint { font-size: 12px; color: #9ab; }
     /* ---- Legend slide-drawer (from right) ---- */
     #legend-backdrop {
       position: fixed;
@@ -284,6 +305,8 @@
       border-bottom: 1px solid rgba(0, 240, 255, 0.22);
       vertical-align: bottom;
     }
+    #legend-drawer .pad-map { display: block; font-size: 11px; color: #8fd; margin-top: 3px; font-weight: 600; }
+    #legend-drawer .pad-eq { color: #9ab; font-weight: 500; }
     #legend-drawer td {
       padding: 14px 10px 14px 0;
       vertical-align: middle;
@@ -610,6 +633,14 @@
   </div>
   <div class="vignette"></div>
 
+  
+  <div id="pause-overlay" aria-hidden="true">
+    <div class="pause-card">
+      <h2>PAUSED</h2>
+      <p>Start · Options · Plus to resume</p>
+      <p class="pause-hint">D-pad and analog will move menu items when settings land.</p>
+    </div>
+  </div>
   <div id="legend-backdrop" aria-hidden="true"></div>
   <aside id="legend-drawer" aria-label="Controls legend" aria-hidden="true">
     <h2>Controls</h2>
@@ -632,33 +663,33 @@
         <tbody>
           <tr>
             <td>Left flipper</td>
-            <td class="legend-col-pc">← · <strong>A</strong> · NumPad <strong>1</strong> · LMB</td>
-            <td class="legend-col-mobile">L Flip · left half of table</td>
+            <td class="legend-col-pc">← · <strong>A</strong> · NumPad <strong>1</strong> · LMB<br><span class="pad-map">Pad: LT · LB · A <span class="pad-eq">(L2 · L1 · ✕ / ZL · L · B)</span></span></td>
+            <td class="legend-col-mobile">L Flip · left half · pad LT/LB/A</td>
           </tr>
           <tr>
             <td>Right flipper</td>
-            <td class="legend-col-pc">→ · <strong>D</strong> · NumPad <strong>3</strong> · RMB</td>
-            <td class="legend-col-mobile">R Flip · right half of table</td>
+            <td class="legend-col-pc">→ · <strong>D</strong> · NumPad <strong>3</strong> · RMB<br><span class="pad-map">Pad: RT · RB · B <span class="pad-eq">(R2 · R1 · ○ / ZR · R · A)</span></span></td>
+            <td class="legend-col-mobile">R Flip · right half · pad RT/RB/B</td>
           </tr>
           <tr>
             <td>Double-tap charge (2×)</td>
-            <td class="legend-col-pc">Double-tap any flipper key / mouse</td>
-            <td class="legend-col-mobile">Double-tap L/R Flip or table half</td>
+            <td class="legend-col-pc">Double-tap any flipper key / mouse / pad<br><span class="pad-map">Ignored while that bat is already glowing</span></td>
+            <td class="legend-col-mobile">Double-tap L/R · ignored if already glowing</td>
           </tr>
           <tr>
             <td>Charge / launch</td>
-            <td class="legend-col-pc">Space hold / release</td>
-            <td class="legend-col-mobile">Launch hold / release</td>
+            <td class="legend-col-pc">Space hold / release<br><span class="pad-map">Pad: X · Select/View · R3 <span class="pad-eq">(□ · Create · R3 / Y · Minus · R-stick in)</span></span></td>
+            <td class="legend-col-mobile">Launch hold / release · pad X / Select / R3</td>
           </tr>
           <tr>
             <td>Tilt</td>
-            <td class="legend-col-pc">NumPad <strong>7</strong> only (×3 drain)</td>
-            <td class="legend-col-mobile">HUD <strong>Tilt</strong> (top band)</td>
+            <td class="legend-col-pc">NumPad <strong>7</strong> only (×3 drain)<br><span class="pad-map">Pad: LT+RT+LB+RB together <span class="pad-eq">(L2+R2+L1+R1 / ZL+ZR+L+R)</span></span></td>
+            <td class="legend-col-mobile">HUD Tilt · pad all four shoulders</td>
           </tr>
           <tr>
             <td>Theme (art only)</td>
-            <td class="legend-col-pc"><strong>T</strong> · split left half</td>
-            <td class="legend-col-mobile">Theme | Legend (left half)</td>
+            <td class="legend-col-pc"><strong>T</strong> · split left half<br><span class="pad-map">Pad: Y <span class="pad-eq">(△ / X)</span></span></td>
+            <td class="legend-col-mobile">Theme | Legend (left) · pad Y</td>
           </tr>
           <tr>
             <td>Open legend</td>
@@ -671,6 +702,16 @@
             <td class="legend-col-mobile">[X] Close · Esc</td>
           </tr>
           <tr>
+            <td>Pause / menu</td>
+            <td class="legend-col-pc">Start <span class="pad-eq">(Options / Plus)</span></td>
+            <td class="legend-col-mobile">Start · Options · Plus</td>
+          </tr>
+          <tr>
+            <td>Menu navigate</td>
+            <td class="legend-col-pc">D-pad · left analog <span class="pad-eq">(when settings exist)</span></td>
+            <td class="legend-col-mobile">D-pad · left stick (later)</td>
+          </tr>
+          <tr>
             <td>Game over restart</td>
             <td class="legend-col-pc">NumPad 7 · spinning pinball</td>
             <td class="legend-col-mobile">Press here to Restart · spin pinball</td>
@@ -678,7 +719,7 @@
         </tbody>
       </table>
       <p class="legend-note">
-        Theme cycles Void Pulse ↔ Ember Rail (look only — physics unchanged). Double-tap a flipper to charge 2× hits for 15s. That bat glows green→yellow→cyan→orange→blue→white (dim to bright); the cycle starts at 4×/sec and slows as the charge runs out. Audio unlocks on first input.
+        Theme cycles Void Pulse ↔ Ember Rail (look only — physics unchanged). Double-tap a flipper to charge 2× hits for 15s (glow green→yellow→cyan→orange→blue→white; starts at 4×/sec and slows). A double-tap on a bat that is already glowing does not re-charge. Pads use the Xbox layout in the browser; PlayStation and Switch equivalents are in the rows above. Audio unlocks on first input.
       </p>
     </div>
     <div class="legend-foot">
@@ -693,6 +734,7 @@
   <script src="assets.js"></script>
   <script src="renderer.js"></script>
   <script src="audio.js"></script>
+  <script src="gamepad.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

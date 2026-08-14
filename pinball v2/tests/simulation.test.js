@@ -16,6 +16,33 @@ function flushEob(state) {
 }
 
 console.log('Pinball simulation unit tests');
+
+(function testDoubleTapIgnoredWhileGlowing() {
+  var state = fresh();
+  var left = state.flippers.find(function (f) { return f.side === 'left'; });
+  sim.activateFlipper(state, 'left', true);
+  sim.stepPhysics(state, 0.05);
+  sim.activateFlipper(state, 'left', false);
+  sim.stepPhysics(state, 0.08);
+  sim.activateFlipper(state, 'left', true);
+  sim.stepPhysics(state, 0.016);
+  assert(left.chargeLeft > 14, 'first double-tap charges');
+  var leftAfter = left.chargeLeft;
+  sim.activateFlipper(state, 'left', false);
+  sim.stepPhysics(state, 0.5);
+  var mid = left.chargeLeft;
+  assert(mid > 0 && mid < leftAfter, 'charge is ticking');
+  sim.activateFlipper(state, 'left', true);
+  sim.stepPhysics(state, 0.05);
+  sim.activateFlipper(state, 'left', false);
+  sim.stepPhysics(state, 0.08);
+  sim.activateFlipper(state, 'left', true);
+  sim.stepPhysics(state, 0.016);
+  assert(left.chargeLeft < mid - 0.02, 'double-tap while glowing must not reset (mid=' + mid.toFixed(2) + ' now=' + left.chargeLeft.toFixed(2) + ')');
+  assert(left.chargeLeft > mid - 0.4, 'charge should still be the same glow, not a new 15s');
+  console.log('PASS: double-tap ignored while glowing (charge=' + left.chargeLeft.toFixed(2) + ')');
+})();
+
 console.log('=============================');
 
 (function testGravityUpdatesPositionAndVelocity() {

@@ -25,6 +25,10 @@
   var state = Sim.createInitialState();
   var lastTime = 0;
   var keys = { left: false, right: false, launch: false };
+  var padHeld = { left: false, right: false, launch: false };
+  var dockHeld = { left: false, right: false };
+  var padPrev = { theme: false, menu: false, tilt: false };
+  var paused = false;
   var soundPrev = Audio.createPrev();
   var activePointers = Object.create(null);
   var legendOpen = false;
@@ -283,6 +287,48 @@
     return code === 'ArrowRight' || code === 'KeyD' || code === 'Numpad3';
   }
 
+  function pointerHolds(side) {
+    for (var id in activePointers) {
+      if (activePointers[id] === side) return true;
+    }
+    return false;
+  }
+
+  function syncFlippersAndLaunch() {
+    var left = anyHeld(leftKeyHeld) || padHeld.left || dockHeld.left || pointerHolds('left');
+    var right = anyHeld(rightKeyHeld) || padHeld.right || dockHeld.right || pointerHolds('right');
+    setLeftFlipper(left);
+    setRightFlipper(right);
+    var launch = keys.launchSpace || padHeld.launch;
+    if (launch) beginLaunchCharge();
+    else endLaunchCharge();
+  }
+
+  function setPaused(on) {
+    paused = !!on;
+    var el = document.getElementById('pause-overlay');
+    if (el) {
+      el.classList.toggle('open', paused);
+      el.setAttribute('aria-hidden', paused ? 'false' : 'true');
+    }
+  }
+
+  function pollGamepad() {
+    var Pad = window.PinballPad;
+    if (!Pad || !Pad.poll) return;
+    var p = Pad.poll();
+    padHeld.left = p.left;
+    padHeld.right = p.right;
+    padHeld.launch = p.launch;
+    if (p.theme && !padPrev.theme) cycleTheme();
+    if (p.menu && !padPrev.menu) setPaused(!paused);
+    if (p.tilt && !padPrev.tilt) doTiltOrRestart();
+    padPrev.theme = p.theme;
+    padPrev.menu = p.menu;
+    padPrev.tilt = p.tilt;
+    // navX/navY reserved for pause/main menu items when those screens exist.
+    syncFlippersAndLaunch();
+  }
   function anyHeld(map) {
     for (var k in map) {
       if (map[k]) return true;
@@ -304,16 +350,17 @@
     if (isLeftFlipperKey(e.code)) {
       e.preventDefault();
       leftKeyHeld[e.code] = true;
-      setLeftFlipper(true);
+      syncFlippersAndLaunch();
     }
     if (isRightFlipperKey(e.code)) {
       e.preventDefault();
       rightKeyHeld[e.code] = true;
-      setRightFlipper(true);
+      syncFlippersAndLaunch();
     }
     if (e.code === 'Space') {
       e.preventDefault();
-      beginLaunchCharge();
+      keys.launchSpace = true;
+      syncFlippersAndLaunch();
     }
     // Tilt is intentionally awkward (NumPad 7 only) — not letter R
     if (e.code === 'Numpad7') {
@@ -327,13 +374,13 @@
     unlockAudio();
     if (isLeftFlipperKey(e.code)) {
       leftKeyHeld[e.code] = false;
-      if (!anyHeld(leftKeyHeld)) setLeftFlipper(false);
+      syncFlippersAndLaunch();
     }
     if (isRightFlipperKey(e.code)) {
       rightKeyHeld[e.code] = false;
-      if (!anyHeld(rightKeyHeld)) setRightFlipper(false);
+      syncFlippersAndLaunch();
     }
-    if (e.code === 'Space') endLaunchCharge();
+    if (e.code === 'Space') { keys.launchSpace = false; syncFlippersAndLaunch(); }
   }
 
   function sideFromEvent(e) {
@@ -364,19 +411,19 @@
     if (e.pointerType === 'mouse' || e.pointerType === 'pen') {
       if (e.button === 0) {
         e.preventDefault();
-        setLeftFlipper(true);
+        syncFlippersAndLaunch();
         activePointers[e.pointerId] = 'left';
       } else if (e.button === 2) {
         e.preventDefault();
-        setRightFlipper(true);
+        syncFlippersAndLaunch();
         activePointers[e.pointerId] = 'right';
       }
     } else {
       e.preventDefault();
       var side = sideFromEvent(e);
       activePointers[e.pointerId] = side;
-      if (side === 'left') setLeftFlipper(true);
-      else setRightFlipper(true);
+      if (side === 'left') syncFlippersAndLaunch();
+      else syncFlippersAndLaunch();
     }
     try {
       canvas.setPointerCapture(e.pointerId);
@@ -391,16 +438,16 @@
       for (var id in activePointers) {
         if (activePointers[id] === 'left') stillLeft = true;
       }
-      if (!stillLeft) setLeftFlipper(false);
+      syncFlippersAndLaunch();
     } else if (side === 'right') {
       var stillRight = false;
       for (var id2 in activePointers) {
         if (activePointers[id2] === 'right') stillRight = true;
       }
-      if (!stillRight) setRightFlipper(false);
+      syncFlippersAndLaunch();
     } else if (e.pointerType === 'mouse') {
-      if (e.button === 0) setLeftFlipper(false);
-      if (e.button === 2) setRightFlipper(false);
+      syncFlippersAndLaunch();
+      syncFlippersAndLaunch();
     }
     try {
       if (canvas.hasPointerCapture && canvas.hasPointerCapture(e.pointerId)) {
@@ -440,14 +487,18 @@
 
   function wireTouchUi() {
     bindHoldButton(document.getElementById('btn-left'), function () {
-      setLeftFlipper(true);
+      dockHeld.left = true;
+      syncFlippersAndLaunch();
     }, function () {
-      setLeftFlipper(false);
+      dockHeld.left = false;
+      syncFlippersAndLaunch();
     });
     bindHoldButton(document.getElementById('btn-right'), function () {
-      setRightFlipper(true);
+      dockHeld.right = true;
+      syncFlippersAndLaunch();
     }, function () {
-      setRightFlipper(false);
+      dockHeld.right = false;
+      syncFlippersAndLaunch();
     });
     bindHoldButton(document.getElementById('btn-launch'), beginLaunchCharge, endLaunchCharge);
     bindTapButton(document.getElementById('btn-tilt'), doTiltOrRestart);
@@ -524,6 +575,13 @@
     if (!lastTime) lastTime = timestamp;
     var dt = Math.min((timestamp - lastTime) / 1000, 0.033);
     lastTime = timestamp;
+
+    pollGamepad();
+    if (paused) {
+      Render.render(canvas, state, 0);
+      requestAnimationFrame(gameLoop);
+      return;
+    }
 
     if (keys.left) Sim.activateFlipper(state, 'left', true);
     if (keys.right) Sim.activateFlipper(state, 'right', true);
