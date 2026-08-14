@@ -27,7 +27,7 @@
   var keys = { left: false, right: false, launch: false };
   var padHeld = { left: false, right: false, launch: false };
   var dockHeld = { left: false, right: false };
-  var padPrev = { theme: false, menu: false, tilt: false };
+  var padPrev = { theme: false, menu: false, tilt: false, legend: false, flip: false };
   var paused = false;
   var soundPrev = Audio.createPrev();
   var activePointers = Object.create(null);
@@ -323,10 +323,17 @@
     if (p.theme && !padPrev.theme) cycleTheme();
     if (p.menu && !padPrev.menu) setPaused(!paused);
     if (p.tilt && !padPrev.tilt) doTiltOrRestart();
+    if (p.legend && !padPrev.legend && !paused) toggleLegend();
+    if (state.phase === 'game_over' && (p.left || p.right) && !padPrev.flip) {
+      restartGame();
+    }
     padPrev.theme = p.theme;
     padPrev.menu = p.menu;
     padPrev.tilt = p.tilt;
-    // navX/navY reserved for pause/main menu items when those screens exist.
+    padPrev.legend = !!p.legend;
+    padPrev.flip = !!(p.left || p.right);
+    // D-pad reserved for pause/main menu items when those screens exist.
+    // Left analog stick toggles the legend (same as L) during play.
     syncFlippersAndLaunch();
   }
   function anyHeld(map) {

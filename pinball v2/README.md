@@ -22,7 +22,7 @@ In-game **legend** slides from the **right** (**L**, **Legend** button, or swipe
 **PC theme:** press **`T`** (or left half of dock split). Cycles Void Pulse ↔ Ember Rail — art only.
 
 
-**Gamepad** (Xbox layout in the browser; PlayStation / Switch equivalents in the in-game legend): left flipper **LT · LB · A**; right **RT · RB · B**; plunger **X · Select/View · R3**; theme **Y**; tilt **LT+RT+LB+RB**; pause **Start**. D-pad and left analog are reserved for menu navigation.
+**Gamepad** (Xbox layout in the browser; PlayStation / Switch equivalents in the in-game legend): left flipper **LT · LB · A**; right **RT · RB · B**; plunger **X · Select/View · R3 · right stick down** (hold to charge, release to fire); theme **Y**; tilt **LT+RT+LB+RB**; pause **Start**; legend **left analog stick** (flick any way, same as **L**); game-over restart **any flipper button**. D-pad is reserved for menu navigation.
 
 **Dock:** L Flip · Launch · R Flip, then centered **Theme \| Legend** split (away from flippers). No top key-hint strip — use legend.
 

@@ -14,6 +14,7 @@
     DUP: 12, DDOWN: 13, DLEFT: 14, DRIGHT: 15
   };
   var DEAD = 0.35;
+  var STICK = 0.55;
   var TRIG = 0.45;
 
   function pressed(b) {
@@ -43,6 +44,7 @@
       tilt: false,
       theme: false,
       menu: false,
+      legend: false,
       navX: 0,
       navY: 0
     };
@@ -55,8 +57,11 @@
     var rb = pressed(b[BTN.RB]);
     var lx = ax[0] || 0;
     var ly = ax[1] || 0;
+    var ry = ax[3] || 0;
+    var rDown = ry > STICK;
     var navX = 0;
     var navY = 0;
+    var stick = Math.abs(lx) > STICK || Math.abs(ly) > STICK;
     if (pressed(b[BTN.DLEFT]) || lx < -DEAD) navX = -1;
     else if (pressed(b[BTN.DRIGHT]) || lx > DEAD) navX = 1;
     if (pressed(b[BTN.DUP]) || ly < -DEAD) navY = -1;
@@ -66,10 +71,11 @@
       id: gp.id || '',
       left: lt || lb || pressed(b[BTN.A]),
       right: rt || rb || pressed(b[BTN.B]),
-      launch: pressed(b[BTN.X]) || pressed(b[BTN.SELECT]) || pressed(b[BTN.R3]),
+      launch: pressed(b[BTN.X]) || pressed(b[BTN.SELECT]) || pressed(b[BTN.R3]) || rDown,
       tilt: lt && rt && lb && rb,
       theme: pressed(b[BTN.Y]),
       menu: pressed(b[BTN.START]),
+      legend: stick,
       navX: navX,
       navY: navY
     };
