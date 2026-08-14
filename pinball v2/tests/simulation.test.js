@@ -971,5 +971,41 @@ function slapSpeedAtFraction(frac) {
   console.log('PASS: armed save exactly one kick then drain sticks via tick');
 })();
 
+(function testTapFlipperHitsHarderThanHold() {
+  function slap(tap) {
+    var state = fresh();
+    var flipper = state.flippers.find(function (f) { return f.side === 'left'; });
+    flipper.active = true;
+    flipper.tapBoost = !!tap;
+    flipper.angle = flipper.restAngle + (flipper.activeAngle - flipper.restAngle) * 0.45;
+    flipper.omega = -sim.FLIPPER_SPEED;
+    var ux = Math.cos(flipper.angle);
+    var uy = Math.sin(flipper.angle);
+    var t = flipper.length * 0.9;
+    state.ball.inPlay = true;
+    state.exitedLaunchLane = true;
+    state.ball.x = flipper.pivotX + ux * t;
+    state.ball.y = flipper.pivotY + uy * t - (state.ball.radius + flipper.width * 0.5) + 2;
+    state.ball.vx = 0;
+    state.ball.vy = 180;
+    sim.stepPhysics(state, 0.016);
+    return Math.sqrt(state.ball.vx * state.ball.vx + state.ball.vy * state.ball.vy);
+  }
+  var hold = slap(false);
+  var tap = slap(true);
+  assert(tap > hold * 1.35, 'tap slap should be much harder than hold (tap=' + tap.toFixed(1) + ' hold=' + hold.toFixed(1) + ')');
+  console.log('PASS: tap flipper hits harder than hold (tap=' + tap.toFixed(1) + ' hold=' + hold.toFixed(1) + ')');
+})();
+
+(function testTapBoostArmsOnPressAndDropsOnHold() {
+  var state = fresh();
+  sim.activateFlipper(state, 'left', true);
+  var left = state.flippers.find(function (f) { return f.side === 'left'; });
+  assert(left.tapBoost, 'press should arm tap boost');
+  for (var i = 0; i < 20; i++) sim.stepPhysics(state, 0.016);
+  assert(!left.tapBoost, 'held past tap window should drop to full-power hold');
+  console.log('PASS: tap boost arms on press and drops on hold');
+})();
+
 console.log('=============================');
 console.log('All tests passed.');

@@ -23,6 +23,10 @@
   var FLIPPER_OMEGA_DEAD = 2;
   /** Scales tip velocity â†’ ball Î”v while sweeping. */
   var FLIPPER_IMPULSE_GAIN = 0.85;
+  /** Short tap (press < TAP_WINDOW) slaps 2x a full-power hold sweep. */
+  var FLIPPER_TAP_MULT = 2;
+  var FLIPPER_TAP_WINDOW = 0.16;
+  var FLIPPER_TAP_LINGER = 0.14;
   /** Cap on powered add-speed from a flipper slap (px/s). */
   var FLIPPER_MAX_ADD_SPEED = 1150;
   /** Tip-weight exponent on contact fraction t/segLen. */
@@ -138,7 +142,10 @@
       length: FLIPPER_LEN,
       width: FLIPPER_W,
       active: false,
-      omega: 0
+      omega: 0,
+      pressAge: 0,
+      tapBoost: false,
+      tapLinger: 0
     };
   }
 
@@ -792,6 +799,13 @@
 
   function updateFlippers(state, dt) {
     state.flippers.forEach(function (f) {
+      if (f.active) {
+        f.pressAge = (f.pressAge || 0) + dt;
+        if (f.pressAge > FLIPPER_TAP_WINDOW) f.tapBoost = false;
+      } else if (f.tapLinger > 0) {
+        f.tapLinger -= dt;
+        if (f.tapLinger <= 0) f.tapBoost = false;
+      }
       var prevAngle = f.angle;
       f.targetAngle = f.active ? f.activeAngle : f.restAngle;
       var diff = f.targetAngle - f.angle;
@@ -2196,14 +2210,16 @@
 
         if (sweeping) {
           // Contact-point bat velocity (omega Ã— r), tip-weighted.
+          var tapMult = flipper.tapBoost ? FLIPPER_TAP_MULT : 1;
           var tipFrac = Math.pow(t / segLen, FLIPPER_TIP_POWER);
           var contactVx = -Math.sin(flipper.angle) * flipper.omega * t;
           var contactVy = Math.cos(flipper.angle) * flipper.omega * t;
-          var addVx = contactVx * FLIPPER_IMPULSE_GAIN * tipFrac;
-          var addVy = contactVy * FLIPPER_IMPULSE_GAIN * tipFrac;
+          var addVx = contactVx * FLIPPER_IMPULSE_GAIN * tipFrac * tapMult;
+          var addVy = contactVy * FLIPPER_IMPULSE_GAIN * tipFrac * tapMult;
           var addSpeed = vecLen(addVx, addVy);
-          if (addSpeed > FLIPPER_MAX_ADD_SPEED && addSpeed > 1e-6) {
-            var scale = FLIPPER_MAX_ADD_SPEED / addSpeed;
+          var maxAdd = FLIPPER_MAX_ADD_SPEED * tapMult;
+          if (addSpeed > maxAdd && addSpeed > 1e-6) {
+            var scale = maxAdd / addSpeed;
             addVx *= scale;
             addVy *= scale;
           }
@@ -2311,7 +2327,22 @@
 
   function activateFlipper(state, side, active) {
     state.flippers.forEach(function (f) {
-      if (f.side === side) f.active = !!active;
+      if (f.side !== side) return;
+      var next = !!active;
+      if (next && !f.active) {
+        f.pressAge = 0;
+        f.tapBoost = true;
+        f.tapLinger = 0;
+      } else if (!next && f.active) {
+        if ((f.pressAge || 0) <= FLIPPER_TAP_WINDOW) {
+          f.tapBoost = true;
+          f.tapLinger = FLIPPER_TAP_LINGER;
+        } else {
+          f.tapBoost = false;
+          f.tapLinger = 0;
+        }
+      }
+      f.active = next;
     });
     return state;
   }
@@ -2474,6 +2505,7 @@
     FLIPPER_SPEED: FLIPPER_SPEED,
     FLIPPER_OMEGA_DEAD: FLIPPER_OMEGA_DEAD,
     FLIPPER_IMPULSE_GAIN: FLIPPER_IMPULSE_GAIN,
+    FLIPPER_TAP_MULT: FLIPPER_TAP_MULT,
     FLIPPER_MAX_ADD_SPEED: FLIPPER_MAX_ADD_SPEED,
     FLIPPER_TIP_POWER: FLIPPER_TIP_POWER,
     FLIPPER_PIVOT_SPACING: FLIPPER_PIVOT_SPACING,
