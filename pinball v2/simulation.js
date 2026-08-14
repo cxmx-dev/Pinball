@@ -15,7 +15,7 @@
   var FLIPPER_LEFT_PIVOT_X = Math.round(4.5 / 20.25 * TABLE_W);
   var FLIPPER_RIGHT_PIVOT_X = Math.round(11.625 / 20.25 * TABLE_W);
   var FLIPPER_PIVOT_SPACING = FLIPPER_RIGHT_PIVOT_X - FLIPPER_LEFT_PIVOT_X;
-  var FLIPPER_LEN = Math.round(2.5 / 20.25 * TABLE_W); // shorter bats: ~12px wider rest tip gap
+  var FLIPPER_LEN = 62; // was 59 (too wide ~2.55 balls); 65 felt too tight. 62 ~2.3 balls.
   var FLIPPER_W = 14;
   var FLIPPER_PIVOT_R = 16;
   var FLIPPER_SPEED = 14;
