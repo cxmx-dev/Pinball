@@ -1804,6 +1804,14 @@
         var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, WALL_RESTITUTION);
         ball.vx = rv.vx;
         ball.vy = rv.vy;
+        // Flat standup tops are shelves — peel inward + down into play.
+        if (ballSpeed(ball) < 150 && n.y < -0.2) {
+          var inwardT = target.x < TABLE_W * 0.5 ? 1 : -1;
+          ball.x = target.x + inwardT * (halfW + ball.radius + 10);
+          ball.y = target.y + halfH + ball.radius + 2;
+          ball.vx = inwardT * Math.max(170, Math.abs(ball.vx));
+          ball.vy = Math.max(ball.vy, 110);
+        }
         if (!target.occupied) {
           target.occupied = true;
           target.flash = 0.35;
@@ -1953,6 +1961,31 @@
         ball.vy = rv.vy;
       }
     });
+  }
+
+  function unstickFromStandupShelves(state) {
+    var ball = state.ball;
+    if (!ball.inPlay || !state.exitedLaunchLane || !state.targets) return;
+    if (ballSpeed(ball) > 90) return;
+    var r = ball.radius;
+    var i;
+    for (i = 0; i < state.targets.length; i++) {
+      var t = state.targets[i];
+      var halfW = t.w * 0.5;
+      var halfH = t.h * 0.5;
+      var onTop =
+        ball.x > t.x - halfW - r - 4 &&
+        ball.x < t.x + halfW + r + 4 &&
+        ball.y + r > t.y - halfH - 6 &&
+        ball.y < t.y - halfH + r + 2;
+      if (!onTop) continue;
+      var inward = t.x < TABLE_W * 0.5 ? 1 : -1;
+      ball.x = t.x + inward * (halfW + r + 10);
+      ball.y = t.y + halfH + r + 2;
+      ball.vx = inward * 180;
+      ball.vy = Math.max(ball.vy, 120);
+      return;
+    }
   }
 
   function unstickFromFlippers(state) {

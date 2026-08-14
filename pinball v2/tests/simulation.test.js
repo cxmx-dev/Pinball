@@ -1021,5 +1021,25 @@ function slapSpeedAtFraction(frac) {
   console.log('PASS: double-tap charges 15s then expires');
 })();
 
+(function testStandupShelfDoesNotHoldBall() {
+  var state = fresh();
+  var stand = state.targets.find(function (tg) { return tg.id === 'standup-l'; });
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.ball.x = stand.x - 12;
+  state.ball.y = stand.y - stand.h * 0.5 - state.ball.radius + 1;
+  state.ball.vx = 0;
+  state.ball.vy = 0;
+  var i;
+  for (i = 0; i < 90; i++) sim.stepPhysics(state, 1 / 120);
+  var sp = Math.sqrt(state.ball.vx * state.ball.vx + state.ball.vy * state.ball.vy);
+  var stillOnShelf = Math.abs(state.ball.y - (stand.y - stand.h * 0.5 - state.ball.radius)) < 8 &&
+    Math.abs(state.ball.x - stand.x) < 18;
+  assert(!stillOnShelf, 'ball should peel off standup-l shelf (x=' + state.ball.x.toFixed(1) + ' y=' + state.ball.y.toFixed(1) + ')');
+  assert(sp > 80, 'peel should impart speed (sp=' + sp.toFixed(1) + ')');
+  console.log('PASS: standup shelf peels into play (sp=' + sp.toFixed(1) + ')');
+})();
+
 console.log('=============================');
+
 console.log('All tests passed.');
