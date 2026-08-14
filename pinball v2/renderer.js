@@ -60,6 +60,33 @@
   }
 
   /** No-op shadow on phone — shadowBlur is very expensive on Android GPU. */
+
+  var TAP_GLOW_RGB = [
+    [34, 255, 68],
+    [255, 230, 0],
+    [0, 255, 246],
+    [255, 122, 24],
+    [42, 107, 255],
+    [255, 255, 255]
+  ];
+
+  function flipperGlowStyle(flipper) {
+    if (!flipper || !(flipper.chargeLeft > 0)) return null;
+    var phase = flipper.glowPhase || 0;
+    var rgb = TAP_GLOW_RGB[Math.floor(phase) % TAP_GLOW_RGB.length];
+    var pulse = 0.5 - 0.5 * Math.cos((phase % 1) * Math.PI * 2);
+    var dim = 0.22 + 0.78 * pulse;
+    var a = 0.28 + 0.72 * pulse;
+    function rgba(alpha) {
+      return 'rgba(' + Math.round(rgb[0] * dim) + ',' + Math.round(rgb[1] * dim) + ',' + Math.round(rgb[2] * dim) + ',' + alpha + ')';
+    }
+    return {
+      outer: rgba(a),
+      shadow: rgba(0.55 + 0.4 * pulse),
+      pivot: rgba(0.95)
+    };
+  }
+
   function applyShadow(ctx, color, blur) {
     if (!q().shadows) {
       ctx.shadowBlur = 0;
@@ -794,7 +821,21 @@
       ctx.strokeStyle = grad;
       ctx.lineWidth = flipper.width + 2;
       ctx.lineCap = 'round';
-      applyShadow(ctx, flipper.active ? 'rgba(100,200,255,0.9)' : 'rgba(60,90,120,0.5)', flipper.active ? 20 : 8);
+      var glow = flipperGlowStyle(flipper);
+      if (glow) {
+        ctx.strokeStyle = glow.outer;
+        ctx.lineWidth = flipper.width + 10;
+        applyShadow(ctx, glow.shadow, 22);
+        ctx.beginPath();
+        ctx.moveTo(flipper.pivotX, flipper.pivotY);
+        ctx.lineTo(tip.x, tip.y);
+        ctx.stroke();
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = flipper.width + 2;
+        applyShadow(ctx, glow.shadow, 14);
+      } else {
+        applyShadow(ctx, flipper.active ? 'rgba(100,200,255,0.9)' : 'rgba(60,90,120,0.5)', flipper.active ? 20 : 8);
+      }
       ctx.beginPath();
       ctx.moveTo(flipper.pivotX, flipper.pivotY);
       ctx.lineTo(tip.x, tip.y);
@@ -808,7 +849,7 @@
       ctx.lineTo(tip.x, tip.y);
       ctx.stroke();
 
-      ctx.fillStyle = flipper.active ? '#88bbee' : '#556677';
+      ctx.fillStyle = glow ? glow.pivot : (flipper.active ? '#88bbee' : '#556677');
       ctx.beginPath();
       ctx.arc(flipper.pivotX, flipper.pivotY, 9, 0, Math.PI * 2);
       ctx.fill();

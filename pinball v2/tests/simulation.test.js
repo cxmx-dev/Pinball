@@ -977,6 +977,7 @@ function slapSpeedAtFraction(frac) {
     var flipper = state.flippers.find(function (f) { return f.side === 'left'; });
     flipper.active = true;
     flipper.tapBoost = !!tap;
+    flipper.chargeLeft = tap ? 15 : 0;
     flipper.angle = flipper.restAngle + (flipper.activeAngle - flipper.restAngle) * 0.45;
     flipper.omega = -sim.FLIPPER_SPEED;
     var ux = Math.cos(flipper.angle);
@@ -997,14 +998,27 @@ function slapSpeedAtFraction(frac) {
   console.log('PASS: tap flipper hits harder than hold (tap=' + tap.toFixed(1) + ' hold=' + hold.toFixed(1) + ')');
 })();
 
-(function testTapBoostArmsOnPressAndDropsOnHold() {
+(function testDoubleTapChargesFifteenSeconds() {
   var state = fresh();
-  sim.activateFlipper(state, 'left', true);
   var left = state.flippers.find(function (f) { return f.side === 'left'; });
-  assert(left.tapBoost, 'press should arm tap boost');
-  for (var i = 0; i < 20; i++) sim.stepPhysics(state, 0.016);
-  assert(!left.tapBoost, 'held past tap window should drop to full-power hold');
-  console.log('PASS: tap boost arms on press and drops on hold');
+  sim.activateFlipper(state, 'left', true);
+  sim.stepPhysics(state, 0.016);
+  assert(!left.chargeLeft, 'single tap does not charge');
+  sim.activateFlipper(state, 'left', false);
+  sim.stepPhysics(state, 0.08);
+  sim.activateFlipper(state, 'left', true);
+  sim.stepPhysics(state, 0.016);
+  assert(left.chargeLeft > 14.5, 'double-tap should charge ~15s (got ' + left.chargeLeft + ')');
+  assert(left.tapBoost, 'charged bat is 2x');
+  var phaseEarly = left.glowPhase;
+  var steps = Math.ceil(14.7 / 0.05);
+  for (var i = 0; i < steps; i++) sim.stepPhysics(state, 0.05);
+  assert(left.chargeLeft > 0 && left.chargeLeft < 1.2, 'charge should be nearly spent (got ' + left.chargeLeft + ')');
+  assert(left.glowPhase > phaseEarly, 'glow phase should advance');
+  for (var j = 0; j < 30; j++) sim.stepPhysics(state, 0.05);
+  assert(!(left.chargeLeft > 0), 'charge ends after 15s');
+  assert(!left.tapBoost, '2x ends when charge ends');
+  console.log('PASS: double-tap charges 15s then expires');
 })();
 
 console.log('=============================');

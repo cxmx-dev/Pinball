@@ -23,10 +23,12 @@
   var FLIPPER_OMEGA_DEAD = 2;
   /** Scales tip velocity â†’ ball Î”v while sweeping. */
   var FLIPPER_IMPULSE_GAIN = 0.85;
-  /** Short tap (press < TAP_WINDOW) slaps 2x a full-power hold sweep. */
+  /** Double-tap charges that bat 2x for CHARGE_SEC; glow starts at 4 Hz and eases down. */
   var FLIPPER_TAP_MULT = 2;
-  var FLIPPER_TAP_WINDOW = 0.16;
-  var FLIPPER_TAP_LINGER = 0.14;
+  var FLIPPER_DBL_TAP_WINDOW = 0.32;
+  var FLIPPER_CHARGE_SEC = 15;
+  var FLIPPER_GLOW_HZ_START = 4;
+  var FLIPPER_GLOW_HZ_END = 0.75;
   /** Cap on powered add-speed from a flipper slap (px/s). */
   var FLIPPER_MAX_ADD_SPEED = 1150;
   /** Tip-weight exponent on contact fraction t/segLen. */
@@ -145,7 +147,9 @@
       omega: 0,
       pressAge: 0,
       tapBoost: false,
-      tapLinger: 0
+      sinceLastPress: 99,
+      chargeLeft: 0,
+      glowPhase: 0
     };
   }
 
@@ -799,12 +803,19 @@
 
   function updateFlippers(state, dt) {
     state.flippers.forEach(function (f) {
+      if (f.sinceLastPress == null) f.sinceLastPress = 99;
+        f.sinceLastPress += dt;
+      if (f.chargeLeft > 0) {
+        f.chargeLeft = Math.max(0, f.chargeLeft - dt);
+        var u = 1 - f.chargeLeft / FLIPPER_CHARGE_SEC;
+        var hz = FLIPPER_GLOW_HZ_START + (FLIPPER_GLOW_HZ_END - FLIPPER_GLOW_HZ_START) * u;
+        f.glowPhase = (f.glowPhase || 0) + hz * dt;
+        f.tapBoost = true;
+      } else {
+        f.tapBoost = false;
+      }
       if (f.active) {
         f.pressAge = (f.pressAge || 0) + dt;
-        if (f.pressAge > FLIPPER_TAP_WINDOW) f.tapBoost = false;
-      } else if (f.tapLinger > 0) {
-        f.tapLinger -= dt;
-        if (f.tapLinger <= 0) f.tapBoost = false;
       }
       var prevAngle = f.angle;
       f.targetAngle = f.active ? f.activeAngle : f.restAngle;
@@ -2331,16 +2342,12 @@
       var next = !!active;
       if (next && !f.active) {
         f.pressAge = 0;
-        f.tapBoost = true;
-        f.tapLinger = 0;
-      } else if (!next && f.active) {
-        if ((f.pressAge || 0) <= FLIPPER_TAP_WINDOW) {
+        if ((f.sinceLastPress != null ? f.sinceLastPress : 99) <= FLIPPER_DBL_TAP_WINDOW) {
+          f.chargeLeft = FLIPPER_CHARGE_SEC;
+          f.glowPhase = 0;
           f.tapBoost = true;
-          f.tapLinger = FLIPPER_TAP_LINGER;
-        } else {
-          f.tapBoost = false;
-          f.tapLinger = 0;
         }
+        f.sinceLastPress = 0;
       }
       f.active = next;
     });
@@ -2506,6 +2513,10 @@
     FLIPPER_OMEGA_DEAD: FLIPPER_OMEGA_DEAD,
     FLIPPER_IMPULSE_GAIN: FLIPPER_IMPULSE_GAIN,
     FLIPPER_TAP_MULT: FLIPPER_TAP_MULT,
+    FLIPPER_DBL_TAP_WINDOW: FLIPPER_DBL_TAP_WINDOW,
+    FLIPPER_CHARGE_SEC: FLIPPER_CHARGE_SEC,
+    FLIPPER_GLOW_HZ_START: FLIPPER_GLOW_HZ_START,
+    FLIPPER_GLOW_HZ_END: FLIPPER_GLOW_HZ_END,
     FLIPPER_MAX_ADD_SPEED: FLIPPER_MAX_ADD_SPEED,
     FLIPPER_TIP_POWER: FLIPPER_TIP_POWER,
     FLIPPER_PIVOT_SPACING: FLIPPER_PIVOT_SPACING,
