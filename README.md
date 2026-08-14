@@ -17,13 +17,18 @@ Legend slides from the **right** on **v1** and **v2**. Same features on PC and m
 | **Charge / launch** | **Space** hold / release | **Launch** hold / release |
 | **Tilt** | NumPad **7** only (3rd drain) | Compact HUD **Tilt** pill (lower score band; scales with table) |
 | **Theme** (v2 only) | **T** · left half of split | **Theme \| Legend** (left half) |
-| **Open legend** | **L** · right half of split | **Theme \| Legend** (right) · swipe ← |
-| **Close legend** | **L** · **Esc** · **[X] Close** | **[X] Close** · **Esc** |
-| **Game over restart** | Spinning pinball · NumPad **7** | **Press here to Restart** · spin pinball |
+| **Open legend** | **L** · right half of split · pad **left analog stick** | **Theme \| Legend** (right) · swipe ← · pad L-stick |
+| **Close legend** | **L** · **Esc** · **[X] Close** · pad L-stick | **[X] Close** · **Esc** · pad L-stick |
+| **Game over restart** | Spinning pinball · NumPad **7** · pad **any flipper** | **Press here to Restart** · pad any flipper |
+
+**Double-tap charge (v2):** double-tap a flipper to charge **2×** hits for 15s. That bat glows through green / yellow / cyan / orange / blue / white; the pulse starts at 4×/sec and slows as the charge fades. A double-tap on a bat that is already glowing does not re-charge.
 
 **PC theme change:** press **`T`** (or left half of the dock split). Cycles Void Pulse ↔ Ember Rail — art only, same physics. HUD shows the current pack name.
 
 **Tilt is intentionally awkward** (NumPad 7 / HUD pill only — not letter **R**), so it is harder to spam like a real cabinet.
+
+
+**Gamepad** (Xbox layout in the browser; PlayStation / Switch equivalents in the in-game legend): left flipper **LT · LB · A**; right **RT · RB · B**; plunger **X · Select/View · R3 · right stick down** (hold to charge, release to fire); theme **Y**; tilt **LT+RT+LB+RB**; pause **Start**; legend **left analog stick** (flick any way, same as **L**); game-over restart **any flipper button**. D-pad is reserved for menu navigation.
 
 **Dock layout (PC + mobile):** row 1 = L Flip · Launch · R Flip; row 2 = centered **Theme \| Legend** split (v2) or **Legend** only (v1) — clear of flipper buttons. No top-of-screen key strip (controls live in legend + dock).
 
