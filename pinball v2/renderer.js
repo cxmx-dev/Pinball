@@ -436,6 +436,7 @@
       state.walls.forEach(function (wall) {
         var kind = wall.kind || 'rail';
         if (kind === 'lane' || kind === 'chute') return;
+        if ((kind === 'habitrail' || kind === 'guide') && wall.x1 > 270 && wall.x2 > 270) return;
         if (wall.arc || kind === 'rail' || kind === 'habitrail') {
           ctx.strokeStyle = kind === 'habitrail' ? 'rgba(255, 170, 60, 0.20)' : 'rgba(100, 200, 255, 0.22)';
           ctx.lineWidth = 10;
@@ -451,6 +452,7 @@
     state.walls.forEach(function (wall) {
       var kind = wall.kind || 'rail';
       if (kind === 'lane' || kind === 'chute') return;
+      if ((kind === 'habitrail' || kind === 'guide') && wall.x1 > 270 && wall.x2 > 270) return;
       if (kind === 'habitrail') {
         strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, {
           core: 'rgba(255, 190, 90, 0.92)',
@@ -513,6 +515,135 @@
     });
   }
 
+  function midpoint(a, b) {
+    return { x: (a.x + b.x) * 0.5, y: (a.y + b.y) * 0.5 };
+  }
+
+  function segsToPoints(segs) {
+    if (!segs || !segs.length) return [];
+    var pts = [{ x: segs[0].x1, y: segs[0].y1 }];
+    var i;
+    for (i = 0; i < segs.length; i++) pts.push({ x: segs[i].x2, y: segs[i].y2 });
+    return pts;
+  }
+
+  function strokeSmooth(ctx, pts, close) {
+    if (!pts || pts.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    var i;
+    for (i = 1; i < pts.length - 1; i++) {
+      var m = midpoint(pts[i], pts[i + 1]);
+      ctx.quadraticCurveTo(pts[i].x, pts[i].y, m.x, m.y);
+    }
+    var last = pts[pts.length - 1];
+    ctx.lineTo(last.x, last.y);
+    if (close) ctx.closePath();
+  }
+
+  /** Right habitrail as SDF-3-guided orange hull (style only — physics unchanged). */
+  function drawPioneerRamp(ctx, ramp, pulse) {
+    if (!ramp || !ramp.segments) return;
+    var outer = segsToPoints(ramp.segments);
+    var inner = segsToPoints(ramp.guides).reverse();
+    if (outer.length < 2 || inner.length < 2) return;
+    var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
+    var pulseA = 0.55 + Math.sin(pulse * 1.4) * 0.12;
+    var hull = outer.concat(inner);
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // Solid underlay so the playfield still cannot show the old scribble through
+    strokeSmooth(ctx, hull, true);
+    ctx.fillStyle = '#2a1206';
+    ctx.fill();
+    strokeSmooth(ctx, hull, true);
+    var g = ctx.createLinearGradient(300, 140, 390, 560);
+    g.addColorStop(0, 'rgba(255, 184, 72, 1)');
+    g.addColorStop(0.4, 'rgba(214, 96, 24, 1)');
+    g.addColorStop(1, 'rgba(110, 40, 10, 1)');
+    ctx.fillStyle = g;
+    ctx.fill();
+
+    var lobes = [
+      { x: 362, y: 500, r: 17 },
+      { x: 358, y: 390, r: 16 },
+      { x: 354, y: 275, r: 15 },
+      { x: 338, y: 188, r: 13 }
+    ];
+    var li;
+    for (li = 0; li < lobes.length; li++) {
+      var L = lobes[li];
+      var lg = ctx.createRadialGradient(L.x - 5, L.y - 6, 2, L.x, L.y, L.r);
+      lg.addColorStop(0, 'rgba(255, 214, 120, 0.95)');
+      lg.addColorStop(0.55, 'rgba(230, 110, 32, 0.75)');
+      lg.addColorStop(1, 'rgba(110, 40, 10, 0)');
+      ctx.fillStyle = lg;
+      ctx.beginPath();
+      ctx.arc(L.x, L.y, L.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (!simple) {
+      applyShadow(ctx, 'rgba(255, 140, 40, 0.28)', 10);
+    }
+
+    function paintRim(pts, width) {
+      strokeSmooth(ctx, pts, false);
+      ctx.strokeStyle = 'rgba(255, 168, 64, 0.95)';
+      ctx.lineWidth = width;
+      ctx.stroke();
+      if (!simple) {
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = 'rgba(255, 230, 170, 0.55)';
+        ctx.lineWidth = Math.max(2, width * 0.28);
+        strokeSmooth(ctx, pts, false);
+        ctx.stroke();
+      }
+    }
+    paintRim(outer, simple ? 11 : 15);
+    paintRim(inner.slice().reverse(), simple ? 10 : 14);
+
+    var ribCount = simple ? 4 : 6;
+    var r;
+    for (r = 1; r <= ribCount; r++) {
+      var t = r / (ribCount + 1);
+      var oi = Math.min(outer.length - 2, Math.floor(t * (outer.length - 1)));
+      var ii = Math.min(inner.length - 2, Math.floor((1 - t) * (inner.length - 1)));
+      var oa = outer[oi];
+      var ob = outer[oi + 1];
+      var ia = inner[ii];
+      var ib = inner[ii + 1];
+      var tf = t * (outer.length - 1) - oi;
+      var ox = oa.x + (ob.x - oa.x) * tf;
+      var oy = oa.y + (ob.y - oa.y) * tf;
+      var ix = ia.x + (ib.x - ia.x) * 0.5;
+      var iy = ia.y + (ib.y - ia.y) * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(ox, oy);
+      ctx.lineTo(ix, iy);
+      ctx.strokeStyle = 'rgba(70, 24, 6, 0.45)';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+    }
+
+    var nose = { x: 318, y: 150 };
+    var ng = ctx.createRadialGradient(nose.x - 4, nose.y - 5, 2, nose.x, nose.y, 16);
+    ng.addColorStop(0, 'rgba(255, 214, 130, 0.9)');
+    ng.addColorStop(0.55, 'rgba(220, 110, 32, 0.85)');
+    ng.addColorStop(1, 'rgba(90, 32, 8, 0.15)');
+    ctx.fillStyle = ng;
+    ctx.beginPath();
+    ctx.arc(nose.x, nose.y, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255, 196, 70, ' + (0.55 + pulseA * 0.25) + ')';
+    ctx.beginPath();
+    ctx.arc(nose.x + 2, nose.y - 1, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
   function drawSideRoutes(ctx, state, pulse) {
     if (!state.sideRoutes) return;
     var cap = state.sideRoutes.leftCaptive;
@@ -562,15 +693,7 @@
 
     var ramp = state.sideRoutes.rightRamp;
     if (ramp) {
-      strokeRoutePath(ramp.segments, 'rgba(255, 180, 80, 0.82)', 7, 'rgba(255, 160, 40, 0.45)');
-      strokeRoutePath(ramp.guides, 'rgba(255, 220, 140, 0.38)', 3, 'rgba(255, 180, 60, 0.2)');
-      if (ramp.entry) {
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255, 180, 80, 0.35)';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(ramp.entry.x - ramp.entry.w * 0.5, ramp.entry.y - ramp.entry.h * 0.5, ramp.entry.w, ramp.entry.h);
-        ctx.restore();
-      }
+      drawPioneerRamp(ctx, ramp, pulse);
     }
   }
 
