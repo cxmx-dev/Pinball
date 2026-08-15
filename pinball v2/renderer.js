@@ -269,11 +269,11 @@
     var th = state.tableH;
     var laneLeft = root.PinballSim.LAUNCH_LANE_LEFT;
     var laneGrad = ctx.createLinearGradient(laneLeft, 0, tw, 0);
-    laneGrad.addColorStop(0, 'rgba(20,45,70,0.85)');
-    laneGrad.addColorStop(1, 'rgba(35,65,95,0.95)');
+    laneGrad.addColorStop(0, 'rgba(42,18,8,0.92)');
+    laneGrad.addColorStop(1, 'rgba(88,36,12,0.96)');
     ctx.fillStyle = laneGrad;
     ctx.fillRect(laneLeft, 60, tw - laneLeft - 4, th - 130);
-    ctx.strokeStyle = 'rgba(80,140,200,0.2)';
+    ctx.strokeStyle = 'rgba(255,160,64,0.28)';
     ctx.lineWidth = 1;
     ctx.strokeRect(laneLeft + 1, 60, tw - laneLeft - 6, th - 132);
   }
@@ -300,10 +300,10 @@
       // Dim base always
       ctx.shadowBlur = 0;
       ctx.globalAlpha = 1;
-      ctx.fillStyle = 'rgba(50, 80, 110, 0.55)';
+      ctx.fillStyle = 'rgba(70, 32, 10, 0.62)';
       drawRoundedRect(ctx, x0, y0, w, h, 5);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(100,150,200,0.28)';
+      ctx.strokeStyle = 'rgba(255,170,70,0.28)';
       ctx.lineWidth = 1;
       drawRoundedRect(ctx, x0, y0, w, h, 5);
       ctx.stroke();
@@ -822,15 +822,15 @@
       applyShadow(ctx, bumper.saver ? "rgba(80,255,180,0.85)" : bumper.color, hot ? 26 : 12 + glow * 8);
       ctx.strokeStyle = bumper.saver
         ? 'rgba(120,255,200,' + (0.75 + glow * 0.2) + ')'
-        : 'rgba(255,255,255,' + (0.55 + glow * 0.25) + ')';
-      ctx.lineWidth = bumper.saver ? 3.5 : 2.8;
+        : 'rgba(255,168,64,' + (0.82 + glow * 0.15) + ')';
+      ctx.lineWidth = bumper.saver ? 3.5 : 3.4;
       ctx.beginPath();
       ctx.arc(bumper.x, bumper.y, bumper.radius + (bumper.saver ? 3 : 2), 0, Math.PI * 2);
       ctx.stroke();
       ctx.shadowBlur = 0;
       ctx.strokeStyle = bumper.saver
         ? 'rgba(200,255,230,0.9)'
-        : 'rgba(255,240,200,' + (0.5 + glow * 0.3) + ')';
+        : 'rgba(255,196,80,' + (0.55 + glow * 0.3) + ')';
       ctx.lineWidth = 1.6;
       if (bumper.saver) ctx.setLineDash([4, 3]);
       ctx.beginPath();
@@ -880,36 +880,36 @@
       'rgba(180,220,255,' + (0.45 + spinGlow * 0.45) + ')',
       8 + spinGlow * 10 + Math.sin(pulse * 5) * 3
     );
-    // 4-point star — rotates with sp.angle each frame while spinVel coasts
-    var R = sp.radius + 2;
-    var rInner = sp.radius * 0.38;
+    // Sensor eye — copper bezel, amber iris; still rotates with spinVel
+    var R = sp.radius + 3;
     ctx.beginPath();
-    for (var i = 0; i < 8; i++) {
-      var rad = i % 2 === 0 ? R : rInner;
-      var a = (i / 8) * Math.PI * 2 - Math.PI / 2;
-      var px = Math.cos(a) * rad;
-      var py = Math.sin(a) * rad;
-      if (i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-    ctx.fillStyle = spinGlow > 0.05 ? '#d0e8ff' : '#9aabbc';
+    ctx.arc(0, 0, R, 0, Math.PI * 2);
+    ctx.fillStyle = spinGlow > 0.05 ? '#c45a18' : '#8a3a12';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(220,235,255,0.95)';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255, 190, 80, 0.95)';
+    ctx.lineWidth = 3;
     ctx.stroke();
-    ctx.strokeStyle = 'rgba(160,190,220,0.9)';
-    ctx.lineWidth = 2.5;
-    for (var j = 0; j < 4; j++) {
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(sp.radius * 0.92, 0);
-      ctx.stroke();
-      ctx.rotate(Math.PI / 2);
-    }
+    var iris = ctx.createRadialGradient(-2, -2, 1, 0, 0, sp.radius * 0.72);
+    iris.addColorStop(0, spinGlow > 0.08 ? '#ffe08a' : '#e8a040');
+    iris.addColorStop(0.55, spinGlow > 0.08 ? '#ff9a20' : '#c86818');
+    iris.addColorStop(1, '#4a1c08');
     ctx.beginPath();
-    ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
-    ctx.fillStyle = spinGlow > 0.08 ? '#ffffff' : '#8899aa';
+    ctx.arc(0, 0, sp.radius * 0.7, 0, Math.PI * 2);
+    ctx.fillStyle = iris;
+    ctx.fill();
+    ctx.fillStyle = spinGlow > 0.1 ? '#1a0a04' : '#2a1208';
+    ctx.beginPath();
+    ctx.arc(0, 0, sp.radius * 0.28, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 220, 140, ' + (0.35 + spinGlow * 0.45) + ')';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(-sp.radius * 0.55, 0);
+    ctx.lineTo(sp.radius * 0.55, 0);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,230,0.55)';
+    ctx.beginPath();
+    ctx.arc(-sp.radius * 0.22, -sp.radius * 0.22, 2.2, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -1062,12 +1062,12 @@
     var wireX2 = root.PinballSim.LAUNCH_WIRE_X2;
     ctx.save();
     var railGrad = ctx.createLinearGradient(x - 8, 0, x + 2, 0);
-    railGrad.addColorStop(0, 'rgba(200,230,255,0.95)');
-    railGrad.addColorStop(1, 'rgba(100,130,170,0.8)');
+    railGrad.addColorStop(0, 'rgba(255,190,80,0.95)');
+    railGrad.addColorStop(1, 'rgba(160,70,20,0.88)');
     ctx.strokeStyle = railGrad;
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 6;
     ctx.lineCap = 'round';
-    applyShadow(ctx, 'rgba(120,180,255,0.55)', 10);
+    applyShadow(ctx, 'rgba(255,140,40,0.45)', 10);
     ctx.beginPath();
     ctx.moveTo(x, 60);
     ctx.lineTo(x, wireY1);
@@ -1079,6 +1079,25 @@
     ctx.beginPath();
     ctx.moveTo(x, wireY1);
     ctx.lineTo(x, state.tableH - 72);
+    ctx.stroke();
+    // Berth collar where the hull docks to the shooter lane
+    ctx.shadowBlur = 0;
+    var collar = ctx.createLinearGradient(x - 10, 70, x + 18, 150);
+    collar.addColorStop(0, 'rgba(255, 176, 72, 0.55)');
+    collar.addColorStop(1, 'rgba(120, 48, 12, 0.15)');
+    ctx.fillStyle = collar;
+    ctx.beginPath();
+    ctx.moveTo(x - 8, 72);
+    ctx.lineTo(x + 16, 72);
+    ctx.lineTo(x + 14, 128);
+    ctx.lineTo(x - 4, 138);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 196, 80, 0.7)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, 78);
+    ctx.lineTo(x, 134);
     ctx.stroke();
     ctx.restore();
   }

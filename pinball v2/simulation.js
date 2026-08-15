@@ -164,7 +164,7 @@
       { x: 240, y: 198, radius: 26, score: 500, color: '#ff3366', kind: 'bumper', hitCooldown: 0 },
       // Upper wings - inset so ball cannot pinch vs outer rail / habitrail guide
       { x: 200, y: 252, radius: 22, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0 },
-      { x: 268, y: 252, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
+      { x: 276, y: 248, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
       // Single lower feeder (above drop bank; mid toys fill empty band above)
       { x: 240, y: 455, radius: 16, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0 },
       {
@@ -209,7 +209,7 @@
   function createTargets() {
     return [
       { id: 'standup-l', x: 118, y: 540, w: 10, h: 30, score: 1000, lit: true, flash: 0, occupied: false },
-      { id: 'standup-r', x: 362, y: 540, w: 10, h: 30, score: 1000, lit: true, flash: 0, occupied: false },
+      { id: 'standup-r', x: 322, y: 548, w: 10, h: 30, score: 1000, lit: true, flash: 0, occupied: false },
       { id: 'standup-c', x: 240, y: 575, w: 10, h: 26, score: 1500, lit: false, flash: 0, occupied: false },
       // Mid-field standup bank (readable toys; keeps side orbits clear)
       { id: 'standup-m1', x: 200, y: 338, w: 10, h: 26, score: 800, lit: true, flash: 0, occupied: false },
