@@ -210,11 +210,7 @@
     return [
       { id: 'standup-l', x: 118, y: 540, w: 10, h: 30, score: 1000, lit: true, flash: 0, occupied: false },
       { id: 'standup-r', x: 322, y: 548, w: 10, h: 30, score: 1000, lit: true, flash: 0, occupied: false },
-      { id: 'standup-c', x: 240, y: 575, w: 10, h: 26, score: 1500, lit: false, flash: 0, occupied: false },
-      // Mid-field standup bank (readable toys; keeps side orbits clear)
-      { id: 'standup-m1', x: 200, y: 338, w: 10, h: 26, score: 800, lit: true, flash: 0, occupied: false },
-      { id: 'standup-m2', x: 240, y: 338, w: 10, h: 26, score: 800, lit: false, flash: 0, occupied: false },
-      { id: 'standup-m3', x: 280, y: 338, w: 10, h: 26, score: 800, lit: true, flash: 0, occupied: false }
+      { id: 'standup-c', x: 240, y: 575, w: 10, h: 26, score: 1500, lit: false, flash: 0, occupied: false }
     ];
   }
 

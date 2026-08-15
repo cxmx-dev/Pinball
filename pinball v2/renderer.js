@@ -258,7 +258,6 @@
     if (!state.ball.inPlay || !state.exitedLaunchLane) {
       drawPlunger(ctx, state);
     }
-    drawDrainSlots(ctx, state, glowPulse);
 
     ctx.restore();
     return { ox: ox, oy: oy };
@@ -437,6 +436,7 @@
         var kind = wall.kind || 'rail';
         if (kind === 'lane' || kind === 'chute') return;
         if ((kind === 'habitrail' || kind === 'guide') && wall.x1 > 270 && wall.x2 > 270) return;
+        if ((kind === 'habitrail' || kind === 'guide') && wall.x1 < 160 && wall.x2 < 160) return;
         if (wall.arc || kind === 'rail' || kind === 'habitrail') {
           ctx.strokeStyle = kind === 'habitrail' ? 'rgba(255, 170, 60, 0.20)' : 'rgba(100, 200, 255, 0.22)';
           ctx.lineWidth = 10;
@@ -453,6 +453,7 @@
       var kind = wall.kind || 'rail';
       if (kind === 'lane' || kind === 'chute') return;
       if ((kind === 'habitrail' || kind === 'guide') && wall.x1 > 270 && wall.x2 > 270) return;
+      if ((kind === 'habitrail' || kind === 'guide') && wall.x1 < 160 && wall.x2 < 160) return;
       if (kind === 'habitrail') {
         strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, {
           core: 'rgba(255, 190, 90, 0.92)',
@@ -541,9 +542,10 @@
     if (close) ctx.closePath();
   }
 
-  /** Right habitrail as SDF-3-guided orange hull (style only — physics unchanged). */
-  function drawPioneerRamp(ctx, ramp, pulse) {
+  /** Habitrail as SDF-3-guided hull (style only — physics unchanged). theme: 'copper' (default) or 'cyan'. */
+  function drawPioneerRamp(ctx, ramp, pulse, theme) {
     if (!ramp || !ramp.segments) return;
+    var cyan = theme === 'cyan';
     var outer = segsToPoints(ramp.segments);
     var inner = segsToPoints(ramp.guides).reverse();
     if (outer.length < 2 || inner.length < 2) return;
@@ -556,29 +558,50 @@
 
     // Solid underlay so the playfield still cannot show the old scribble through
     strokeSmooth(ctx, hull, true);
-    ctx.fillStyle = '#2a1206';
+    ctx.fillStyle = cyan ? '#061820' : '#2a1206';
     ctx.fill();
     strokeSmooth(ctx, hull, true);
-    var g = ctx.createLinearGradient(300, 140, 390, 560);
-    g.addColorStop(0, 'rgba(255, 184, 72, 1)');
-    g.addColorStop(0.4, 'rgba(214, 96, 24, 1)');
-    g.addColorStop(1, 'rgba(110, 40, 10, 1)');
+    var g = cyan
+      ? ctx.createLinearGradient(30, 140, 130, 560)
+      : ctx.createLinearGradient(300, 140, 390, 560);
+    if (cyan) {
+      g.addColorStop(0, 'rgba(120, 230, 255, 1)');
+      g.addColorStop(0.4, 'rgba(24, 140, 190, 1)');
+      g.addColorStop(1, 'rgba(8, 40, 70, 1)');
+    } else {
+      g.addColorStop(0, 'rgba(255, 184, 72, 1)');
+      g.addColorStop(0.4, 'rgba(214, 96, 24, 1)');
+      g.addColorStop(1, 'rgba(110, 40, 10, 1)');
+    }
     ctx.fillStyle = g;
     ctx.fill();
 
-    var lobes = [
-      { x: 362, y: 500, r: 17 },
-      { x: 358, y: 390, r: 16 },
-      { x: 354, y: 275, r: 15 },
-      { x: 338, y: 188, r: 13 }
-    ];
+    var lobes = cyan
+      ? [
+          { x: 78, y: 500, r: 17 },
+          { x: 68, y: 390, r: 16 },
+          { x: 64, y: 275, r: 15 },
+          { x: 78, y: 188, r: 13 }
+        ]
+      : [
+          { x: 362, y: 500, r: 17 },
+          { x: 358, y: 390, r: 16 },
+          { x: 354, y: 275, r: 15 },
+          { x: 338, y: 188, r: 13 }
+        ];
     var li;
     for (li = 0; li < lobes.length; li++) {
       var L = lobes[li];
       var lg = ctx.createRadialGradient(L.x - 5, L.y - 6, 2, L.x, L.y, L.r);
-      lg.addColorStop(0, 'rgba(255, 214, 120, 0.95)');
-      lg.addColorStop(0.55, 'rgba(230, 110, 32, 0.75)');
-      lg.addColorStop(1, 'rgba(110, 40, 10, 0)');
+      if (cyan) {
+        lg.addColorStop(0, 'rgba(180, 245, 255, 0.95)');
+        lg.addColorStop(0.55, 'rgba(32, 150, 200, 0.75)');
+        lg.addColorStop(1, 'rgba(8, 40, 70, 0)');
+      } else {
+        lg.addColorStop(0, 'rgba(255, 214, 120, 0.95)');
+        lg.addColorStop(0.55, 'rgba(230, 110, 32, 0.75)');
+        lg.addColorStop(1, 'rgba(110, 40, 10, 0)');
+      }
       ctx.fillStyle = lg;
       ctx.beginPath();
       ctx.arc(L.x, L.y, L.r, 0, Math.PI * 2);
@@ -586,17 +609,17 @@
     }
 
     if (!simple) {
-      applyShadow(ctx, 'rgba(255, 140, 40, 0.28)', 10);
+      applyShadow(ctx, cyan ? 'rgba(40, 200, 255, 0.28)' : 'rgba(255, 140, 40, 0.28)', 10);
     }
 
     function paintRim(pts, width) {
       strokeSmooth(ctx, pts, false);
-      ctx.strokeStyle = 'rgba(255, 168, 64, 0.95)';
+      ctx.strokeStyle = cyan ? 'rgba(80, 220, 255, 0.95)' : 'rgba(255, 168, 64, 0.95)';
       ctx.lineWidth = width;
       ctx.stroke();
       if (!simple) {
         ctx.shadowBlur = 0;
-        ctx.strokeStyle = 'rgba(255, 230, 170, 0.55)';
+        ctx.strokeStyle = cyan ? 'rgba(200, 245, 255, 0.55)' : 'rgba(255, 230, 170, 0.55)';
         ctx.lineWidth = Math.max(2, width * 0.28);
         strokeSmooth(ctx, pts, false);
         ctx.stroke();
@@ -623,21 +646,29 @@
       ctx.beginPath();
       ctx.moveTo(ox, oy);
       ctx.lineTo(ix, iy);
-      ctx.strokeStyle = 'rgba(70, 24, 6, 0.45)';
+      ctx.strokeStyle = cyan ? 'rgba(8, 40, 70, 0.45)' : 'rgba(70, 24, 6, 0.45)';
       ctx.lineWidth = 1.4;
       ctx.stroke();
     }
 
-    var nose = { x: 318, y: 150 };
+    var nose = cyan ? { x: 96, y: 162 } : { x: 318, y: 150 };
     var ng = ctx.createRadialGradient(nose.x - 4, nose.y - 5, 2, nose.x, nose.y, 16);
-    ng.addColorStop(0, 'rgba(255, 214, 130, 0.9)');
-    ng.addColorStop(0.55, 'rgba(220, 110, 32, 0.85)');
-    ng.addColorStop(1, 'rgba(90, 32, 8, 0.15)');
+    if (cyan) {
+      ng.addColorStop(0, 'rgba(180, 245, 255, 0.9)');
+      ng.addColorStop(0.55, 'rgba(32, 150, 200, 0.85)');
+      ng.addColorStop(1, 'rgba(8, 40, 70, 0.15)');
+    } else {
+      ng.addColorStop(0, 'rgba(255, 214, 130, 0.9)');
+      ng.addColorStop(0.55, 'rgba(220, 110, 32, 0.85)');
+      ng.addColorStop(1, 'rgba(90, 32, 8, 0.15)');
+    }
     ctx.fillStyle = ng;
     ctx.beginPath();
     ctx.arc(nose.x, nose.y, 16, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = 'rgba(255, 196, 70, ' + (0.55 + pulseA * 0.25) + ')';
+    ctx.fillStyle = cyan
+      ? 'rgba(120, 230, 255, ' + (0.55 + pulseA * 0.25) + ')'
+      : 'rgba(255, 196, 70, ' + (0.55 + pulseA * 0.25) + ')';
     ctx.beginPath();
     ctx.arc(nose.x + 2, nose.y - 1, 3.2, 0, Math.PI * 2);
     ctx.fill();
@@ -664,31 +695,9 @@
       ctx.restore();
     }
 
-    function strokeRoutePath(segs, color, width, glow) {
-      if (!segs || !segs.length) return;
-      var i;
-      for (i = 0; i < segs.length; i++) {
-        strokeTubeSegment(ctx, segs[i].x1, segs[i].y1, segs[i].x2, segs[i].y2, {
-          core: color,
-          glow: glow,
-          width: width,
-          hi: "rgba(255,255,255,0.5)",
-          dashed: width >= 5
-        });
-      }
-    }
-
     var left = state.sideRoutes.leftRamp;
     if (left) {
-      strokeRoutePath(left.segments, 'rgba(120, 220, 255, 0.78)', 7, 'rgba(80, 200, 255, 0.4)');
-      strokeRoutePath(left.guides, 'rgba(160, 230, 255, 0.35)', 3, 'rgba(80, 180, 255, 0.2)');
-      if (left.entry) {
-        ctx.save();
-        ctx.strokeStyle = 'rgba(120, 220, 255, 0.35)';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(left.entry.x - left.entry.w * 0.5, left.entry.y - left.entry.h * 0.5, left.entry.w, left.entry.h);
-        ctx.restore();
-      }
+      drawPioneerRamp(ctx, left, pulse, 'cyan');
     }
 
     var ramp = state.sideRoutes.rightRamp;
@@ -749,11 +758,12 @@
 
   function drawRollovers(ctx, state) {
     state.rollovers.forEach(function (lane) {
+      if (!lane.lit) return;
       ctx.save();
-      ctx.strokeStyle = lane.lit ? 'rgba(255,220,80,0.85)' : 'rgba(80,120,160,0.4)';
+      ctx.strokeStyle = 'rgba(255,220,80,0.85)';
       ctx.lineWidth = lane.width;
       ctx.lineCap = 'round';
-      applyShadow(ctx, lane.lit ? 'rgba(255,200,60,0.6)' : 'transparent', lane.lit ? 12 : 0);
+      applyShadow(ctx, 'rgba(255,200,60,0.6)', 12);
       ctx.beginPath();
       ctx.moveTo(lane.x1, lane.y1);
       ctx.lineTo(lane.x2, lane.y2);
@@ -981,23 +991,113 @@
   }
 
   function drawPlunger(ctx, state) {
-    var x = root.PinballSim.LAUNCH_LANE_X;
-    var y = root.PinballSim.PLUNGER_REST_Y;
-    var laneLeft = root.PinballSim.LAUNCH_LANE_LEFT;
+    var Sim = root.PinballSim;
+    var x = Sim.LAUNCH_LANE_X;
+    var restY = Sim.PLUNGER_REST_Y;
+    var laneLeft = Sim.LAUNCH_LANE_LEFT;
+    var laneRight = Sim.LAUNCH_LANE_RIGHT;
+    var tableH = state.tableH || Sim.TABLE_H;
+    var tableW = state.tableW || Sim.TABLE_W;
+    var power = clamp(state.launchPower || 0, 0, 1);
+    var charging = !!state.launchCharging;
+    var follow = state.plungerFollowFrames || 0;
+    var followMax = 3;
+    var headR = 22;
+    var headRestY = restY + 16;
+    var headY = headRestY;
+    if (follow > 0) {
+      headY = headRestY - 26 * (follow / followMax);
+    } else {
+      headY = headRestY + power * 50;
+    }
+    var laneInnerRight = Math.min(laneRight, tableW - 2);
+    var laneW = laneInnerRight - laneLeft;
+    var shaftW = 12;
+    var baseTop = tableH - 22;
+    var baseH = 14;
+    var cupBottom = headY + headR * 0.55;
+    var shaftTop = cupBottom;
+    var shaftBot = baseTop;
+    if (shaftBot < shaftTop + 8) shaftBot = shaftTop + 8;
 
     ctx.save();
-    ctx.fillStyle = '#334455';
-    ctx.fillRect(x - 10, y - 20, 20, 40);
-    var cupGrad = ctx.createLinearGradient(x - 8, y - 8, x + 8, y + 8);
-    cupGrad.addColorStop(0, '#667788');
-    cupGrad.addColorStop(1, '#334455');
-    ctx.fillStyle = cupGrad;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    var baseGrad = ctx.createLinearGradient(laneLeft, baseTop, laneLeft, baseTop + baseH);
+    baseGrad.addColorStop(0, '#5a2e14');
+    baseGrad.addColorStop(0.45, '#3a1c0c');
+    baseGrad.addColorStop(1, '#1a0c06');
+    ctx.fillStyle = baseGrad;
+    ctx.fillRect(laneLeft + 3, baseTop, laneW - 6, baseH);
+    ctx.strokeStyle = 'rgba(255, 180, 90, 0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(laneLeft + 3, baseTop, laneW - 6, baseH);
+
+    var shaftGrad = ctx.createLinearGradient(x - shaftW * 0.5, shaftTop, x + shaftW * 0.5, shaftBot);
+    shaftGrad.addColorStop(0, '#c8d0d8');
+    shaftGrad.addColorStop(0.5, '#6a7380');
+    shaftGrad.addColorStop(1, '#2a3038');
+    ctx.fillStyle = shaftGrad;
+    ctx.fillRect(x - shaftW * 0.5, shaftTop, shaftW, Math.max(6, shaftBot - shaftTop));
+
+    var springTop = cupBottom + 2;
+    var springBot = baseTop - 2;
+    var span = springBot - springTop;
+    if (span > 6) {
+      var coils = follow > 0 ? 9 : Math.max(3, Math.round(8 - power * 4));
+      var amp = Math.min(10, (laneW - 16) * 0.5);
+      ctx.beginPath();
+      ctx.moveTo(x, springTop);
+      var si;
+      var sn = coils * 2;
+      for (si = 1; si <= sn; si++) {
+        var st = si / sn;
+        ctx.lineTo(x + ((si % 2) ? amp : -amp), springTop + span * st);
+      }
+      ctx.lineTo(x, springBot);
+      ctx.strokeStyle = charging ? 'rgba(255, 180, 70, 0.85)' : 'rgba(180, 196, 210, 0.9)';
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+    }
+
+    var firing = follow > 0;
+    if (charging || firing) {
+      applyShadow(
+        ctx,
+        firing ? 'rgba(255, 230, 140, 0.95)' : 'rgba(255, 170, 50, 0.75)',
+        firing ? 18 : 12
+      );
+    }
+    var hg = ctx.createLinearGradient(x - headR, headY - headR, x + headR, headY + headR);
+    hg.addColorStop(0, '#f0d8a8');
+    hg.addColorStop(0.35, '#d08030');
+    hg.addColorStop(0.75, '#8a4a18');
+    hg.addColorStop(1, '#3a1c0c');
+    ctx.fillStyle = hg;
     ctx.beginPath();
-    ctx.arc(x, y, 10, 0, Math.PI * 2);
+    ctx.arc(x, headY, headR, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(180,200,230,0.4)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(laneLeft + 4, y - 30, root.PinballSim.TABLE_W - laneLeft - 42, 60);
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = firing ? 'rgba(255, 240, 180, 0.95)' : 'rgba(255, 220, 160, 0.75)';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.arc(x, headY, headR, 0, Math.PI * 2);
+    ctx.stroke();
+    var dish = ctx.createRadialGradient(x - 5, headY - 7, 2, x, headY, headR * 0.72);
+    dish.addColorStop(0, 'rgba(255, 245, 220, 0.55)');
+    dish.addColorStop(0.55, 'rgba(120, 70, 30, 0.35)');
+    dish.addColorStop(1, 'rgba(20, 10, 6, 0.55)');
+    ctx.fillStyle = dish;
+    ctx.beginPath();
+    ctx.arc(x, headY - 2, headR * 0.62, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 240, 200, 0.45)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(x - 3, headY - 6, headR * 0.42, -Math.PI * 0.9, -Math.PI * 0.15);
+    ctx.stroke();
+
     ctx.restore();
   }
 
