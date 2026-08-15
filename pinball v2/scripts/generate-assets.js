@@ -117,27 +117,6 @@ function genPlayfield(themeId, palette) {
       b = mix(b, palette.neonB[2], 0.35);
     }
 
-    // bumper pads (visual only)
-    var pads = [
-      [w * 0.5, 200, 42],
-      [w * 0.28, 300, 34],
-      [w * 0.72, 300, 34],
-      [w * 0.5, 390, 30]
-    ];
-    for (var i = 0; i < pads.length; i++) {
-      var p = pads[i];
-      var d = dist(x, y, p[0], p[1]);
-      if (d < p[2]) {
-        var t = 1 - d / p[2];
-        r = mix(r, palette.pad[0], 0.25 + t * 0.35);
-        g = mix(g, palette.pad[1], 0.25 + t * 0.35);
-        b = mix(b, palette.pad[2], 0.25 + t * 0.35);
-      } else if (d < p[2] + 3) {
-        r = mix(r, palette.neonA[0], 0.7);
-        g = mix(g, palette.neonA[1], 0.7);
-        b = mix(b, palette.neonA[2], 0.7);
-      }
-    }
 
     // top starfield
     if (y < 160 && ((x * 17 + y * 31) % 97) === 0) {
