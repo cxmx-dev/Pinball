@@ -15,7 +15,7 @@
   var FLIPPER_LEFT_PIVOT_X = Math.round(4.5 / 20.25 * TABLE_W);
   var FLIPPER_RIGHT_PIVOT_X = Math.round(11.625 / 20.25 * TABLE_W);
   var FLIPPER_PIVOT_SPACING = FLIPPER_RIGHT_PIVOT_X - FLIPPER_LEFT_PIVOT_X;
-  var FLIPPER_LEN = 63; // 59 too wide; 62 still a tad open; 65 felt tight. 63 ~2.25 balls.
+  var FLIPPER_LEN = 71; // 63 still a 2.25-ball hole; 71 lets a held pair save center, rest still drains.
   var FLIPPER_W = 14;
   var FLIPPER_PIVOT_R = 16;
   var FLIPPER_SPEED = 14;
