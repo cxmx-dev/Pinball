@@ -191,7 +191,7 @@ function slapSpeedAtFraction(frac) {
   var leftTip = sim.flipperTip(left);
   var rightTip = sim.flipperTip(right);
   var tipGap = rightTip.x - leftTip.x;
-  assert(tipGap > 36 && tipGap < 90, 'flipper tips leave a fair, playable center gap');
+  assert(tipGap > 45 && tipGap < 90, 'flipper tips leave a fair, playable center gap');
   assert(left.pivotX < 140, 'left flipper sits near left inlane without a wide dead zone');
   console.log('PASS: flipper spacing matches standard ratio (spacing=' + spacing + ' tipGap=' + tipGap.toFixed(1) + ')');
 })();
