@@ -550,7 +550,7 @@
     var inner = segsToPoints(ramp.guides).reverse();
     if (outer.length < 2 || inner.length < 2) return;
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
-    var pulseA = 0.55 + Math.sin(pulse * 1.4) * 0.12;
+
     var hull = outer.concat(inner);
     ctx.save();
     ctx.lineCap = 'round';
@@ -576,37 +576,6 @@
     ctx.fillStyle = g;
     ctx.fill();
 
-    var lobes = cyan
-      ? [
-          { x: 78, y: 500, r: 17 },
-          { x: 68, y: 390, r: 16 },
-          { x: 64, y: 275, r: 15 },
-          { x: 78, y: 188, r: 13 }
-        ]
-      : [
-          { x: 362, y: 500, r: 17 },
-          { x: 358, y: 390, r: 16 },
-          { x: 354, y: 275, r: 15 },
-          { x: 338, y: 188, r: 13 }
-        ];
-    var li;
-    for (li = 0; li < lobes.length; li++) {
-      var L = lobes[li];
-      var lg = ctx.createRadialGradient(L.x - 5, L.y - 6, 2, L.x, L.y, L.r);
-      if (cyan) {
-        lg.addColorStop(0, 'rgba(180, 245, 255, 0.95)');
-        lg.addColorStop(0.55, 'rgba(32, 150, 200, 0.75)');
-        lg.addColorStop(1, 'rgba(8, 40, 70, 0)');
-      } else {
-        lg.addColorStop(0, 'rgba(255, 214, 120, 0.95)');
-        lg.addColorStop(0.55, 'rgba(230, 110, 32, 0.75)');
-        lg.addColorStop(1, 'rgba(110, 40, 10, 0)');
-      }
-      ctx.fillStyle = lg;
-      ctx.beginPath();
-      ctx.arc(L.x, L.y, L.r, 0, Math.PI * 2);
-      ctx.fill();
-    }
 
     if (!simple) {
       applyShadow(ctx, cyan ? 'rgba(40, 200, 255, 0.28)' : 'rgba(255, 140, 40, 0.28)', 10);
@@ -651,27 +620,6 @@
       ctx.stroke();
     }
 
-    var nose = cyan ? { x: 96, y: 162 } : { x: 318, y: 150 };
-    var ng = ctx.createRadialGradient(nose.x - 4, nose.y - 5, 2, nose.x, nose.y, 16);
-    if (cyan) {
-      ng.addColorStop(0, 'rgba(180, 245, 255, 0.9)');
-      ng.addColorStop(0.55, 'rgba(32, 150, 200, 0.85)');
-      ng.addColorStop(1, 'rgba(8, 40, 70, 0.15)');
-    } else {
-      ng.addColorStop(0, 'rgba(255, 214, 130, 0.9)');
-      ng.addColorStop(0.55, 'rgba(220, 110, 32, 0.85)');
-      ng.addColorStop(1, 'rgba(90, 32, 8, 0.15)');
-    }
-    ctx.fillStyle = ng;
-    ctx.beginPath();
-    ctx.arc(nose.x, nose.y, 16, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = cyan
-      ? 'rgba(120, 230, 255, ' + (0.55 + pulseA * 0.25) + ')'
-      : 'rgba(255, 196, 70, ' + (0.55 + pulseA * 0.25) + ')';
-    ctx.beginPath();
-    ctx.arc(nose.x + 2, nose.y - 1, 3.2, 0, Math.PI * 2);
-    ctx.fill();
 
     ctx.restore();
   }
@@ -1003,6 +951,8 @@
     var follow = state.plungerFollowFrames || 0;
     var followMax = 3;
     var headR = 8;
+    var tipW = 19;
+    var tipH = 11;
     var headRestY = restY + Sim.BALL_RADIUS + headR + 2;
     var headY = headRestY;
     if (follow > 0) {
@@ -1015,7 +965,7 @@
     var shaftW = 6;
     var baseTop = tableH - 20;
     var baseH = 12;
-    var shaftTop = headY + headR - 1;
+    var shaftTop = headY - headR + tipH - 1;
     var shaftBot = baseTop;
     if (shaftBot < shaftTop + 8) shaftBot = shaftTop + 8;
 
@@ -1089,49 +1039,15 @@
       );
     }
 
-    ctx.fillStyle = '#1a1210';
-    ctx.beginPath();
-    ctx.arc(x, headY, headR, 0, Math.PI * 2);
-    ctx.fill();
-
-    var hg = ctx.createLinearGradient(x - headR, headY - headR, x + headR, headY + headR);
-    if (firing) {
-      hg.addColorStop(0, '#fff4c8');
-      hg.addColorStop(0.35, '#f0c060');
-      hg.addColorStop(0.7, '#c88830');
-      hg.addColorStop(1, '#6a4818');
-    } else {
-      hg.addColorStop(0, '#f4f6f8');
-      hg.addColorStop(0.3, '#c8d0d8');
-      hg.addColorStop(0.65, '#8a949e');
-      hg.addColorStop(1, '#3a424a');
-    }
-    ctx.fillStyle = hg;
-    ctx.beginPath();
-    ctx.arc(x, headY, headR - 1.2, 0, Math.PI * 2);
-    ctx.fill();
+    var tipTop = headY - headR;
+    var tipLeft = x - tipW * 0.5;
+    ctx.fillStyle = '#111111';
+    ctx.fillRect(tipLeft, tipTop, tipW, tipH * 0.5);
+    ctx.fillStyle = '#8a8f96';
+    ctx.fillRect(tipLeft, tipTop + tipH * 0.5, tipW, tipH * 0.5);
+    ctx.fillStyle = 'rgba(230, 234, 238, 0.65)';
+    ctx.fillRect(tipLeft + 1, tipTop, tipW - 2, 1.5);
     ctx.shadowBlur = 0;
-
-    ctx.strokeStyle = 'rgba(20, 12, 10, 0.85)';
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.arc(x, headY, headR - 0.4, 0, Math.PI * 2);
-    ctx.stroke();
-
-    var faceR = headR * 0.42;
-    var faceGrad = ctx.createRadialGradient(x - 1, headY - 1, 0.5, x, headY, faceR);
-    faceGrad.addColorStop(0, firing ? 'rgba(255, 236, 180, 0.7)' : 'rgba(230, 236, 240, 0.55)');
-    faceGrad.addColorStop(1, firing ? 'rgba(160, 100, 30, 0.35)' : 'rgba(70, 78, 86, 0.45)');
-    ctx.fillStyle = faceGrad;
-    ctx.beginPath();
-    ctx.arc(x, headY - 0.5, faceR, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = firing ? 'rgba(255, 250, 210, 0.9)' : 'rgba(255, 255, 255, 0.7)';
-    ctx.lineWidth = 1.3;
-    ctx.beginPath();
-    ctx.arc(x - 2, headY - 3, headR * 0.45, -Math.PI * 0.95, -Math.PI * 0.2);
-    ctx.stroke();
 
     ctx.restore();
   }

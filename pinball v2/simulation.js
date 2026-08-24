@@ -161,7 +161,7 @@
   function createBumpers() {
     return [
       // Skill / apex - keep clear of arch pocket
-      { x: 240, y: 198, radius: 26, score: 500, color: '#ff3366', kind: 'bumper', hitCooldown: 0 },
+      { x: 175, y: 385, radius: 26, score: 500, color: '#ff3366', kind: 'bumper', hitCooldown: 0 },
       // Upper wings - inset so ball cannot pinch vs outer rail / habitrail guide
       { x: 200, y: 252, radius: 22, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0 },
       { x: 276, y: 248, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
@@ -382,13 +382,7 @@
 
   /** Small mid-field posts â€” deflect without recreating bumper chaos. */
   function createPosts() {
-    return [
-      { id: 'post-ml', x: 175, y: 385, radius: 9, score: 200, color: '#88ccee', flash: 0 },
-      { id: 'post-mr', x: 305, y: 385, radius: 9, score: 200, color: '#eecc88', flash: 0 },
-      // Above outlanes: kick outer-wall slides inward (not 100% death)
-      { id: 'post-ol-l', x: 66, y: 500, radius: 11, score: 150, color: '#88ffcc', flash: 0 },
-      { id: 'post-ol-r', x: LAUNCH_LANE_LEFT - 44, y: 500, radius: 11, score: 150, color: '#ffcc88', flash: 0 }
-    ];
+    return [];
   }
 
   /** Ellipse arc as wall segments (canvas y+ down). a0â†’a1 radians. */
