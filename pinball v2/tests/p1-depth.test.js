@@ -15,26 +15,27 @@ function flushEob(state) {
 console.log('Pinball P1 depth unit tests');
 console.log('===========================');
 
-(function testDropBankStartsRush() {
+(function testStandupsStartRush() {
   var state = fresh();
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
   state.themeId = 'void-pulse';
-  assert.strictEqual(state.dropTargets.length, sim.DROP_BANK_SIZE);
-  // Knock drops via ball overlaps (AABB + radius)
-  state.dropTargets.forEach(function (drop) {
-    state.ball.x = drop.x;
-    state.ball.y = drop.y;
+  assert.strictEqual(state.dropTargets.length, 0);
+  assert.strictEqual(sim.allDropsDown(state.dropTargets), false);
+  // Knock the three remaining standups via ball overlaps
+  state.targets.forEach(function (target) {
+    state.ball.x = target.x + 1;
+    state.ball.y = target.y - target.h * 0.5 - state.ball.radius + 2;
     state.ball.vx = 0;
-    state.ball.vy = 20;
-    drop.occupied = false;
+    state.ball.vy = 80;
+    target.occupied = false;
     sim.stepPhysics(state, 0.016);
   });
-  assert(sim.allDropsDown(state.dropTargets), 'all drops down');
+  assert(state.targets.every(function (t) { return t.lit; }), 'all standups lit');
   assert(state.rushTimer > 0, 'rush started');
   assert.strictEqual(state.rushName, 'VOID RUSH');
   assert.strictEqual(state.rushMult, sim.RUSH_SCORE_MULT);
-  console.log('PASS: drop bank starts VOID RUSH');
+  console.log('PASS: standups start VOID RUSH');
 })();
 
 (function testEmberRushNameFromTheme() {

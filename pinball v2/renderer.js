@@ -597,30 +597,6 @@
     paintRim(outer, simple ? 11 : 15);
     paintRim(inner.slice().reverse(), simple ? 10 : 14);
 
-    var ribCount = simple ? 4 : 6;
-    var r;
-    for (r = 1; r <= ribCount; r++) {
-      var t = r / (ribCount + 1);
-      var oi = Math.min(outer.length - 2, Math.floor(t * (outer.length - 1)));
-      var ii = Math.min(inner.length - 2, Math.floor((1 - t) * (inner.length - 1)));
-      var oa = outer[oi];
-      var ob = outer[oi + 1];
-      var ia = inner[ii];
-      var ib = inner[ii + 1];
-      var tf = t * (outer.length - 1) - oi;
-      var ox = oa.x + (ob.x - oa.x) * tf;
-      var oy = oa.y + (ob.y - oa.y) * tf;
-      var ix = ia.x + (ib.x - ia.x) * 0.5;
-      var iy = ia.y + (ib.y - ia.y) * 0.5;
-      ctx.beginPath();
-      ctx.moveTo(ox, oy);
-      ctx.lineTo(ix, iy);
-      ctx.strokeStyle = cyan ? 'rgba(8, 40, 70, 0.45)' : 'rgba(70, 24, 6, 0.45)';
-      ctx.lineWidth = 1.4;
-      ctx.stroke();
-    }
-
-
     ctx.restore();
   }
   function drawSideRoutes(ctx, state, pulse) {
@@ -1116,7 +1092,7 @@
     railGrad.addColorStop(0, 'rgba(255,190,80,0.95)');
     railGrad.addColorStop(1, 'rgba(160,70,20,0.88)');
     ctx.strokeStyle = railGrad;
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 4;
     ctx.lineCap = 'round';
     applyShadow(ctx, 'rgba(255,140,40,0.45)', 10);
     ctx.beginPath();
@@ -1130,25 +1106,6 @@
     ctx.beginPath();
     ctx.moveTo(x, wireY1);
     ctx.lineTo(x, state.tableH - 72);
-    ctx.stroke();
-    // Berth collar where the hull docks to the shooter lane
-    ctx.shadowBlur = 0;
-    var collar = ctx.createLinearGradient(x - 10, 70, x + 18, 150);
-    collar.addColorStop(0, 'rgba(255, 176, 72, 0.55)');
-    collar.addColorStop(1, 'rgba(120, 48, 12, 0.15)');
-    ctx.fillStyle = collar;
-    ctx.beginPath();
-    ctx.moveTo(x - 8, 72);
-    ctx.lineTo(x + 16, 72);
-    ctx.lineTo(x + 14, 128);
-    ctx.lineTo(x - 4, 138);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 196, 80, 0.7)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x, 78);
-    ctx.lineTo(x, 134);
     ctx.stroke();
     ctx.restore();
   }

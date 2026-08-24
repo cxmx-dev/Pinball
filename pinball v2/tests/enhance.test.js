@@ -15,7 +15,8 @@ console.log('==============================');
   assert(state.slingshots.length >= 2);
   assert(state.targets.length >= 3);
   assert(state.rollovers.length >= 2);
-  assert(state.kickers.length >= 2);
+  assert(state.kickers.length === 0);
+  assert(state.bumpers.length >= 4);
   assert(state.spinner);
   assert.strictEqual(state.multiplier, 1);
   console.log('PASS: initial state has elaborate elements');
@@ -44,20 +45,20 @@ console.log('==============================');
   console.log('PASS: all targets lit enables jackpot');
 })();
 
-(function testKickerHitScores() {
+(function testBumperHitScores() {
   var state = fresh();
-  var kicker = state.kickers[0];
+  var bumper = state.bumpers[0];
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
-  state.ball.x = kicker.x;
-  state.ball.y = kicker.y - kicker.radius - state.ball.radius + 2;
+  state.ball.x = bumper.x;
+  state.ball.y = bumper.y - bumper.radius - state.ball.radius + 2;
   state.ball.vx = 0;
   state.ball.vy = 150;
   var before = state.score;
   sim.stepPhysics(state, 0.016);
   assert(state.score > before);
-  assert.strictEqual(state.lastHitType, 'kicker');
-  console.log('PASS: kicker hit scores');
+  assert.strictEqual(state.lastHitType, 'bumper');
+  console.log('PASS: bumper hit scores');
 })();
 
 console.log('==============================');

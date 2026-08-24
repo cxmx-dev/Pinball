@@ -160,13 +160,11 @@
    */
   function createBumpers() {
     return [
-      // Skill / apex - keep clear of arch pocket
-      { x: 175, y: 385, radius: 26, score: 500, color: '#ff3366', kind: 'bumper', hitCooldown: 0 },
-      // Upper wings - inset so ball cannot pinch vs outer rail / habitrail guide
+      // Skill / apex - 180 moved into the hole between the two 300s
+      { x: 240, y: 198, radius: 16, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0 },
+      // Upper wings - right 300 nudged left toward the cluster
       { x: 200, y: 252, radius: 22, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0 },
-      { x: 276, y: 248, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
-      // Single lower feeder (above drop bank; mid toys fill empty band above)
-      { x: 240, y: 455, radius: 16, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0 },
+      { x: 248, y: 248, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
       {
         // Weaker / smaller saver - outlane tension
         x: 138,
@@ -216,24 +214,7 @@
 
   /** Horizontal drop bank mid-table â€” complete all â†’ rush mode */
   function createDropTargets() {
-    var drops = [];
-    var baseX = 188;
-    var y = 488;
-    var i;
-    for (i = 0; i < DROP_BANK_SIZE; i++) {
-      drops.push({
-        id: 'drop-' + i,
-        x: baseX + i * 28,
-        y: y,
-        w: 20,
-        h: 12,
-        down: false,
-        score: 350,
-        occupied: false,
-        flash: 0
-      });
-    }
-    return drops;
+    return [];
   }
 
   /**
@@ -373,14 +354,9 @@
   }
 
   function createKickers() {
-    // Above flipper line, clear of rest pose â€” feed cross-shots without trapping bats
-    return [
-      { id: 'kicker-l', x: 148, y: 575, radius: 14, score: 750, color: '#ff8844' },
-      { id: 'kicker-r', x: 332, y: 575, radius: 14, score: 750, color: '#44ffaa' }
-    ];
+    return [];
   }
 
-  /** Small mid-field posts â€” deflect without recreating bumper chaos. */
   function createPosts() {
     return [];
   }
@@ -511,6 +487,9 @@
     walls.push({ x1: rightInlaneX - 4, y1: FLIPPER_ROW_Y - 20, x2: rightInlaneX - 4, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: LAUNCH_LANE_LEFT - 10, y1: 455, x2: rightInlaneX, y2: FLIPPER_ROW_Y - 40, kind: 'guide' });
     walls.push({ x1: LAUNCH_LANE_LEFT - 4, y1: 420, x2: rightInlaneX + 6, y2: 505, kind: 'guide' });
+    // Short return lanes at hull bottoms - steer a dump toward the flippers, not free fall
+    walls.push({ x1: 70, y1: 560, x2: FLIPPER_INLANE_X + 10, y2: 630, kind: 'inlane' });
+    walls.push({ x1: 378, y1: 554, x2: rightInlaneX + 10, y2: 630, kind: 'inlane' });
     walls.push({ x1: bounds.centerLeft, y1: FLIPPER_ROW_Y, x2: bounds.centerLeft, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: bounds.centerRight, y1: FLIPPER_ROW_Y, x2: bounds.centerRight, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: bounds.rightOutlaneLeft, y1: FLIPPER_ROW_Y, x2: bounds.rightOutlaneLeft, y2: chuteBottom, kind: 'chute' });
@@ -1012,6 +991,21 @@
       merged: false
     };
     return true;
+  }
+
+  function allStandupsLit(targets) {
+    if (!targets || !targets.length) return false;
+    var hasL = false;
+    var hasR = false;
+    var hasC = false;
+    var i;
+    for (i = 0; i < targets.length; i++) {
+      if (!targets[i].lit) continue;
+      if (targets[i].id === 'standup-l') hasL = true;
+      if (targets[i].id === 'standup-r') hasR = true;
+      if (targets[i].id === 'standup-c') hasC = true;
+    }
+    return hasL && hasR && hasC;
   }
 
   function allDropsDown(drops) {
@@ -1811,6 +1805,9 @@
           }
           var bonus = target.lit ? target.score : Math.floor(target.score * 0.5);
           awardScore(state, bonus, 'target', target.id, target.x, target.y);
+          if (allStandupsLit(state.targets)) {
+            startRushMode(state);
+          }
         }
       } else {
         target.occupied = false;
