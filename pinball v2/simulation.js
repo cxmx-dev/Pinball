@@ -206,7 +206,7 @@
 
   function createTargets() {
     return [
-      { id: 'standup-l', x: 118, y: 540, w: 10, h: 30, score: 1000, lit: true, flash: 0, occupied: false },
+      { id: 'standup-l', x: 148, y: 518, w: 10, h: 30, score: 1000, lit: true, flash: 0, occupied: false },
       { id: 'standup-r', x: 322, y: 548, w: 10, h: 30, score: 1000, lit: true, flash: 0, occupied: false },
       { id: 'standup-c', x: 240, y: 575, w: 10, h: 26, score: 1500, lit: false, flash: 0, occupied: false }
     ];
@@ -223,6 +223,8 @@
    * routes hold entry sensors + draw polylines + mild ride boosts.
    */
   function createSideRoutes() {
+    // Horseshoe orbit: left slide + top channel + right slide meet under the arch.
+    // Outer / inner polylines are also the draw hulls (cyan left, copper right).
     return {
       leftCaptive: {
         id: 'captive-l',
@@ -236,45 +238,54 @@
         id: 'ramp-l',
         score: 800,
         cooldown: 0,
-        entry: { x: 78, y: 545, w: 36, h: 40 },
-        exit: { x: 122, y: 168 },
-        boost: 340,
-        // Dump below-left of spinner so the last wall is not a shelf in the left cusp
+        entry: { x: 86, y: 530, w: 40, h: 48 },
+        exit: { x: 330, y: 520 },
+        via: { x: 80, y: 100 },
+        boost: 360,
         segments: [
-          { x1: 68, y1: 560, x2: 50, y2: 470 },
-          { x1: 50, y1: 470, x2: 40, y2: 360 },
-          { x1: 40, y1: 360, x2: 38, y2: 245 },
-          { x1: 38, y1: 245, x2: 52, y2: 175 },
-          { x1: 52, y1: 175, x2: 86, y2: 154 },
-          { x1: 86, y1: 154, x2: 118, y2: 170 }
+          { x1: 72, y1: 540, x2: 48, y2: 420 },
+          { x1: 48, y1: 420, x2: 40, y2: 300 },
+          { x1: 40, y1: 300, x2: 48, y2: 180 },
+          { x1: 48, y1: 180, x2: 80, y2: 100 },
+          { x1: 80, y1: 100, x2: 160, y2: 78 },
+          { x1: 160, y1: 78, x2: 240, y2: 70 },
+          { x1: 240, y1: 70, x2: 320, y2: 78 }
         ],
         guides: [
-          { x1: 108, y1: 555, x2: 96, y2: 465 },
-          { x1: 96, y1: 465, x2: 90, y2: 355 },
-          { x1: 90, y1: 355, x2: 88, y2: 250 },
-          { x1: 88, y1: 250, x2: 106, y2: 180 }
+          { x1: 100, y1: 536, x2: 76, y2: 420 },
+          { x1: 76, y1: 420, x2: 70, y2: 300 },
+          { x1: 70, y1: 300, x2: 76, y2: 180 },
+          { x1: 76, y1: 180, x2: 104, y2: 116 },
+          { x1: 104, y1: 116, x2: 160, y2: 104 },
+          { x1: 160, y1: 104, x2: 240, y2: 96 },
+          { x1: 240, y1: 96, x2: 320, y2: 104 }
         ]
       },
       rightRamp: {
         id: 'ramp-r',
         score: 750,
         cooldown: 0,
-        entry: { x: 355, y: 540, w: 34, h: 44 },
-        exit: { x: 285, y: 150 },
+        entry: { x: 340, y: 528, w: 40, h: 48 },
+        exit: { x: 100, y: 520 },
+        via: { x: 368, y: 100 },
         boost: 360,
-        // Stay left of shooter lane; widen channel vs crawl
         segments: [
-          { x1: 384, y1: 555, x2: 380, y2: 450 },
-          { x1: 380, y1: 450, x2: 378, y2: 330 },
-          { x1: 378, y1: 330, x2: 376, y2: 175 },
-          { x1: 376, y1: 175, x2: 338, y2: 152 },
-          { x1: 338, y1: 152, x2: 298, y2: 144 }
+          { x1: 160, y1: 78, x2: 240, y2: 70 },
+          { x1: 240, y1: 70, x2: 320, y2: 78 },
+          { x1: 320, y1: 78, x2: 368, y2: 100 },
+          { x1: 368, y1: 100, x2: 378, y2: 180 },
+          { x1: 378, y1: 180, x2: 380, y2: 320 },
+          { x1: 380, y1: 320, x2: 376, y2: 440 },
+          { x1: 376, y1: 440, x2: 350, y2: 540 }
         ],
         guides: [
-          { x1: 346, y1: 550, x2: 340, y2: 445 },
-          { x1: 340, y1: 445, x2: 334, y2: 330 },
-          { x1: 334, y1: 330, x2: 326, y2: 225 },
-          { x1: 326, y1: 225, x2: 308, y2: 168 }
+          { x1: 160, y1: 104, x2: 240, y2: 96 },
+          { x1: 240, y1: 96, x2: 320, y2: 104 },
+          { x1: 320, y1: 104, x2: 344, y2: 116 },
+          { x1: 344, y1: 116, x2: 350, y2: 180 },
+          { x1: 350, y1: 180, x2: 350, y2: 320 },
+          { x1: 350, y1: 320, x2: 348, y2: 440 },
+          { x1: 348, y1: 440, x2: 322, y2: 536 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 540,
@@ -477,18 +488,17 @@
       kind: 'deck'
     });
     // Inlane posts + return plastics: wall-hug must hit shelf/post before free outlane fall
-    walls.push({ x1: FLIPPER_INLANE_X + 6, y1: 440, x2: FLIPPER_INLANE_X + 6, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' });
+    walls.push({ x1: FLIPPER_INLANE_X + 6, y1: 585, x2: FLIPPER_INLANE_X + 6, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' });
     walls.push({ x1: FLIPPER_INLANE_X + 6, y1: FLIPPER_ROW_Y - 20, x2: FLIPPER_INLANE_X + 6, y2: chuteBottom, kind: 'chute' });
     // Left return shelf (outer rail -> inlane): kicks inward/down toward flipper
-    walls.push({ x1: 42, y1: 455, x2: FLIPPER_INLANE_X + 4, y2: FLIPPER_ROW_Y - 40, kind: 'guide' });
-    walls.push({ x1: 36, y1: 420, x2: 72, y2: 505, kind: 'guide' });
+    walls.push({ x1: 50, y1: 560, x2: FLIPPER_INLANE_X + 4, y2: FLIPPER_ROW_Y - 40, kind: 'guide' });
+    walls.push({ x1: 36, y1: 420, x2: 46, y2: 468, kind: 'guide' });
     // Right inlane post (mirror left) + return plastics
     walls.push({ x1: rightInlaneX - 4, y1: 440, x2: rightInlaneX - 4, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' });
     walls.push({ x1: rightInlaneX - 4, y1: FLIPPER_ROW_Y - 20, x2: rightInlaneX - 4, y2: chuteBottom, kind: 'chute' });
-    walls.push({ x1: LAUNCH_LANE_LEFT - 10, y1: 455, x2: rightInlaneX, y2: FLIPPER_ROW_Y - 40, kind: 'guide' });
-    walls.push({ x1: LAUNCH_LANE_LEFT - 4, y1: 420, x2: rightInlaneX + 6, y2: 505, kind: 'guide' });
-    // Short return lanes at hull bottoms - steer a dump toward the flippers, not free fall
-    walls.push({ x1: 70, y1: 560, x2: FLIPPER_INLANE_X + 10, y2: 630, kind: 'inlane' });
+    walls.push({ x1: 370, y1: 560, x2: rightInlaneX, y2: FLIPPER_ROW_Y - 40, kind: 'guide' });
+    walls.push({ x1: LAUNCH_LANE_LEFT - 4, y1: 420, x2: 376, y2: 468, kind: 'guide' });
+    // Right return only — left 70,560→inlane pinched a V with standup-l / left slide.
     walls.push({ x1: 378, y1: 554, x2: rightInlaneX + 10, y2: 630, kind: 'inlane' });
     walls.push({ x1: bounds.centerLeft, y1: FLIPPER_ROW_Y, x2: bounds.centerLeft, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: bounds.centerRight, y1: FLIPPER_ROW_Y, x2: bounds.centerRight, y2: chuteBottom, kind: 'chute' });
@@ -1069,15 +1079,71 @@
     if (!pointInRouteEntry(ball, route.entry)) return false;
     if (ball.vy > 40) return false;
     var boost = route.boost || 280;
-    var ex = route.exit ? route.exit.x : ball.x;
-    var ey = route.exit ? route.exit.y : ball.y - 80;
-    var dir = normalize(ex - ball.x, ey - ball.y);
+    var aimX = route.via ? route.via.x : (route.exit ? route.exit.x : ball.x);
+    var aimY = route.via ? route.via.y : (route.exit ? route.exit.y : ball.y - 80);
+    var dir = normalize(aimX - ball.x, aimY - ball.y);
+    // Mouths sit at similar Y to the far dump — never launch sideways across the playfield.
+    if (dir.y > -0.35) dir = normalize(towardCenterSign * 0.12, -1);
     var along = Math.max(boost, HABITRAIL_MIN_SPEED + 40);
     ball.vx = dir.x * along + towardCenterSign * 25;
     ball.vy = Math.min(ball.vy, dir.y * along);
     if (ball.vy > -boost * 0.45) ball.vy = dir.y * along;
     route.cooldown = SIDE_ROUTE_COOLDOWN * 1.6;
+    state.activeHabitrail = route.id;
+    if (state.sideRoutes) {
+      var other = route.id === 'ramp-l' ? state.sideRoutes.rightRamp : state.sideRoutes.leftRamp;
+      if (other) other.cooldown = Math.max(other.cooldown || 0, SIDE_ROUTE_COOLDOWN);
+    }
+    var ex = route.exit ? route.exit.x : aimX;
+    var ey = route.exit ? route.exit.y : aimY;
     awardScore(state, route.score, 'route', route.id, (ball.x + ex) * 0.5, (ball.y + ey) * 0.5);
+    return true;
+  }
+
+  /** Full horseshoe centerline, left mouth → top → right mouth (assist travel). */
+  function horseshoeTravelSegs(leftRamp, rightRamp) {
+    var segs = [];
+    if (leftRamp && leftRamp.segments) {
+      var i;
+      for (i = 0; i < leftRamp.segments.length; i++) segs.push(leftRamp.segments[i]);
+    }
+    if (rightRamp && rightRamp.segments) {
+      var j;
+      for (j = 0; j < rightRamp.segments.length; j++) {
+        var s = rightRamp.segments[j];
+        var dup = false;
+        var k;
+        for (k = 0; k < segs.length; k++) {
+          var t = segs[k];
+          if (t.x1 === s.x1 && t.y1 === s.y1 && t.x2 === s.x2 && t.y2 === s.y2) {
+            dup = true;
+            break;
+          }
+        }
+        if (!dup) segs.push(s);
+      }
+    }
+    return segs;
+  }
+
+  function peelHabitrailDump(state, route) {
+    if (!route || !route.exit) return false;
+    var ball = state.ball;
+    var dx = ball.x - route.exit.x;
+    var dy = ball.y - route.exit.y;
+    if (vecLen(dx, dy) > 52) return false;
+    if (ball.y < 470) return false;
+    var inward = route.exit.x > TABLE_W * 0.5 ? -1 : 1;
+    ball.x += inward * 22;
+    ball.vx = inward * Math.max(180, Math.abs(ball.vx) * 0.4);
+    ball.vy = Math.max(Math.abs(ball.vy) * 0.3, 160);
+    state.activeHabitrail = null;
+    if (state.sideRoutes && state.sideRoutes.leftRamp) {
+      state.sideRoutes.leftRamp.cooldown = Math.max(state.sideRoutes.leftRamp.cooldown || 0, SIDE_ROUTE_COOLDOWN);
+    }
+    if (state.sideRoutes && state.sideRoutes.rightRamp) {
+      state.sideRoutes.rightRamp.cooldown = Math.max(state.sideRoutes.rightRamp.cooldown || 0, SIDE_ROUTE_COOLDOWN);
+    }
     return true;
   }
 
@@ -1104,8 +1170,13 @@
   function assistHabitrails(state, dt) {
     if (!state.sideRoutes || !state.ball.inPlay || !state.exitedLaunchLane) return;
     var ball = state.ball;
-    var routes = [state.sideRoutes.leftRamp, state.sideRoutes.rightRamp];
+    var left = state.sideRoutes.leftRamp;
+    var right = state.sideRoutes.rightRamp;
+    var travel = horseshoeTravelSegs(left, right);
+    var nearTravel = nearestPointOnSegments(ball.x, ball.y, travel);
+    var routes = [left, right];
     var ri;
+    var inChannel = false;
     for (ri = 0; ri < routes.length; ri++) {
       var route = routes[ri];
       if (!route || !route.segments) continue;
@@ -1115,20 +1186,28 @@
       var channelDist = nearOuter.dist;
       if (nearGuide) channelDist = Math.min(channelDist, nearGuide.dist);
       if (channelDist > ball.radius + 22) continue;
-      // Do not drag a ball sitting on the spinner (left dump used to feed that cusp)
-      if (state.spinner && route.id === 'ramp-l') {
+      if (state.spinner && ball.y > 110) {
         var spAssist = state.spinner;
-        if (vecLen(ball.x - spAssist.x, ball.y - spAssist.y) < spAssist.radius + ball.radius + 30) continue;
+        if (vecLen(ball.x - spAssist.x, ball.y - spAssist.y) < spAssist.radius + ball.radius + 18) continue;
       }
-      // Must sit between outer rail and inner guide - not playfield-side wall hug
       if (nearGuide) {
-        var loX = Math.min(nearOuter.x, nearGuide.x) - 6;
-        var hiX = Math.max(nearOuter.x, nearGuide.x) + 6;
-        if (ball.x < loX || ball.x > hiX) continue;
+        var loX = Math.min(nearOuter.x, nearGuide.x) - 8;
+        var hiX = Math.max(nearOuter.x, nearGuide.x) + 8;
+        var loY = Math.min(nearOuter.y, nearGuide.y) - 8;
+        var hiY = Math.max(nearOuter.y, nearGuide.y) + 8;
+        if (ball.x < loX || ball.x > hiX || ball.y < loY || ball.y > hiY) continue;
       }
-      var ex = route.exit ? route.exit.x : ball.x;
-      var ey = route.exit ? route.exit.y : ball.y - 60;
-      var dir = normalize(ex - ball.x, ey - ball.y);
+      inChannel = true;
+      var wall = nearTravel && nearTravel.dist <= channelDist + 6 ? nearTravel : nearOuter;
+      var fwd = normalize(wall.seg.x2 - wall.seg.x1, wall.seg.y2 - wall.seg.y1);
+      var ride = state.activeHabitrail;
+      var dir;
+      if (ride === 'ramp-r') dir = { x: -fwd.x, y: -fwd.y };
+      else if (ride === 'ramp-l') dir = fwd;
+      else {
+        var already = dot(ball.vx, ball.vy, fwd.x, fwd.y);
+        dir = already >= 0 ? fwd : { x: -fwd.x, y: -fwd.y };
+      }
       var speed = ballSpeed(ball);
       var along = dot(ball.vx, ball.vy, dir.x, dir.y);
       ball.vx += dir.x * HABITRAIL_ASSIST * dt;
@@ -1137,14 +1216,32 @@
         var need = HABITRAIL_MIN_SPEED - Math.max(0, along);
         ball.vx += dir.x * need;
         ball.vy += dir.y * need;
-        var wall = nearGuide && nearGuide.dist < nearOuter.dist ? nearGuide : nearOuter;
-        var n = normalize(ball.x - wall.x, ball.y - wall.y);
+        var nWall = nearGuide && nearGuide.dist < nearOuter.dist ? nearGuide : nearOuter;
+        var n = normalize(ball.x - nWall.x, ball.y - nWall.y);
         ball.x += n.x * 1.5;
         ball.y += n.y * 1.5;
         ball.vx += n.x * 40;
         ball.vy += n.y * 20;
       }
     }
+    if (state.activeHabitrail === 'ramp-l' && left) peelHabitrailDump(state, left);
+    if (state.activeHabitrail === 'ramp-r' && right) peelHabitrailDump(state, right);
+    if (state.activeHabitrail && !inChannel && nearTravel && nearTravel.dist > ball.radius + 40) {
+      state.activeHabitrail = null;
+    }
+  }
+
+  /** Slow ball wedged lower-left (standup / old return V) — peel inward, not loft. */
+  function peelLeftInlaneWedge(state) {
+    var ball = state.ball;
+    if (!ball || !ball.inPlay || !state.exitedLaunchLane) return;
+    if (ball.x < 60 || ball.x > 130 || ball.y < 555 || ball.y > 640) return;
+    if (ballSpeed(ball) > 90) return;
+    var left = state.sideRoutes && state.sideRoutes.leftRamp;
+    if (left && pointInRouteEntry(ball, left.entry)) return;
+    ball.x = Math.max(ball.x, 108);
+    ball.vx = Math.max(ball.vx, 150);
+    if (ball.vy < 80) ball.vy = 80;
   }
 
   function resolveSideRouteCollisions(state) {
@@ -1451,6 +1548,12 @@
 
     state.walls.forEach(function (wall) {
       if (!state.exitedLaunchLane && (wall.wireform || wall.kind === 'lane')) return;
+      // Raised horseshoe rides over the launch wireform (different height).
+      if (wall.wireform && (state.activeHabitrail ||
+          inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp) ||
+          inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp))) {
+        return;
+      }
       // Soft short deck stubs â€” less bounce so they don't steal lower play
       var rest = WALL_RESTITUTION;
       if (wall.kind === 'deck') rest = WALL_RESTITUTION * 0.55;
@@ -1590,7 +1693,7 @@
     // Spinner-left cusp vs habitrail/arch: kick into playfield (right+down), never outlane.
     // Live bounce-loops here can exceed the slow-crawl speed gate.
     var spn = state.spinner;
-    if (spn && ball.x < spn.x + 6 && ball.x > spn.x - 70 && ball.y < spn.y + 42 && ball.y > spn.y - 40) {
+    if (spn && ball.y > 108 && ball.x < spn.x + 6 && ball.x > spn.x - 70 && ball.y < spn.y + 42 && ball.y > spn.y - 40) {
       var sdist = vecLen(ball.x - spn.x, ball.y - spn.y);
       var nearSp = sdist < spn.radius + r + 24;
       var nearShelf = false;
@@ -2141,9 +2244,27 @@
     return null;
   }
 
+
+  function routeChannelDist(ball, route) {
+    if (!ball || !route || !route.segments) return 999;
+    var nearOuter = nearestPointOnSegments(ball.x, ball.y, route.segments);
+    var nearGuide = nearestPointOnSegments(ball.x, ball.y, route.guides);
+    var d = nearOuter ? nearOuter.dist : 999;
+    if (nearGuide) d = Math.min(d, nearGuide.dist);
+    return d;
+  }
+
+  function inHabitrailChannel(state, route) {
+    var ball = state.ball;
+    if (!ball || !route) return false;
+    if (pointInRouteEntry(ball, route.entry)) return true;
+    return routeChannelDist(ball, route) < ball.radius + 24;
+  }
+
   function guardLeftOutlaneShelf(state) {
     if (!state.ball.inPlay || !state.exitedLaunchLane) return;
     if (apronAssistsBlocked(state)) return;
+    if (inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp)) return;
     var ball = state.ball;
     var zones = getDrainBounds(state);
     var r = ball.radius;
@@ -2168,6 +2289,7 @@
   function guardRightOutlaneShelf(state) {
     if (!state.ball.inPlay || !state.exitedLaunchLane) return;
     if (apronAssistsBlocked(state)) return;
+    if (inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp)) return;
     var ball = state.ball;
     var zones = getDrainBounds(state);
     var r = ball.radius;
@@ -2320,6 +2442,7 @@
     blockShooterLaneIntrusion(state);
     resolveWallCollisions(state);
     assistHabitrails(state, dt);
+    peelLeftInlaneWedge(state);
     guardLeftOutlaneShelf(state);
     guardRightOutlaneShelf(state);
     resolveSlingshotCollisions(state);
