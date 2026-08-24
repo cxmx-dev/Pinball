@@ -143,7 +143,6 @@
 
   function beginLaunchCharge() {
     hideSwipeHint();
-    keys.launch = true;
     if (Sim.canChargePlunger(state)) {
       if (!state.ball.inPlay && state.phase === 'playing') {
         state.phase = 'ready';
@@ -153,7 +152,6 @@
   }
 
   function endLaunchCharge() {
-    keys.launch = false;
     if (state.launchCharging) {
       Sim.launchBall(state, null);
       Sim.setLaunchCharging(state, false);
@@ -509,7 +507,13 @@
       dockHeld.right = false;
       syncFlippersAndLaunch();
     });
-    bindHoldButton(document.getElementById('btn-launch'), beginLaunchCharge, endLaunchCharge);
+    bindHoldButton(document.getElementById('btn-launch'), function () {
+      keys.launch = true;
+      beginLaunchCharge();
+    }, function () {
+      keys.launch = false;
+      endLaunchCharge();
+    });
     bindTapButton(document.getElementById('btn-tilt'), doTiltOrRestart);
     bindTapButton(document.getElementById('btn-theme'), cycleTheme);
     bindTapButton(document.getElementById('btn-legend'), toggleLegend);
