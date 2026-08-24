@@ -299,7 +299,7 @@
     var right = anyHeld(rightKeyHeld) || padHeld.right || dockHeld.right || pointerHolds('right');
     setLeftFlipper(left);
     setRightFlipper(right);
-    var launch = keys.launchSpace || padHeld.launch;
+    var launch = keys.launch || keys.launchSpace || padHeld.launch;
     if (launch) beginLaunchCharge();
     else endLaunchCharge();
   }
@@ -469,6 +469,9 @@
       unlockAudio();
       ev.preventDefault();
       ev.stopPropagation();
+      if (el.setPointerCapture) {
+        try { el.setPointerCapture(ev.pointerId); } catch (err) { /* ignore */ }
+      }
       onDown();
     }
     function up(ev) {
@@ -478,7 +481,6 @@
     }
     el.addEventListener('pointerdown', down);
     el.addEventListener('pointerup', up);
-    el.addEventListener('pointerleave', up);
     el.addEventListener('pointercancel', up);
   }
 
