@@ -235,14 +235,14 @@
         id: 'ramp-l',
         score: 800,
         cooldown: 0,
-        entry: { x: 86, y: 530, w: 40, h: 48 },
-        exit: { x: 330, y: 520 },
+        entry: { x: 86, y: 440, w: 40, h: 48 },
+        exit: { x: 330, y: 430 },
         via: { x: 90, y: 108 },
         boost: 360,
         segments: [
-          { x1: 72, y1: 540, x2: 48, y2: 420 },
-          { x1: 48, y1: 420, x2: 36, y2: 300 },
-          { x1: 36, y1: 300, x2: 42, y2: 190 },
+          { x1: 72, y1: 450, x2: 48, y2: 350 },
+          { x1: 48, y1: 350, x2: 36, y2: 255 },
+          { x1: 36, y1: 255, x2: 42, y2: 190 },
           { x1: 42, y1: 190, x2: 64, y2: 150 },
           { x1: 64, y1: 150, x2: 90, y2: 108 },
           { x1: 90, y1: 108, x2: 150, y2: 68 },
@@ -250,9 +250,9 @@
           { x1: 240, y1: 58, x2: 330, y2: 68 }
         ],
         guides: [
-          { x1: 112, y1: 536, x2: 86, y2: 420 },
-          { x1: 86, y1: 420, x2: 78, y2: 300 },
-          { x1: 78, y1: 300, x2: 84, y2: 190 },
+          { x1: 112, y1: 446, x2: 86, y2: 350 },
+          { x1: 86, y1: 350, x2: 78, y2: 255 },
+          { x1: 78, y1: 255, x2: 84, y2: 190 },
           { x1: 84, y1: 190, x2: 100, y2: 164 },
           { x1: 100, y1: 164, x2: 118, y2: 136 },
           { x1: 118, y1: 136, x2: 162, y2: 101 },
@@ -264,8 +264,8 @@
         id: 'ramp-r',
         score: 750,
         cooldown: 0,
-        entry: { x: 340, y: 528, w: 40, h: 48 },
-        exit: { x: 100, y: 520 },
+        entry: { x: 340, y: 438, w: 40, h: 48 },
+        exit: { x: 100, y: 430 },
         via: { x: 390, y: 108 },
         boost: 360,
         segments: [
@@ -273,18 +273,18 @@
           { x1: 240, y1: 58, x2: 330, y2: 68 },
           { x1: 330, y1: 68, x2: 390, y2: 108 },
           { x1: 390, y1: 108, x2: 388, y2: 200 },
-          { x1: 388, y1: 200, x2: 386, y2: 320 },
-          { x1: 386, y1: 320, x2: 378, y2: 440 },
-          { x1: 378, y1: 440, x2: 352, y2: 540 }
+          { x1: 388, y1: 200, x2: 386, y2: 271 },
+          { x1: 386, y1: 271, x2: 378, y2: 363 },
+          { x1: 378, y1: 363, x2: 352, y2: 450 }
         ],
         guides: [
           { x1: 162, y1: 101, x2: 240, y2: 100 },
           { x1: 240, y1: 100, x2: 318, y2: 101 },
           { x1: 318, y1: 101, x2: 352, y2: 136 },
           { x1: 352, y1: 136, x2: 346, y2: 200 },
-          { x1: 346, y1: 200, x2: 344, y2: 320 },
-          { x1: 344, y1: 320, x2: 338, y2: 440 },
-          { x1: 338, y1: 440, x2: 314, y2: 536 }
+          { x1: 346, y1: 200, x2: 344, y2: 271 },
+          { x1: 344, y1: 271, x2: 338, y2: 363 },
+          { x1: 338, y1: 363, x2: 314, y2: 446 }
         ],
         mergeOuter: [
           { x1: 428, y1: 158, x2: 408, y2: 126 },
@@ -298,7 +298,7 @@
           { x1: 352, y1: 136, x2: 318, y2: 101 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
-        y1: 540,
+        y1: 450,
         x2: LAUNCH_LANE_LEFT - 60,
         y2: 200
       }
@@ -501,17 +501,15 @@
     walls.push({ x1: bounds.centerRight, y1: FLIPPER_ROW_Y, x2: bounds.centerRight, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: bounds.rightOutlaneLeft, y1: FLIPPER_ROW_Y, x2: bounds.rightOutlaneLeft, y2: chuteBottom, kind: 'chute' });
 
-    // Left dump return: cyan mouth (~86,530) down to the left bat. Kind inlane, no standup V.
-    walls.push({ x1: 86, y1: 548, x2: 92, y2: 580, kind: 'inlane' });
-    walls.push({ x1: 92, y1: 580, x2: 104, y2: 610, kind: 'inlane' });
-    walls.push({ x1: 104, y1: 610, x2: 118, y2: 635, kind: 'inlane' });
-    walls.push({ x1: 118, y1: 635, x2: 128, y2: 652, kind: 'inlane' });
+    // Left dump return: cyan mouth (~86,440) into playfield above flippers. Kind inlane, no standup V.
+    walls.push({ x1: 86, y1: 458, x2: 94, y2: 490, kind: 'inlane' });
+    walls.push({ x1: 94, y1: 490, x2: 108, y2: 518, kind: 'inlane' });
+    walls.push({ x1: 108, y1: 518, x2: 122, y2: 540, kind: 'inlane' });
 
-    // Right dump merge: orange mouth (~340,528) down to the right bat (left of plunger).
-    walls.push({ x1: 340, y1: 548, x2: 326, y2: 580, kind: 'inlane' });
-    walls.push({ x1: 326, y1: 580, x2: 308, y2: 610, kind: 'inlane' });
-    walls.push({ x1: 308, y1: 610, x2: 288, y2: 635, kind: 'inlane' });
-    walls.push({ x1: 288, y1: 635, x2: 268, y2: 652, kind: 'inlane' });
+    // Right dump merge: orange mouth (~340,438) into playfield above flippers (left of plunger).
+    walls.push({ x1: 340, y1: 458, x2: 322, y2: 490, kind: 'inlane' });
+    walls.push({ x1: 322, y1: 490, x2: 300, y2: 518, kind: 'inlane' });
+    walls.push({ x1: 300, y1: 518, x2: 278, y2: 540, kind: 'inlane' });
 
     // Real left orbit / right habitrail travel paths (replaces token diagonal kick chutes)
     walls = walls.concat(createHabitrailWalls());
@@ -1145,7 +1143,7 @@
     var dx = ball.x - route.exit.x;
     var dy = ball.y - route.exit.y;
     if (vecLen(dx, dy) > 52) return false;
-    if (ball.y < 470) return false;
+    if (ball.y < 380) return false;
     var inward = route.exit.x > TABLE_W * 0.5 ? -1 : 1;
     ball.x += inward * 22;
     ball.vx = inward * Math.max(180, Math.abs(ball.vx) * 0.4);
@@ -1248,7 +1246,7 @@
   function peelLeftInlaneWedge(state) {
     var ball = state.ball;
     if (!ball || !ball.inPlay || !state.exitedLaunchLane) return;
-    if (ball.x < 60 || ball.x > 130 || ball.y < 555 || ball.y > 640) return;
+    if (ball.x < 60 || ball.x > 130 || ball.y < 465 || ball.y > 545) return;
     if (ballSpeed(ball) > 90) return;
     var left = state.sideRoutes && state.sideRoutes.leftRamp;
     if (left && pointInRouteEntry(ball, left.entry)) return;
