@@ -271,10 +271,10 @@
     laneGrad.addColorStop(0, 'rgba(42,18,8,0.92)');
     laneGrad.addColorStop(1, 'rgba(88,36,12,0.96)');
     ctx.fillStyle = laneGrad;
-    ctx.fillRect(laneLeft, 60, tw - laneLeft - 4, th - 130);
+    ctx.fillRect(laneLeft, 148, tw - laneLeft - 4, th - 218);
     ctx.strokeStyle = 'rgba(255,160,64,0.28)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(laneLeft + 1, 60, tw - laneLeft - 6, th - 132);
+    ctx.strokeRect(laneLeft + 1, 148, tw - laneLeft - 6, th - 220);
   }
 
   /**
@@ -437,6 +437,11 @@
         if (kind === 'lane' || kind === 'chute') return;
         if ((kind === 'habitrail' || kind === 'guide') && wall.x1 > 270 && wall.x2 > 270) return;
         if ((kind === 'habitrail' || kind === 'guide') && wall.x1 < 160 && wall.x2 < 160) return;
+        if (kind === 'rail' && wall.arc) {
+          var gmx = (wall.x1 + wall.x2) * 0.5;
+          var gmy = (wall.y1 + wall.y2) * 0.5;
+          if (gmy < 118 && gmx > 70 && gmx < 420) return;
+        }
         if (wall.arc || kind === 'rail' || kind === 'habitrail') {
           ctx.strokeStyle = kind === 'habitrail' ? 'rgba(255, 170, 60, 0.20)' : 'rgba(100, 200, 255, 0.22)';
           ctx.lineWidth = 10;
@@ -454,6 +459,11 @@
       if (kind === 'lane' || kind === 'chute') return;
       if ((kind === 'habitrail' || kind === 'guide') && wall.x1 > 270 && wall.x2 > 270) return;
       if ((kind === 'habitrail' || kind === 'guide') && wall.x1 < 160 && wall.x2 < 160) return;
+      if (kind === 'rail' && wall.arc) {
+        var mx = (wall.x1 + wall.x2) * 0.5;
+        var my = (wall.y1 + wall.y2) * 0.5;
+        if (my < 118 && mx > 70 && mx < 420) return;
+      }
       if (kind === 'habitrail') {
         strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, {
           core: 'rgba(255, 190, 90, 0.92)',
@@ -627,6 +637,9 @@
     var ramp = state.sideRoutes.rightRamp;
     if (ramp) {
       drawPioneerRamp(ctx, ramp, pulse);
+      if (ramp.mergeOuter && ramp.mergeInner) {
+        drawPioneerRamp(ctx, { segments: ramp.mergeOuter, guides: ramp.mergeInner }, pulse);
+      }
     }
   }
 
@@ -1084,9 +1097,6 @@
 
   function drawLaunchLaneRail(ctx, state) {
     var x = root.PinballSim.LAUNCH_LANE_LEFT;
-    var wireY1 = root.PinballSim.LAUNCH_WIRE_Y1;
-    var wireY2 = root.PinballSim.LAUNCH_WIRE_Y2;
-    var wireX2 = root.PinballSim.LAUNCH_WIRE_X2;
     ctx.save();
     var railGrad = ctx.createLinearGradient(x - 8, 0, x + 2, 0);
     railGrad.addColorStop(0, 'rgba(255,190,80,0.95)');
@@ -1096,17 +1106,10 @@
     ctx.lineCap = 'round';
     applyShadow(ctx, 'rgba(255,140,40,0.45)', 10);
     ctx.beginPath();
-    ctx.moveTo(x, 60);
-    ctx.lineTo(x, wireY1);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x, wireY1);
-    ctx.quadraticCurveTo(x - 36, wireY1 - 18, wireX2, wireY2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x, wireY1);
+    ctx.moveTo(x, 148);
     ctx.lineTo(x, state.tableH - 72);
     ctx.stroke();
+
     ctx.restore();
   }
 

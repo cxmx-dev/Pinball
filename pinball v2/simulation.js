@@ -85,8 +85,8 @@
   var PLUNGER_REST_Y = TABLE_H - 88;
   var LAUNCH_LANE_TOP = TABLE_H - 200;
   var LAUNCH_WIRE_Y1 = 130;
-  var LAUNCH_WIRE_Y2 = 94;
-  var LAUNCH_WIRE_X2 = 252;
+  var LAUNCH_WIRE_Y2 = 102;
+  var LAUNCH_WIRE_X2 = 324;
   var WIRE_FORM_X1 = LAUNCH_LANE_LEFT;
   var WIRE_FORM_Y1 = LAUNCH_WIRE_Y1;
   var WIRE_FORM_X2 = LAUNCH_WIRE_X2;
@@ -225,6 +225,7 @@
   function createSideRoutes() {
     // Horseshoe orbit: left slide + top channel + right slide meet under the arch.
     // Outer / inner polylines are also the draw hulls (cyan left, copper right).
+    // Top channel ~42px (outer y=58, inner y=100 at x=240). Inners follow the same U.
     return {
       leftCaptive: {
         id: 'captive-l',
@@ -240,25 +241,27 @@
         cooldown: 0,
         entry: { x: 86, y: 530, w: 40, h: 48 },
         exit: { x: 330, y: 520 },
-        via: { x: 80, y: 100 },
+        via: { x: 90, y: 108 },
         boost: 360,
         segments: [
           { x1: 72, y1: 540, x2: 48, y2: 420 },
-          { x1: 48, y1: 420, x2: 40, y2: 300 },
-          { x1: 40, y1: 300, x2: 48, y2: 180 },
-          { x1: 48, y1: 180, x2: 80, y2: 100 },
-          { x1: 80, y1: 100, x2: 160, y2: 78 },
-          { x1: 160, y1: 78, x2: 240, y2: 70 },
-          { x1: 240, y1: 70, x2: 320, y2: 78 }
+          { x1: 48, y1: 420, x2: 36, y2: 300 },
+          { x1: 36, y1: 300, x2: 42, y2: 190 },
+          { x1: 42, y1: 190, x2: 64, y2: 150 },
+          { x1: 64, y1: 150, x2: 90, y2: 108 },
+          { x1: 90, y1: 108, x2: 150, y2: 68 },
+          { x1: 150, y1: 68, x2: 240, y2: 58 },
+          { x1: 240, y1: 58, x2: 330, y2: 68 }
         ],
         guides: [
-          { x1: 100, y1: 536, x2: 76, y2: 420 },
-          { x1: 76, y1: 420, x2: 70, y2: 300 },
-          { x1: 70, y1: 300, x2: 76, y2: 180 },
-          { x1: 76, y1: 180, x2: 104, y2: 116 },
-          { x1: 104, y1: 116, x2: 160, y2: 104 },
-          { x1: 160, y1: 104, x2: 240, y2: 96 },
-          { x1: 240, y1: 96, x2: 320, y2: 104 }
+          { x1: 112, y1: 536, x2: 86, y2: 420 },
+          { x1: 86, y1: 420, x2: 78, y2: 300 },
+          { x1: 78, y1: 300, x2: 84, y2: 190 },
+          { x1: 84, y1: 190, x2: 100, y2: 164 },
+          { x1: 100, y1: 164, x2: 118, y2: 136 },
+          { x1: 118, y1: 136, x2: 162, y2: 101 },
+          { x1: 162, y1: 101, x2: 240, y2: 100 },
+          { x1: 240, y1: 100, x2: 318, y2: 101 }
         ]
       },
       rightRamp: {
@@ -267,25 +270,36 @@
         cooldown: 0,
         entry: { x: 340, y: 528, w: 40, h: 48 },
         exit: { x: 100, y: 520 },
-        via: { x: 368, y: 100 },
+        via: { x: 390, y: 108 },
         boost: 360,
         segments: [
-          { x1: 160, y1: 78, x2: 240, y2: 70 },
-          { x1: 240, y1: 70, x2: 320, y2: 78 },
-          { x1: 320, y1: 78, x2: 368, y2: 100 },
-          { x1: 368, y1: 100, x2: 378, y2: 180 },
-          { x1: 378, y1: 180, x2: 380, y2: 320 },
-          { x1: 380, y1: 320, x2: 376, y2: 440 },
-          { x1: 376, y1: 440, x2: 350, y2: 540 }
+          { x1: 150, y1: 68, x2: 240, y2: 58 },
+          { x1: 240, y1: 58, x2: 330, y2: 68 },
+          { x1: 330, y1: 68, x2: 390, y2: 108 },
+          { x1: 390, y1: 108, x2: 388, y2: 200 },
+          { x1: 388, y1: 200, x2: 386, y2: 320 },
+          { x1: 386, y1: 320, x2: 378, y2: 440 },
+          { x1: 378, y1: 440, x2: 352, y2: 540 }
         ],
         guides: [
-          { x1: 160, y1: 104, x2: 240, y2: 96 },
-          { x1: 240, y1: 96, x2: 320, y2: 104 },
-          { x1: 320, y1: 104, x2: 344, y2: 116 },
-          { x1: 344, y1: 116, x2: 350, y2: 180 },
-          { x1: 350, y1: 180, x2: 350, y2: 320 },
-          { x1: 350, y1: 320, x2: 348, y2: 440 },
-          { x1: 348, y1: 440, x2: 322, y2: 536 }
+          { x1: 162, y1: 101, x2: 240, y2: 100 },
+          { x1: 240, y1: 100, x2: 318, y2: 101 },
+          { x1: 318, y1: 101, x2: 352, y2: 136 },
+          { x1: 352, y1: 136, x2: 346, y2: 200 },
+          { x1: 346, y1: 200, x2: 344, y2: 320 },
+          { x1: 344, y1: 320, x2: 338, y2: 440 },
+          { x1: 338, y1: 440, x2: 314, y2: 536 }
+        ],
+        mergeOuter: [
+          { x1: 428, y1: 158, x2: 408, y2: 126 },
+          { x1: 408, y1: 126, x2: 392, y2: 108 },
+          { x1: 392, y1: 108, x2: 360, y2: 80 },
+          { x1: 360, y1: 80, x2: 330, y2: 68 }
+        ],
+        mergeInner: [
+          { x1: 392, y1: 170, x2: 384, y2: 148 },
+          { x1: 384, y1: 148, x2: 352, y2: 136 },
+          { x1: 352, y1: 136, x2: 318, y2: 101 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 540,
@@ -465,10 +479,7 @@
     walls.push({ x1: LAUNCH_LANE_LEFT, y1: LAUNCH_WIRE_Y1, x2: LAUNCH_WIRE_X2, y2: LAUNCH_WIRE_Y2, wireform: true, kind: 'lane' });
     walls.push({ x1: LAUNCH_LANE_LEFT, y1: LAUNCH_WIRE_Y1, x2: LAUNCH_LANE_LEFT, y2: TABLE_H - 80, rail: true, kind: 'lane' });
 
-    // Soft upper-right round into launch (yellow annotation)
-    walls = walls.concat(
-      ellipseArcSegments(LAUNCH_LANE_LEFT - 8, 118, 42, 38, -Math.PI * 0.15, Math.PI * 0.55, 8, 'rail')
-    );
+    // Merge lane (wireform + copper hull) replaces the old upper-right rail bulge.
 
     // Tiny deck stubs under pivots only â€” longer stubs shelved balls in the inlanes
     var leftPivot = FLIPPER_LEFT_PIVOT_X;
@@ -876,8 +887,9 @@
     state.exitedLaunchLane = true;
     state.skillShotWindow = true;
     state.launchTick = 0;
-    var targetX = TABLE_W * 0.46;
-    var targetY = 148;
+    var targetX = 214;
+    var targetY = 80;
+    state.activeHabitrail = 'ramp-r';
     var tx = targetX - ball.x;
     var ty = targetY - ball.y;
     var dist = vecLen(tx, ty);
@@ -1752,7 +1764,10 @@
     var wdx = wx2 - wx1;
     var wdy = wy2 - wy1;
     var wlenSq = wdx * wdx + wdy * wdy;
-    if (wlenSq > 1e-6 && ball.y < LAUNCH_WIRE_Y1 + 40 && ball.x > WIRE_FORM_X2 - 30) {
+    var ridingHorse = !!(state.activeHabitrail ||
+      inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp) ||
+      inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp));
+    if (!ridingHorse && wlenSq > 1e-6 && ball.y < LAUNCH_WIRE_Y1 + 40 && ball.x > WIRE_FORM_X2 - 30) {
       var wt = clamp(((ball.x - wx1) * wdx + (ball.y - wy1) * wdy) / wlenSq, 0, 1);
       var wcx = wx1 + wt * wdx;
       var wcy = wy1 + wt * wdy;
