@@ -1002,21 +1002,20 @@
     var charging = !!state.launchCharging;
     var follow = state.plungerFollowFrames || 0;
     var followMax = 3;
-    var headR = 22;
-    var headRestY = restY + 16;
+    var headR = 8;
+    var headRestY = restY + Sim.BALL_RADIUS + headR + 2;
     var headY = headRestY;
     if (follow > 0) {
-      headY = headRestY - 26 * (follow / followMax);
+      headY = headRestY - 20 * (follow / followMax);
     } else {
-      headY = headRestY + power * 50;
+      headY = headRestY + power * 48;
     }
     var laneInnerRight = Math.min(laneRight, tableW - 2);
     var laneW = laneInnerRight - laneLeft;
-    var shaftW = 12;
-    var baseTop = tableH - 22;
-    var baseH = 14;
-    var cupBottom = headY + headR * 0.55;
-    var shaftTop = cupBottom;
+    var shaftW = 6;
+    var baseTop = tableH - 20;
+    var baseH = 12;
+    var shaftTop = headY + headR - 1;
     var shaftBot = baseTop;
     if (shaftBot < shaftTop + 8) shaftBot = shaftTop + 8;
 
@@ -1024,29 +1023,49 @@
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
+    var basePad = 5;
     var baseGrad = ctx.createLinearGradient(laneLeft, baseTop, laneLeft, baseTop + baseH);
     baseGrad.addColorStop(0, '#5a2e14');
     baseGrad.addColorStop(0.45, '#3a1c0c');
     baseGrad.addColorStop(1, '#1a0c06');
     ctx.fillStyle = baseGrad;
-    ctx.fillRect(laneLeft + 3, baseTop, laneW - 6, baseH);
-    ctx.strokeStyle = 'rgba(255, 180, 90, 0.45)';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(laneLeft + 3, baseTop, laneW - 6, baseH);
+    ctx.fillRect(laneLeft + basePad, baseTop, laneW - basePad * 2, baseH);
+    ctx.strokeStyle = 'rgba(255, 180, 90, 0.4)';
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(laneLeft + basePad, baseTop, laneW - basePad * 2, baseH);
 
+    var shaftH = Math.max(6, shaftBot - shaftTop);
     var shaftGrad = ctx.createLinearGradient(x - shaftW * 0.5, shaftTop, x + shaftW * 0.5, shaftBot);
-    shaftGrad.addColorStop(0, '#c8d0d8');
-    shaftGrad.addColorStop(0.5, '#6a7380');
+    shaftGrad.addColorStop(0, '#d8dee4');
+    shaftGrad.addColorStop(0.35, '#9aa4ae');
+    shaftGrad.addColorStop(0.7, '#5a646e');
     shaftGrad.addColorStop(1, '#2a3038');
     ctx.fillStyle = shaftGrad;
-    ctx.fillRect(x - shaftW * 0.5, shaftTop, shaftW, Math.max(6, shaftBot - shaftTop));
+    ctx.fillRect(x - shaftW * 0.5, shaftTop, shaftW, shaftH);
 
-    var springTop = cupBottom + 2;
+    ctx.strokeStyle = 'rgba(36, 42, 48, 0.55)';
+    ctx.lineWidth = 1;
+    var tickX0 = x - shaftW * 0.5 + 0.5;
+    var tickX1 = x + shaftW * 0.5 - 0.5;
+    var knurlSpan = shaftH * 0.42;
+    var knurlStart = shaftTop + shaftH * 0.22;
+    if (knurlSpan > 8) {
+      var ki;
+      for (ki = 0; ki < 3; ki++) {
+        var ky = knurlStart + knurlSpan * (ki / 2);
+        ctx.beginPath();
+        ctx.moveTo(tickX0, ky);
+        ctx.lineTo(tickX1, ky);
+        ctx.stroke();
+      }
+    }
+
+    var springTop = shaftTop + 2;
     var springBot = baseTop - 2;
     var span = springBot - springTop;
     if (span > 6) {
       var coils = follow > 0 ? 9 : Math.max(3, Math.round(8 - power * 4));
-      var amp = Math.min(10, (laneW - 16) * 0.5);
+      var amp = 7;
       ctx.beginPath();
       ctx.moveTo(x, springTop);
       var si;
@@ -1056,8 +1075,8 @@
         ctx.lineTo(x + ((si % 2) ? amp : -amp), springTop + span * st);
       }
       ctx.lineTo(x, springBot);
-      ctx.strokeStyle = charging ? 'rgba(255, 180, 70, 0.85)' : 'rgba(180, 196, 210, 0.9)';
-      ctx.lineWidth = 2.2;
+      ctx.strokeStyle = charging ? 'rgba(220, 176, 96, 0.98)' : 'rgba(196, 170, 120, 0.95)';
+      ctx.lineWidth = 2;
       ctx.stroke();
     }
 
@@ -1065,37 +1084,53 @@
     if (charging || firing) {
       applyShadow(
         ctx,
-        firing ? 'rgba(255, 230, 140, 0.95)' : 'rgba(255, 170, 50, 0.75)',
-        firing ? 18 : 12
+        firing ? 'rgba(255, 200, 80, 0.95)' : 'rgba(200, 210, 220, 0.4)',
+        firing ? 14 : 8
       );
     }
+
+    ctx.fillStyle = '#1a1210';
+    ctx.beginPath();
+    ctx.arc(x, headY, headR, 0, Math.PI * 2);
+    ctx.fill();
+
     var hg = ctx.createLinearGradient(x - headR, headY - headR, x + headR, headY + headR);
-    hg.addColorStop(0, '#f0d8a8');
-    hg.addColorStop(0.35, '#d08030');
-    hg.addColorStop(0.75, '#8a4a18');
-    hg.addColorStop(1, '#3a1c0c');
+    if (firing) {
+      hg.addColorStop(0, '#fff4c8');
+      hg.addColorStop(0.35, '#f0c060');
+      hg.addColorStop(0.7, '#c88830');
+      hg.addColorStop(1, '#6a4818');
+    } else {
+      hg.addColorStop(0, '#f4f6f8');
+      hg.addColorStop(0.3, '#c8d0d8');
+      hg.addColorStop(0.65, '#8a949e');
+      hg.addColorStop(1, '#3a424a');
+    }
     ctx.fillStyle = hg;
     ctx.beginPath();
-    ctx.arc(x, headY, headR, 0, Math.PI * 2);
+    ctx.arc(x, headY, headR - 1.2, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = firing ? 'rgba(255, 240, 180, 0.95)' : 'rgba(255, 220, 160, 0.75)';
-    ctx.lineWidth = 2.4;
+
+    ctx.strokeStyle = 'rgba(20, 12, 10, 0.85)';
+    ctx.lineWidth = 1.6;
     ctx.beginPath();
-    ctx.arc(x, headY, headR, 0, Math.PI * 2);
+    ctx.arc(x, headY, headR - 0.4, 0, Math.PI * 2);
     ctx.stroke();
-    var dish = ctx.createRadialGradient(x - 5, headY - 7, 2, x, headY, headR * 0.72);
-    dish.addColorStop(0, 'rgba(255, 245, 220, 0.55)');
-    dish.addColorStop(0.55, 'rgba(120, 70, 30, 0.35)');
-    dish.addColorStop(1, 'rgba(20, 10, 6, 0.55)');
-    ctx.fillStyle = dish;
+
+    var faceR = headR * 0.42;
+    var faceGrad = ctx.createRadialGradient(x - 1, headY - 1, 0.5, x, headY, faceR);
+    faceGrad.addColorStop(0, firing ? 'rgba(255, 236, 180, 0.7)' : 'rgba(230, 236, 240, 0.55)');
+    faceGrad.addColorStop(1, firing ? 'rgba(160, 100, 30, 0.35)' : 'rgba(70, 78, 86, 0.45)');
+    ctx.fillStyle = faceGrad;
     ctx.beginPath();
-    ctx.arc(x, headY - 2, headR * 0.62, 0, Math.PI * 2);
+    ctx.arc(x, headY - 0.5, faceR, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 240, 200, 0.45)';
-    ctx.lineWidth = 1.4;
+
+    ctx.strokeStyle = firing ? 'rgba(255, 250, 210, 0.9)' : 'rgba(255, 255, 255, 0.7)';
+    ctx.lineWidth = 1.3;
     ctx.beginPath();
-    ctx.arc(x - 3, headY - 6, headR * 0.42, -Math.PI * 0.9, -Math.PI * 0.15);
+    ctx.arc(x - 2, headY - 3, headR * 0.45, -Math.PI * 0.95, -Math.PI * 0.2);
     ctx.stroke();
 
     ctx.restore();
