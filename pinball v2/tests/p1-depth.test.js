@@ -15,27 +15,28 @@ function flushEob(state) {
 console.log('Pinball P1 depth unit tests');
 console.log('===========================');
 
-(function testStandupsStartRush() {
+(function testScoringBumpersStartRush() {
   var state = fresh();
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
   state.themeId = 'void-pulse';
   assert.strictEqual(state.dropTargets.length, 0);
   assert.strictEqual(sim.allDropsDown(state.dropTargets), false);
-  // Knock the three remaining standups via ball overlaps
-  state.targets.forEach(function (target) {
-    state.ball.x = target.x + 1;
-    state.ball.y = target.y - target.h * 0.5 - state.ball.radius + 2;
+  // Knock the three scoring bumpers (180 + both 300s), not the saver
+  state.bumpers.forEach(function (bumper) {
+    if (bumper.saver) return;
+    state.ball.x = bumper.x;
+    state.ball.y = bumper.y - bumper.radius - state.ball.radius + 2;
     state.ball.vx = 0;
-    state.ball.vy = 80;
-    target.occupied = false;
+    state.ball.vy = 150;
+    bumper.hitCooldown = 0;
     sim.stepPhysics(state, 0.016);
   });
-  assert(state.targets.every(function (t) { return t.lit; }), 'all standups lit');
+  assert(state.bumpers.filter(function (b) { return !b.saver; }).every(function (b) { return b.hit; }), 'all scoring bumpers hit');
   assert(state.rushTimer > 0, 'rush started');
   assert.strictEqual(state.rushName, 'VOID RUSH');
   assert.strictEqual(state.rushMult, sim.RUSH_SCORE_MULT);
-  console.log('PASS: standups start VOID RUSH');
+  console.log('PASS: scoring bumpers start VOID RUSH');
 })();
 
 (function testEmberRushNameFromTheme() {

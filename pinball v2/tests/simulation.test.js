@@ -775,7 +775,7 @@ function slapSpeedAtFraction(frac) {
 
 (function testBallProgressResetsOnDrain() {
   var state = fresh();
-  state.targets.forEach(function (t) { t.lit = true; });
+  state.bumpers.forEach(function (b) { if (!b.saver) b.hit = true; });
   state.rollovers.forEach(function (r) { r.lit = true; });
   state.jackpotLit = true;
   state.ball.inPlay = true;
@@ -789,7 +789,7 @@ function slapSpeedAtFraction(frac) {
   }
   flushEob(state);
   assert.strictEqual(state.phase, 'ready');
-  assert.strictEqual(state.targets[2].lit, false);
+  assert(state.bumpers.filter(function (b) { return !b.saver; }).every(function (b) { return !b.hit; }), 'scoring bumper hits reset');
   assert.strictEqual(state.rollovers[0].lit, false);
   assert.strictEqual(state.jackpotLit, false);
   console.log('PASS: ball progress resets on drain');
@@ -800,8 +800,8 @@ function slapSpeedAtFraction(frac) {
   var sling = state.slingshots[0];
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
-  state.ball.x = (sling.x1 + sling.x2) / 2;
-  state.ball.y = (sling.y1 + sling.y2) / 2 - 8;
+  state.ball.x = sling.x2;
+  state.ball.y = sling.y2 - 10;
   state.ball.vx = 0;
   state.ball.vy = 120;
   var before = state.score;
@@ -821,20 +821,20 @@ function slapSpeedAtFraction(frac) {
   console.log('PASS: combo multiplier increases score');
 })();
 
-(function testTargetHitLightsAndScores() {
+(function testScoringBumperHitFlags() {
   var state = fresh();
-  var target = state.targets[2];
+  var bumper = state.bumpers[0];
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
-  state.ball.x = target.x;
-  state.ball.y = target.y - target.h;
+  state.ball.x = bumper.x;
+  state.ball.y = bumper.y - bumper.radius - state.ball.radius + 2;
   state.ball.vx = 0;
   state.ball.vy = 200;
   var before = state.score;
   sim.stepPhysics(state, 0.016);
-  assert(state.score > before, 'target hit should score');
-  assert.strictEqual(target.lit, true);
-  console.log('PASS: target hit lights and scores');
+  assert(state.score > before, 'scoring bumper hit should score');
+  assert.strictEqual(bumper.hit, true);
+  console.log('PASS: scoring bumper hit flags and scores');
 })();
 
 (function testTickIntegratesPhysicsAndDrain() {
@@ -1048,24 +1048,6 @@ function slapSpeedAtFraction(frac) {
   console.log('PASS: double-tap charges 15s then expires');
 })();
 
-(function testStandupShelfDoesNotHoldBall() {
-  var state = fresh();
-  var stand = state.targets.find(function (tg) { return tg.id === 'standup-l'; });
-  state.ball.inPlay = true;
-  state.exitedLaunchLane = true;
-  state.ball.x = stand.x - 12;
-  state.ball.y = stand.y - stand.h * 0.5 - state.ball.radius + 1;
-  state.ball.vx = 0;
-  state.ball.vy = 0;
-  var i;
-  for (i = 0; i < 90; i++) sim.stepPhysics(state, 1 / 120);
-  var sp = Math.sqrt(state.ball.vx * state.ball.vx + state.ball.vy * state.ball.vy);
-  var stillOnShelf = Math.abs(state.ball.y - (stand.y - stand.h * 0.5 - state.ball.radius)) < 8 &&
-    Math.abs(state.ball.x - stand.x) < 18;
-  assert(!stillOnShelf, 'ball should peel off standup-l shelf (x=' + state.ball.x.toFixed(1) + ' y=' + state.ball.y.toFixed(1) + ')');
-  assert(sp > 80, 'peel should impart speed (sp=' + sp.toFixed(1) + ')');
-  console.log('PASS: standup shelf peels into play (sp=' + sp.toFixed(1) + ')');
-})();
 
 console.log('=============================');
 

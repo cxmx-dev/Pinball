@@ -154,17 +154,17 @@
   }
 
   /**
-   * Classic 3-bumper triangle high on the table + optional lower feeder.
-   * Clears mid-table for left/right orbits; saver stays near left outlane.
-   * bumpers[0] remains the skill-shot apex.
+   * Mid-table cluster: 180 apex below the horseshoe, 300s lower and wider.
+   * Clears slide channels; saver stays near left outlane.
+   * bumpers[0] remains the skill-shot target (now the lower apex).
    */
   function createBumpers() {
     return [
-      // Skill / apex - 180 moved into the hole between the two 300s
-      { x: 240, y: 198, radius: 16, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0 },
-      // Upper wings - right 300 nudged left toward the cluster
-      { x: 200, y: 252, radius: 22, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0 },
-      { x: 248, y: 248, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0 },
+      // Skill / apex - 180 below the horseshoe join, out of the channel
+      { x: 240, y: 310, radius: 16, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0, hit: false },
+      // Wings - lower and farther apart, clear of slide channels
+      { x: 155, y: 345, radius: 22, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0, hit: false },
+      { x: 305, y: 345, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0, hit: false },
       {
         // Weaker / smaller saver - outlane tension
         x: 138,
@@ -205,11 +205,7 @@
   }
 
   function createTargets() {
-    return [
-      { id: 'standup-l', x: 148, y: 518, w: 10, h: 30, score: 1000, lit: true, flash: 0, occupied: false },
-      { id: 'standup-r', x: 322, y: 548, w: 10, h: 30, score: 1000, lit: true, flash: 0, occupied: false },
-      { id: 'standup-c', x: 240, y: 575, w: 10, h: 26, score: 1500, lit: false, flash: 0, occupied: false }
-    ];
+    return [];
   }
 
   /** Horizontal drop bank mid-table â€” complete all â†’ rush mode */
@@ -421,7 +417,7 @@
   }
 
   function createSpinner() {
-    // Left under arch â€” clear of apex bumper (240,198) and left habitrail exit (~150,136)
+    // Left under arch â€” clear of lower apex (240,310) and left habitrail exit (~150,136)
     return { x: 172, y: 118, radius: 15, angle: 0, score: 200, spinVel: 0, hitCooldown: 0 };
   }
 
@@ -498,22 +494,24 @@
       y2: FLIPPER_ROW_Y,
       kind: 'deck'
     });
-    // Inlane posts + return plastics: wall-hug must hit shelf/post before free outlane fall
-    walls.push({ x1: FLIPPER_INLANE_X + 6, y1: 585, x2: FLIPPER_INLANE_X + 6, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' });
-    walls.push({ x1: FLIPPER_INLANE_X + 6, y1: FLIPPER_ROW_Y - 20, x2: FLIPPER_INLANE_X + 6, y2: chuteBottom, kind: 'chute' });
-    // Left return shelf (outer rail -> inlane): kicks inward/down toward flipper
-    walls.push({ x1: 50, y1: 560, x2: FLIPPER_INLANE_X + 4, y2: FLIPPER_ROW_Y - 40, kind: 'guide' });
-    walls.push({ x1: 36, y1: 420, x2: 46, y2: 468, kind: 'guide' });
-    // Right inlane post (mirror left) + return plastics
-    walls.push({ x1: rightInlaneX - 4, y1: 440, x2: rightInlaneX - 4, y2: FLIPPER_ROW_Y - 20, kind: 'inlane' });
-    walls.push({ x1: rightInlaneX - 4, y1: FLIPPER_ROW_Y - 20, x2: rightInlaneX - 4, y2: chuteBottom, kind: 'chute' });
-    walls.push({ x1: 370, y1: 560, x2: rightInlaneX, y2: FLIPPER_ROW_Y - 40, kind: 'guide' });
-    walls.push({ x1: LAUNCH_LANE_LEFT - 4, y1: 420, x2: 376, y2: 468, kind: 'guide' });
-    // Right return only — left 70,560→inlane pinched a V with standup-l / left slide.
-    walls.push({ x1: 378, y1: 554, x2: rightInlaneX + 10, y2: 630, kind: 'inlane' });
+    // Drain chutes (minimum for drain holes) - skinny inlane plastics removed
+    walls.push({ x1: FLIPPER_INLANE_X + 6, y1: FLIPPER_ROW_Y, x2: FLIPPER_INLANE_X + 6, y2: chuteBottom, kind: 'chute' });
+    walls.push({ x1: rightInlaneX - 4, y1: FLIPPER_ROW_Y, x2: rightInlaneX - 4, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: bounds.centerLeft, y1: FLIPPER_ROW_Y, x2: bounds.centerLeft, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: bounds.centerRight, y1: FLIPPER_ROW_Y, x2: bounds.centerRight, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: bounds.rightOutlaneLeft, y1: FLIPPER_ROW_Y, x2: bounds.rightOutlaneLeft, y2: chuteBottom, kind: 'chute' });
+
+    // Left dump return: cyan mouth (~86,530) down to the left bat. Kind inlane, no standup V.
+    walls.push({ x1: 86, y1: 548, x2: 92, y2: 580, kind: 'inlane' });
+    walls.push({ x1: 92, y1: 580, x2: 104, y2: 610, kind: 'inlane' });
+    walls.push({ x1: 104, y1: 610, x2: 118, y2: 635, kind: 'inlane' });
+    walls.push({ x1: 118, y1: 635, x2: 128, y2: 652, kind: 'inlane' });
+
+    // Right dump merge: orange mouth (~340,528) down to the right bat (left of plunger).
+    walls.push({ x1: 340, y1: 548, x2: 326, y2: 580, kind: 'inlane' });
+    walls.push({ x1: 326, y1: 580, x2: 308, y2: 610, kind: 'inlane' });
+    walls.push({ x1: 308, y1: 610, x2: 288, y2: 635, kind: 'inlane' });
+    walls.push({ x1: 288, y1: 635, x2: 268, y2: 652, kind: 'inlane' });
 
     // Real left orbit / right habitrail travel paths (replaces token diagonal kick chutes)
     walls = walls.concat(createHabitrailWalls());
@@ -989,6 +987,12 @@
     // rush continues across ball unless expired
     if (state.spinner) state.spinner.hitCooldown = 0;
     state.slingshots.forEach(function (s) { s.cooldown = 0; });
+    if (state.bumpers) {
+      state.bumpers.forEach(function (b) {
+        if (!b.saver) b.hit = false;
+        b.hitCooldown = 0;
+      });
+    }
   }
 
   function setThemeId(state, id) {
@@ -1015,19 +1019,16 @@
     return true;
   }
 
-  function allStandupsLit(targets) {
-    if (!targets || !targets.length) return false;
-    var hasL = false;
-    var hasR = false;
-    var hasC = false;
+  function allScoringBumpersHit(bumpers) {
+    if (!bumpers || !bumpers.length) return false;
     var i;
-    for (i = 0; i < targets.length; i++) {
-      if (!targets[i].lit) continue;
-      if (targets[i].id === 'standup-l') hasL = true;
-      if (targets[i].id === 'standup-r') hasR = true;
-      if (targets[i].id === 'standup-c') hasC = true;
+    var seen = false;
+    for (i = 0; i < bumpers.length; i++) {
+      if (bumpers[i].saver) continue;
+      seen = true;
+      if (!bumpers[i].hit) return false;
     }
-    return hasL && hasR && hasC;
+    return seen;
   }
 
   function allDropsDown(drops) {
@@ -1656,6 +1657,12 @@
           applyBumperExitSpeed(ball, n.x, n.y, MIN_BUMPER_EXIT_SPEED);
         }
         bumper.hitCooldown = HIT_COOLDOWN_BUMPER;
+        if (!bumper.saver) {
+          bumper.hit = true;
+          if (allScoringBumpersHit(state.bumpers)) {
+            startRushMode(state);
+          }
+        }
         awardScore(state, bumper.score, 'bumper', String(idx), bumper.x, bumper.y);
         state.lastHitBumper = idx;
         if (state.jackpotLit) {
@@ -1923,9 +1930,6 @@
           }
           var bonus = target.lit ? target.score : Math.floor(target.score * 0.5);
           awardScore(state, bonus, 'target', target.id, target.x, target.y);
-          if (allStandupsLit(state.targets)) {
-            startRushMode(state);
-          }
         }
       } else {
         target.occupied = false;

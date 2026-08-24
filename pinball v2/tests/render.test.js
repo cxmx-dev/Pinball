@@ -99,7 +99,7 @@ console.log('=========================');
   assert(tracking.stats.fill >= 18, 'playfield must have substantial fill ops');
   assert(tracking.stats.stroke >= 8, 'walls, slings, rails must stroke');
   assert(state.slingshots.length >= 2, 'slingshots present in state');
-  assert(state.targets.length >= 3, 'targets present in state');
+  assert(state.bumpers.length >= 4, 'bumpers present in state');
   assert(state.multiplier >= 1, 'multiplier in state');
   console.log('PASS: render draws substantial non-placeholder surface');
 })();

@@ -13,7 +13,6 @@ console.log('==============================');
 (function testInitialStateHasElaborateElements() {
   var state = fresh();
   assert(state.slingshots.length >= 2);
-  assert(state.targets.length >= 3);
   assert(state.rollovers.length >= 2);
   assert(state.kickers.length === 0);
   assert(state.bumpers.length >= 4);
