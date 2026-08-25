@@ -5,10 +5,15 @@
 (function (root) {
   'use strict';
 
-  var GRAVITY = 1240;
+  var TABLE_PITCH_DEG = 6.5;
+  var GRAVITY = 1380;
   var BALL_RADIUS = 12;
   var TABLE_W = 480;
   var TABLE_H = 860;
+  var ARCH_CX = TABLE_W * 0.5;
+  var ARCH_CY = 76;
+  var ARCH_RX = 200;
+  var ARCH_RY = 50;
   var FLIPPER_INLANE_X = 88;
   var LEFT_INLANE_POST_TOP = 430;
   var FLIPPER_ROW_Y = TABLE_H - 108;
@@ -38,8 +43,8 @@
   var DECK_DRAIN_SPEED = 220;
   var WALL_RESTITUTION = 0.72;
   /** Habitrail/guide bounce â€” livelier than cabinet rails so channels do not crawl. */
-  var HABITRAIL_RESTITUTION = 0.92;
-  var GUIDE_RESTITUTION = 0.88;
+  var HABITRAIL_RESTITUTION = 0.48;
+  var GUIDE_RESTITUTION = 0.45;
   /** Min along-rail speed (px/s) while ball is inside a habitrail channel. */
   var HABITRAIL_MIN_SPEED = 0;
   /** Continuous along-path assist while riding a habitrail (px/s^2). */
@@ -51,8 +56,8 @@
   /** Soft ball speed ceiling (px/s). */
   var MAX_BALL_SPEED = 1600;
   /** Base linear damp per physics step (~16ms); rises with speed. */
-  var BALL_DRAG_BASE = 0.0007;
-  var BALL_DRAG_SPEED = 0.0014;
+  var BALL_DRAG_BASE = 0.00085;
+  var BALL_DRAG_SPEED = 0.00155;
   var MAX_LAUNCH_POWER = 1400;
   var MIN_LAUNCH_POWER = 200;
   var LAUNCH_CHARGE_RATE = 1.1;
@@ -225,9 +230,9 @@
     return {
       leftCaptive: {
         id: 'captive-l',
-        x: 62,
-        y: 318,
-        radius: 12,
+        x: 48,
+        y: 296,
+        radius: 8,
         score: 650,
         cooldown: 0
       },
@@ -235,7 +240,7 @@
         id: 'ramp-l',
         score: 800,
         cooldown: 0,
-        entry: { x: 74, y: 337, w: 40, h: 48 },
+        entry: { x: 74, y: 337, w: 32, h: 26 },
         exit: { x: 340, y: 334 },
         via: { x: 88, y: 76 },
         boost: 360,
@@ -268,7 +273,7 @@
         id: 'ramp-r',
         score: 750,
         cooldown: 0,
-        entry: { x: 350, y: 335, w: 40, h: 48 },
+        entry: { x: 350, y: 335, w: 32, h: 26 },
         exit: { x: 90, y: 334 },
         via: { x: 390, y: 76 },
         boost: 360,
@@ -442,10 +447,10 @@
   /** Approx underside Y of top arch at playfield x (for clamps / unstick). */
   function topArchFloorY(x) {
     // Match createWalls top ellipse: cx=240, cy=76, rx=200, ry=50, upper half
-    var cx = TABLE_W * 0.5;
-    var cy = 76;
-    var rx = 200;
-    var ry = 50;
+    var cx = ARCH_CX;
+    var cy = ARCH_CY;
+    var rx = ARCH_RX;
+    var ry = ARCH_RY;
     var dx = (x - cx) / rx;
     if (dx < -1) dx = -1;
     if (dx > 1) dx = 1;
@@ -492,10 +497,10 @@
 
     // Rounded top arch (ball rides underside â€” green path annotation)
     // Ellipse upper half: PI â†’ 2PI (left â†’ top center â†’ right)
-    var archCx = TABLE_W * 0.5;
-    var archCy = 76;
-    var archRx = 200;
-    var archRy = 50;
+    var archCx = ARCH_CX;
+    var archCy = ARCH_CY;
+    var archRx = ARCH_RX;
+    var archRy = ARCH_RY;
     walls = walls.concat(ellipseArcSegments(archCx, archCy, archRx, archRy, Math.PI, Math.PI * 2, 18, 'rail'));
 
     // Left side rail from arch end down
@@ -1119,7 +1124,7 @@
     if (!route || route.cooldown > 0) return false;
     var ball = state.ball;
     if (!pointInRouteEntry(ball, route.entry)) return false;
-    if (ball.vy > 20) return false;
+    if (ball.vy > -20) return false;
     // Already in/near the tube — do not steal bumper / mid-field shots.
     if (routeChannelDist(ball, route) > ball.radius + 16) return false;
     route.cooldown = SIDE_ROUTE_COOLDOWN * 1.6;
@@ -1269,17 +1274,10 @@
     if (!nearInner) return;
     var nearDist = nearInner.dist;
     if (nearOuter) nearDist = Math.min(nearDist, nearOuter.dist);
-    if (nearDist > 30) return;
-    if (ball.y <= nearInner.y + 3) return;
-    if (!(nearOuter && nearOuter.dist <= 56) && nearInner.dist > 22) return;
-    var lift = nearInner.y - ball.radius - 4;
-    if (nearOuter) {
-      var midY = (nearOuter.y + nearInner.y) * 0.5;
-      if (lift < nearOuter.y + 8) lift = midY;
-    }
-    ball.y = Math.min(ball.y, lift);
-    // Stop falling through the deck; keep vx (do not kill horizontal momentum).
-    if (ball.vy > 0) ball.vy *= 0.15;
+    if (nearInner.dist > 16) return;
+    if (ball.y <= nearInner.y + 2) return;
+    ball.y = nearInner.y - 1;
+    if (ball.vy > 0) ball.vy *= 0.25;
   }
 
   /** Leak-contain only. No snap-to-path, no constant-speed conveyor. */
@@ -2252,6 +2250,7 @@
   function unstickWallSlide(state) {
     var ball = state.ball;
     if (!ball.inPlay || !state.exitedLaunchLane) return;
+    if (state.activeHabitrail) return;
     var r = ball.radius;
     var speed = ballSpeed(ball);
     var absVx = Math.abs(ball.vx);
@@ -2536,7 +2535,7 @@
     if (!state.ball.inPlay) return state;
 
     var ball = state.ball;
-    ball.vy += GRAVITY * dt;
+    ball.vy += GRAVITY * dt; // down-table at TABLE_PITCH_DEG
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
 
@@ -2733,6 +2732,11 @@
 
   var api = {
     GRAVITY: GRAVITY,
+    TABLE_PITCH_DEG: TABLE_PITCH_DEG,
+    ARCH_CX: ARCH_CX,
+    ARCH_CY: ARCH_CY,
+    ARCH_RX: ARCH_RX,
+    ARCH_RY: ARCH_RY,
     BUMPER_RESTITUTION: BUMPER_RESTITUTION,
     MIN_BUMPER_EXIT_SPEED: MIN_BUMPER_EXIT_SPEED,
     HABITRAIL_RESTITUTION: HABITRAIL_RESTITUTION,

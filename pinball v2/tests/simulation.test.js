@@ -1050,6 +1050,38 @@ function slapSpeedAtFraction(frac) {
 
 
 
+(function testLeftCaptiveClearOfMouth() {
+  var state = fresh();
+  var cap = state.sideRoutes.leftCaptive;
+  var e = state.sideRoutes.leftRamp.entry;
+  var hw = (e.w || 30) * 0.5;
+  var hh = (e.h || 36) * 0.5;
+  var overlap =
+    cap.x + cap.radius > e.x - hw &&
+    cap.x - cap.radius < e.x + hw &&
+    cap.y + cap.radius > e.y - hh &&
+    cap.y - cap.radius < e.y + hh;
+  assert(!overlap, "left captive must not sit inside the cyan mouth sensor");
+  assert(e.h <= 32, "entry sensor must hug the visual mouth, not a fat box above it");
+  assert(e.y >= 330 && e.y <= 345, "left entry center stays at the mouth");
+  console.log("PASS: left captive clear of mouth (cap=" + cap.x + "," + cap.y + " r=" + cap.radius + ")");
+})();
+
+(function testHabitrailEntryKeepsOwnMomentum() {
+  var state = fresh();
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.ball.x = 80;
+  state.ball.y = 337;
+  state.ball.vx = 12;
+  state.ball.vy = -280;
+  var vx0 = state.ball.vx;
+  sim.stepPhysics(state, 1 / 60);
+  assert(Math.abs(state.ball.vx - vx0) < 80, "entry must not snap vx toward a via (vx=" + state.ball.vx.toFixed(1) + ")");
+  assert(state.ball.vy < -80, "entry must not replace climb with a constant-speed rail");
+  console.log("PASS: habitrail entry keeps momentum (vx=" + state.ball.vx.toFixed(1) + " vy=" + state.ball.vy.toFixed(1) + ")");
+})();
+
 (function testTopArchFloorAboveHorseshoeChannel() {
   var floor = sim.topArchFloorY(240);
   assert(floor < 32, 'arch underside must sit above U outer y=32, got ' + floor);
@@ -1107,7 +1139,7 @@ function runOrbit(place, dirLabel, speed) {
   assert(ltr.crossedApex, 'LTR should crest the U (x=' + ltr.x.toFixed(1) + ' y=' + ltr.y.toFixed(1) + ')');
   assert(ltr.farSide, 'LTR should reach the right channel, not drop at the apex');
   assert(!ltr.droppedThrough, 'LTR must not kill vx and fall through the top');
-  var rtl = runOrbit(placeInRightMouth, 'RTL', 920);
+  var rtl = runOrbit(placeInRightMouth, 'RTL', 980);
   assert(rtl.crossedApex, 'RTL should crest the U');
   assert(rtl.farSide, 'RTL should reach the left channel, not drop at the apex');
   assert(!rtl.droppedThrough, 'RTL must not kill vx and fall through the top');
