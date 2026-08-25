@@ -272,8 +272,8 @@ function slapSpeedAtFraction(frac) {
   var saver = state.bumpers.find(function (b) { return b.saver; });
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
-  state.ball.x = 100;
-  state.ball.y = 470;
+  state.ball.x = saver.x - 28;
+  state.ball.y = saver.y + 8;
   state.ball.vx = 10;
   state.ball.vy = 30;
   var hits = 0;
@@ -369,13 +369,13 @@ function slapSpeedAtFraction(frac) {
   console.log('PASS: drain uses center hole and outlanes');
 })();
 
-(function testSpinnerMovedLeftUnderArch() {
+(function testSpinnerInOpenFieldBelowU() {
   var state = fresh();
   var sp = state.spinner;
-  assert(sp.x >= 140 && sp.x <= 175, 'spinner x left under arch, got ' + sp.x);
-  assert(sp.y >= 110 && sp.y <= 140, 'spinner y under arch, got ' + sp.y);
-  assert(sp.x < 200, 'spinner clear of apex bumper x');
-  console.log('PASS: spinner relocated left under arch');
+  assert(sp.x >= 185 && sp.x <= 215, 'spinner x in open field below U, got ' + sp.x);
+  assert(sp.y >= 230 && sp.y <= 265, 'spinner y below lifted channel, got ' + sp.y);
+  assert(sp.x <= 220, 'spinner clear of apex bumper x');
+  console.log('PASS: spinner in open field below U');
 })();
 
 (function testSpinnerCoastsAngleAfterHit() {

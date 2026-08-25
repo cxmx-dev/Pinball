@@ -155,7 +155,7 @@
 
   /**
    * Mid-table cluster: 180 apex below the horseshoe, 300s lower and wider.
-   * Clears slide channels; saver stays near left outlane.
+   * Clears slide channels; saver sits mid-table above the flippers.
    * bumpers[0] remains the skill-shot target (now the lower apex).
    */
   function createBumpers() {
@@ -167,8 +167,8 @@
       { x: 305, y: 345, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0, hit: false },
       {
         // Weaker / smaller saver - outlane tension
-        x: 138,
-        y: 478,
+        x: 210,
+        y: 430,
         radius: 14,
         score: 120,
         color: '#55ffaa',
@@ -221,7 +221,7 @@
   function createSideRoutes() {
     // Horseshoe orbit: left slide + top channel + right slide meet under the arch.
     // Outer / inner polylines are also the draw hulls (cyan left, copper right).
-    // Top channel ~40px (outer y=58, inner y=100 at x=240). Inner U is a dense habitrail wall.
+    // Top channel ~40px (outer y=52, inner y=92 at x=240). Inner U is a dense habitrail wall.
     return {
       leftCaptive: {
         id: 'captive-l',
@@ -235,78 +235,78 @@
         id: 'ramp-l',
         score: 800,
         cooldown: 0,
-        entry: { x: 86, y: 440, w: 40, h: 48 },
-        exit: { x: 330, y: 430 },
-        via: { x: 90, y: 108 },
+        entry: { x: 74, y: 422, w: 40, h: 48 },
+        exit: { x: 340, y: 418 },
+        via: { x: 88, y: 96 },
         boost: 360,
         segments: [
-          { x1: 72, y1: 450, x2: 48, y2: 350 },
-          { x1: 48, y1: 350, x2: 36, y2: 255 },
-          { x1: 36, y1: 255, x2: 42, y2: 190 },
-          { x1: 42, y1: 190, x2: 64, y2: 150 },
-          { x1: 64, y1: 150, x2: 90, y2: 108 },
-          { x1: 90, y1: 108, x2: 150, y2: 68 },
-          { x1: 150, y1: 68, x2: 240, y2: 58 },
-          { x1: 240, y1: 58, x2: 330, y2: 68 }
+          { x1: 60, y1: 432, x2: 46, y2: 348 },
+          { x1: 46, y1: 348, x2: 36, y2: 252 },
+          { x1: 36, y1: 252, x2: 42, y2: 184 },
+          { x1: 42, y1: 184, x2: 62, y2: 136 },
+          { x1: 62, y1: 136, x2: 88, y2: 96 },
+          { x1: 88, y1: 96, x2: 150, y2: 56 },
+          { x1: 150, y1: 56, x2: 240, y2: 52 },
+          { x1: 240, y1: 52, x2: 330, y2: 56 }
         ],
         guides: [
-          { x1: 112, y1: 446, x2: 86, y2: 350 },
-          { x1: 86, y1: 350, x2: 78, y2: 255 },
-          { x1: 78, y1: 255, x2: 84, y2: 190 },
-          { x1: 84, y1: 190, x2: 100, y2: 164 },
-          { x1: 100, y1: 164, x2: 114, y2: 144 },
-          { x1: 114, y1: 144, x2: 128, y2: 126 },
-          { x1: 128, y1: 126, x2: 146, y2: 110 },
-          { x1: 146, y1: 110, x2: 168, y2: 102 },
-          { x1: 168, y1: 102, x2: 200, y2: 100 },
-          { x1: 200, y1: 100, x2: 240, y2: 100 },
-          { x1: 240, y1: 100, x2: 280, y2: 100 },
-          { x1: 280, y1: 100, x2: 318, y2: 102 }
+          { x1: 100, y1: 428, x2: 80, y2: 346 },
+          { x1: 80, y1: 346, x2: 74, y2: 252 },
+          { x1: 74, y1: 252, x2: 80, y2: 184 },
+          { x1: 80, y1: 184, x2: 96, y2: 152 },
+          { x1: 96, y1: 152, x2: 110, y2: 130 },
+          { x1: 110, y1: 130, x2: 126, y2: 112 },
+          { x1: 126, y1: 112, x2: 146, y2: 98 },
+          { x1: 146, y1: 98, x2: 168, y2: 94 },
+          { x1: 168, y1: 94, x2: 200, y2: 92 },
+          { x1: 200, y1: 92, x2: 240, y2: 92 },
+          { x1: 240, y1: 92, x2: 280, y2: 92 },
+          { x1: 280, y1: 92, x2: 318, y2: 94 }
         ]
       },
       rightRamp: {
         id: 'ramp-r',
         score: 750,
         cooldown: 0,
-        entry: { x: 340, y: 438, w: 40, h: 48 },
-        exit: { x: 100, y: 430 },
-        via: { x: 390, y: 108 },
+        entry: { x: 350, y: 420, w: 40, h: 48 },
+        exit: { x: 90, y: 418 },
+        via: { x: 390, y: 96 },
         boost: 360,
         segments: [
-          { x1: 150, y1: 68, x2: 240, y2: 58 },
-          { x1: 240, y1: 58, x2: 330, y2: 68 },
-          { x1: 330, y1: 68, x2: 390, y2: 108 },
-          { x1: 390, y1: 108, x2: 388, y2: 200 },
+          { x1: 150, y1: 56, x2: 240, y2: 52 },
+          { x1: 240, y1: 52, x2: 330, y2: 56 },
+          { x1: 330, y1: 56, x2: 390, y2: 96 },
+          { x1: 390, y1: 96, x2: 388, y2: 200 },
           { x1: 388, y1: 200, x2: 386, y2: 271 },
-          { x1: 386, y1: 271, x2: 378, y2: 363 },
-          { x1: 378, y1: 363, x2: 352, y2: 450 }
+          { x1: 386, y1: 271, x2: 380, y2: 358 },
+          { x1: 380, y1: 358, x2: 364, y2: 432 }
         ],
         guides: [
-          { x1: 168, y1: 102, x2: 200, y2: 100 },
-          { x1: 200, y1: 100, x2: 240, y2: 100 },
-          { x1: 240, y1: 100, x2: 280, y2: 100 },
-          { x1: 280, y1: 100, x2: 318, y2: 102 },
-          { x1: 318, y1: 102, x2: 336, y2: 114 },
-          { x1: 336, y1: 114, x2: 348, y2: 128 },
-          { x1: 348, y1: 128, x2: 352, y2: 136 },
-          { x1: 352, y1: 136, x2: 346, y2: 200 },
-          { x1: 346, y1: 200, x2: 344, y2: 271 },
-          { x1: 344, y1: 271, x2: 338, y2: 363 },
-          { x1: 338, y1: 363, x2: 314, y2: 446 }
+          { x1: 168, y1: 94, x2: 200, y2: 92 },
+          { x1: 200, y1: 92, x2: 240, y2: 92 },
+          { x1: 240, y1: 92, x2: 280, y2: 92 },
+          { x1: 280, y1: 92, x2: 318, y2: 94 },
+          { x1: 318, y1: 94, x2: 336, y2: 106 },
+          { x1: 336, y1: 106, x2: 350, y2: 118 },
+          { x1: 350, y1: 118, x2: 354, y2: 128 },
+          { x1: 354, y1: 128, x2: 348, y2: 200 },
+          { x1: 348, y1: 200, x2: 346, y2: 271 },
+          { x1: 346, y1: 271, x2: 342, y2: 358 },
+          { x1: 342, y1: 358, x2: 328, y2: 428 }
         ],
         mergeOuter: [
           { x1: 428, y1: 158, x2: 408, y2: 126 },
-          { x1: 408, y1: 126, x2: 392, y2: 108 },
-          { x1: 392, y1: 108, x2: 360, y2: 80 },
-          { x1: 360, y1: 80, x2: 330, y2: 68 }
+          { x1: 408, y1: 126, x2: 392, y2: 96 },
+          { x1: 392, y1: 96, x2: 360, y2: 70 },
+          { x1: 360, y1: 70, x2: 330, y2: 56 }
         ],
         mergeInner: [
           { x1: 392, y1: 170, x2: 384, y2: 148 },
-          { x1: 384, y1: 148, x2: 352, y2: 136 },
-          { x1: 352, y1: 136, x2: 318, y2: 102 }
+          { x1: 384, y1: 148, x2: 354, y2: 128 },
+          { x1: 354, y1: 128, x2: 318, y2: 94 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
-        y1: 450,
+        y1: 432,
         x2: LAUNCH_LANE_LEFT - 60,
         y2: 200
       }
@@ -454,8 +454,8 @@
   }
 
   function createSpinner() {
-    // Left under arch â€” clear of lower apex (240,310) and left habitrail exit (~150,136)
-    return { x: 172, y: 118, radius: 15, angle: 0, score: 200, spinVel: 0, hitCooldown: 0 };
+    // Open inner field below the U â€” clear of lower apex (240,310) and left habitrail exit (~150,136)
+    return { x: 200, y: 248, radius: 15, angle: 0, score: 200, spinVel: 0, hitCooldown: 0 };
   }
 
   function getRestDrainBounds() {
@@ -538,15 +538,7 @@
     walls.push({ x1: bounds.centerRight, y1: FLIPPER_ROW_Y, x2: bounds.centerRight, y2: chuteBottom, kind: 'chute' });
     walls.push({ x1: bounds.rightOutlaneLeft, y1: FLIPPER_ROW_Y, x2: bounds.rightOutlaneLeft, y2: chuteBottom, kind: 'chute' });
 
-    // Left dump return: cyan mouth (~86,440) into playfield above flippers. Kind inlane, no standup V.
-    walls.push({ x1: 86, y1: 458, x2: 94, y2: 490, kind: 'inlane' });
-    walls.push({ x1: 94, y1: 490, x2: 108, y2: 518, kind: 'inlane' });
-    walls.push({ x1: 108, y1: 518, x2: 122, y2: 540, kind: 'inlane' });
-
-    // Right dump merge: orange mouth (~340,438) into playfield above flippers (left of plunger).
-    walls.push({ x1: 340, y1: 458, x2: 322, y2: 490, kind: 'inlane' });
-    walls.push({ x1: 322, y1: 490, x2: 300, y2: 518, kind: 'inlane' });
-    walls.push({ x1: 300, y1: 518, x2: 278, y2: 540, kind: 'inlane' });
+    // Slide mouths dump into open playfield. No extra inlane plastics (red-X delete).
 
     // Real left orbit / right habitrail travel paths (replaces token diagonal kick chutes)
     walls = walls.concat(createHabitrailWalls());
@@ -1432,9 +1424,9 @@
     var jackPts = state.jackpotLit ? 2500 : 0;
     var bankPts = Math.floor(state.bonusBank || 0);
     var steps = [];
-    if (multPts > 0) steps.push({ label: 'MULT Ã—' + state.multiplier, points: multPts });
+    if (multPts > 0) steps.push({ label: 'MULT x' + state.multiplier, points: multPts });
     if (dashPts > 0) steps.push({ label: 'LANE DASH', points: dashPts });
-    if (jackPts > 0) steps.push({ label: 'JACKPOT FLAG', points: jackPts });
+    if (jackPts > 0) steps.push({ label: 'JACKPOT', points: jackPts });
     steps.push({ label: 'BONUS BANK', points: bankPts });
     var total = 0;
     var i;
@@ -1865,7 +1857,7 @@
         var np = nearestPointOnSegments(ball.x, ball.y, leftRt.segments);
         nearShelf = np && np.dist < r + 18;
       }
-      if (nearSp && (nearShelf || speed <= 160 || sdist < spn.radius + r + 4)) {
+      if (nearSp && nearShelf && (speed <= 160 || sdist < spn.radius + r + 4)) {
         ball.x = spn.x + 12;
         ball.y = Math.max(spn.y + spn.radius + r + 6, ball.y + 10);
         ball.vx = Math.max(200, Math.abs(ball.vx) * 0.35 + 140);
@@ -2440,7 +2432,7 @@
     ) {
       var safeX = zones.leftOutlaneRight + r + 6;
       var saver = getOutlaneSaverBumper(state);
-      if (saver && ball.y > saver.y - saver.radius - r - 20 && ball.y < saver.y + saver.radius + r + 20) {
+      if (saver && saver.x < 180 && ball.y > saver.y - saver.radius - r - 20 && ball.y < saver.y + saver.radius + r + 20) {
         safeX = Math.max(safeX, saver.x + saver.radius + r + 6);
       }
       if (ball.x < safeX) ball.x = safeX;
