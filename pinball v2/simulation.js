@@ -210,11 +210,8 @@
   }
 
   function createTargets() {
-    return [
-      { id: 'stand-r1', x: 352, y: 428, w: 14, h: 26, score: 400, lit: false, occupied: false, flash: 0 },
-      { id: 'stand-r2', x: 352, y: 462, w: 14, h: 26, score: 400, lit: false, occupied: false, flash: 0 },
-      { id: 'stand-l', x: 64, y: 448, w: 14, h: 26, score: 400, lit: false, occupied: false, flash: 0 }
-    ];
+    // Grey standup rectangles removed — leftover mid-left/mid-right clutter.
+    return [];
   }
 
   /** Horizontal drop bank mid-table â€” complete all â†’ rush mode */
@@ -317,6 +314,46 @@
         y1: 345,
         x2: LAUNCH_LANE_LEFT - 60,
         y2: 159
+      },
+      leftFiller: {
+        id: 'fill-l',
+        theme: 'copper',
+        segments: [
+          { x1: 36, y1: 180, x2: 36, y2: 220 },
+          { x1: 36, y1: 220, x2: 36, y2: 250 },
+          { x1: 36, y1: 250, x2: 36, y2: 280 },
+          { x1: 36, y1: 280, x2: 36, y2: 320 }
+        ],
+        guides: [
+          { x1: 36, y1: 180, x2: 54, y2: 188 },
+          { x1: 54, y1: 188, x2: 70, y2: 205 },
+          { x1: 70, y1: 205, x2: 80, y2: 228 },
+          { x1: 80, y1: 228, x2: 84, y2: 250 },
+          { x1: 84, y1: 250, x2: 80, y2: 274 },
+          { x1: 80, y1: 274, x2: 68, y2: 296 },
+          { x1: 68, y1: 296, x2: 50, y2: 312 },
+          { x1: 50, y1: 312, x2: 36, y2: 320 }
+        ]
+      },
+      rightFiller: {
+        id: 'fill-r',
+        theme: 'cyan',
+        segments: [
+          { x1: 392, y1: 182, x2: 392, y2: 220 },
+          { x1: 392, y1: 220, x2: 392, y2: 250 },
+          { x1: 392, y1: 250, x2: 392, y2: 282 },
+          { x1: 392, y1: 282, x2: 392, y2: 318 }
+        ],
+        guides: [
+          { x1: 392, y1: 182, x2: 374, y2: 190 },
+          { x1: 374, y1: 190, x2: 358, y2: 208 },
+          { x1: 358, y1: 208, x2: 348, y2: 230 },
+          { x1: 348, y1: 230, x2: 344, y2: 250 },
+          { x1: 344, y1: 250, x2: 348, y2: 272 },
+          { x1: 348, y1: 272, x2: 360, y2: 294 },
+          { x1: 360, y1: 294, x2: 378, y2: 310 },
+          { x1: 378, y1: 310, x2: 392, y2: 318 }
+        ]
       }
     };
   }
@@ -387,6 +424,13 @@
     }
     pushMerge(routes.rightRamp.mergeOuter, 'habitrail');
     pushMerge(routes.rightRamp.mergeInner, 'habitrail');
+    function pushFiller(fill) {
+      if (!fill) return;
+      pushPath(fill.segments, 'filler');
+      pushPath(fill.guides, 'filler');
+    }
+    pushFiller(routes.leftFiller);
+    pushFiller(routes.rightFiller);
     return walls;
   }
 
@@ -1801,6 +1845,11 @@
 
     state.walls.forEach(function (wall) {
       if (!state.exitedLaunchLane && (wall.wireform || wall.kind === 'lane')) return;
+      if (wall.kind === 'filler' && (state.activeHabitrail ||
+          inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp) ||
+          inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp))) {
+        return;
+      }
       // Raised horseshoe rides over the launch wireform (different height).
       if (wall.wireform && (state.activeHabitrail ||
           inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp) ||
@@ -1825,6 +1874,7 @@
       if (wall.kind === 'deck') rest = WALL_RESTITUTION * 0.55;
       else if (wall.kind === 'habitrail') rest = HABITRAIL_RESTITUTION;
       else if (wall.kind === 'guide') rest = GUIDE_RESTITUTION;
+      else if (wall.kind === 'filler') rest = GUIDE_RESTITUTION;
       segmentCollision(ball, wall.x1, wall.y1, wall.x2, wall.y2, rest, null);
     });
 
@@ -2190,7 +2240,7 @@
           target.flash = 0.35;
           if (!target.lit) {
             target.lit = true;
-            state.jackpotLit = state.targets.every(function (t) { return t.lit; });
+            state.jackpotLit = state.targets.length > 0 && state.targets.every(function (t) { return t.lit; });
           }
           var bonus = target.lit ? target.score : Math.floor(target.score * 0.5);
           awardScore(state, bonus, 'target', target.id, target.x, target.y);
@@ -2501,13 +2551,13 @@
       ball.y > 155 &&
       ball.y < LEFT_INLANE_POST_TOP;
     if (onLeftRail && (absVx < 50 || speed < 130)) {
-      ball.x = 36 + r + 18;
+      ball.x = (ball.y >= 175 && ball.y <= 325) ? (88 + r) : (36 + r + 18);
       ball.vx = Math.max(ball.vx, 240);
       if (ball.vy > 120) ball.vy *= 0.55;
       return;
     }
     if (onRightPlay && (absVx < 50 || speed < 130)) {
-      ball.x = LAUNCH_LANE_LEFT - r - 18;
+      ball.x = (ball.y >= 175 && ball.y <= 325) ? (340 - r) : (LAUNCH_LANE_LEFT - r - 18);
       ball.vx = -Math.max(Math.abs(ball.vx), 240);
       if (ball.vy > 120) ball.vy *= 0.55;
       return;

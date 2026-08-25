@@ -436,7 +436,7 @@
     if (q().wallGlowPass) {
       state.walls.forEach(function (wall) {
         var kind = wall.kind || 'rail';
-        if (kind === 'lane' || kind === 'chute') return;
+        if (kind === 'lane' || kind === 'chute' || kind === 'filler') return;
         if (kind === 'rail' && wall.arc) {
           var gmx = (wall.x1 + wall.x2) * 0.5;
           var gmy = (wall.y1 + wall.y2) * 0.5;
@@ -457,7 +457,7 @@
     }
     state.walls.forEach(function (wall) {
       var kind = wall.kind || 'rail';
-      if (kind === 'chute') return;
+      if (kind === 'chute' || kind === 'filler') return;
       if (kind === 'lane' && !wall.wireform) return;
       if (wall.wireform) {
         strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, {
@@ -603,9 +603,17 @@
     ctx.fillStyle = cyan ? '#061820' : '#2a1206';
     ctx.fill();
     strokeExact(ctx, hull, true);
+    var minX = hull[0].x, maxX = hull[0].x, minY = hull[0].y, maxY = hull[0].y;
+    var hi;
+    for (hi = 1; hi < hull.length; hi++) {
+      if (hull[hi].x < minX) minX = hull[hi].x;
+      if (hull[hi].x > maxX) maxX = hull[hi].x;
+      if (hull[hi].y < minY) minY = hull[hi].y;
+      if (hull[hi].y > maxY) maxY = hull[hi].y;
+    }
     var g = cyan
-      ? ctx.createLinearGradient(30, 80, 130, 400)
-      : ctx.createLinearGradient(300, 80, 390, 400);
+      ? ctx.createLinearGradient(minX, minY, maxX, maxY)
+      : ctx.createLinearGradient(minX, minY, maxX, maxY);
     if (cyan) {
       g.addColorStop(0, 'rgba(120, 230, 255, 1)');
       g.addColorStop(0.4, 'rgba(24, 140, 190, 1)');
@@ -660,6 +668,13 @@
       ctx.lineWidth = 2;
       ctx.stroke();
       ctx.restore();
+    }
+
+    if (state.sideRoutes.leftFiller) {
+      drawPioneerRamp(ctx, state.sideRoutes.leftFiller, pulse);
+    }
+    if (state.sideRoutes.rightFiller) {
+      drawPioneerRamp(ctx, state.sideRoutes.rightFiller, pulse, 'cyan');
     }
 
     var left = state.sideRoutes.leftRamp;
