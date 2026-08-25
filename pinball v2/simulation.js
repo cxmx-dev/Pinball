@@ -302,7 +302,8 @@
           { x1: 362, y1: 286, x2: 328, y2: 342 }
         ],
         mergeOuter: [
-          { x1: 444, y1: 94, x2: 430, y2: 76 },
+          { x1: 444, y1: 103, x2: 438, y2: 86 },
+          { x1: 438, y1: 86, x2: 430, y2: 76 },
           { x1: 430, y1: 76, x2: 412, y2: 60 },
           { x1: 412, y1: 60, x2: 390, y2: 48 },
           { x1: 390, y1: 48, x2: 360, y2: 38 },
@@ -325,18 +326,18 @@
         id: 'fill-l',
         theme: 'copper',
         segments: [
-          { x1: 48, y1: 586, x2: 42, y2: 621 },
-          { x1: 42, y1: 621, x2: 36, y2: 653 },
+          { x1: 36, y1: 586, x2: 36, y2: 621 },
+          { x1: 36, y1: 621, x2: 36, y2: 653 },
           { x1: 36, y1: 653, x2: 36, y2: 675 },
-          { x1: 36, y1: 675, x2: 46, y2: 691 }
+          { x1: 36, y1: 675, x2: 36, y2: 691 }
         ],
         guides: [
-          { x1: 48, y1: 586, x2: 62, y2: 598 },
+          { x1: 36, y1: 586, x2: 62, y2: 598 },
           { x1: 62, y1: 598, x2: 72, y2: 623 },
           { x1: 72, y1: 623, x2: 75, y2: 651 },
           { x1: 75, y1: 651, x2: 69, y2: 675 },
           { x1: 69, y1: 675, x2: 56, y2: 687 },
-          { x1: 56, y1: 687, x2: 46, y2: 691 }
+          { x1: 56, y1: 687, x2: 36, y2: 691 }
         ]
       },
       rightFiller: {
@@ -345,8 +346,8 @@
         segments: [
           { x1: 392, y1: 609, x2: 392, y2: 657 },
           { x1: 392, y1: 657, x2: 392, y2: 699 },
-          { x1: 392, y1: 699, x2: 388, y2: 732 },
-          { x1: 388, y1: 732, x2: 376, y2: 744 }
+          { x1: 392, y1: 699, x2: 392, y2: 732 },
+          { x1: 392, y1: 732, x2: 392, y2: 744 }
         ],
         guides: [
           { x1: 392, y1: 609, x2: 371, y2: 623 },
@@ -354,7 +355,7 @@
           { x1: 352, y1: 652, x2: 342, y2: 689 },
           { x1: 342, y1: 689, x2: 356, y2: 726 },
           { x1: 356, y1: 726, x2: 366, y2: 738 },
-          { x1: 366, y1: 738, x2: 376, y2: 744 }
+          { x1: 366, y1: 738, x2: 392, y2: 744 }
         ]
       }
     };
@@ -455,7 +456,7 @@
     var dashes = [];
     var count = 9;
     var yBot = PLUNGER_REST_Y - 40;
-    var yTop = LAUNCH_WIRE_Y1 + 28;
+    var yTop = 500; // lower shooter only; no oval in the upper merge/copper lane
     var i;
     for (i = 0; i < count; i++) {
       var t = count === 1 ? 0 : i / (count - 1);
@@ -668,7 +669,7 @@
     walls.push({ x1: 36, y1: 110, x2: 36, y2: TABLE_H - 80, kind: 'rail' });
 
     // Outer right (cabinet edge past launch lane)
-    walls.push({ x1: TABLE_W - 36, y1: 70, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' });
+    walls.push({ x1: TABLE_W - 36, y1: LAUNCH_WIRE_Y1, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' });
 
     // Launch lane
     walls.push({ x1: LAUNCH_LANE_LEFT, y1: LAUNCH_WIRE_Y1, x2: LAUNCH_WIRE_X2, y2: LAUNCH_WIRE_Y2, wireform: true, kind: 'lane' });

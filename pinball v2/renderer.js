@@ -269,14 +269,15 @@
     var tw = state.tableW;
     var th = state.tableH;
     var laneLeft = root.PinballSim.LAUNCH_LANE_LEFT;
+    var joinY = root.PinballSim.LAUNCH_WIRE_Y1;
     var laneGrad = ctx.createLinearGradient(laneLeft, 0, tw, 0);
     laneGrad.addColorStop(0, 'rgba(42,18,8,0.92)');
     laneGrad.addColorStop(1, 'rgba(88,36,12,0.96)');
     ctx.fillStyle = laneGrad;
-    ctx.fillRect(laneLeft, 70, tw - laneLeft - 4, th - 140);
+    ctx.fillRect(laneLeft, joinY, tw - laneLeft - 4, th - 70 - joinY);
     ctx.strokeStyle = 'rgba(255,160,64,0.28)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(laneLeft + 1, 70, tw - laneLeft - 6, th - 142);
+    ctx.strokeRect(laneLeft + 1, joinY, tw - laneLeft - 6, th - 72 - joinY);
   }
 
   /**
@@ -289,6 +290,7 @@
     var i;
     for (i = 0; i < dashes.length; i++) {
       var d = dashes[i];
+      if (d.y < 360) continue;
       var intensity = d.intensity != null ? d.intensity : (d.lit ? 1 : 0);
       if (intensity < 0) intensity = 0;
       if (intensity > 1) intensity = 1;
@@ -602,8 +604,6 @@
       };
       strokeTubePath(ctx, segsToPoints(rr.segments), copperTube);
       strokeTubePath(ctx, segsToPoints(rr.guides), copperGuide);
-      if (rr.mergeOuter) strokeTubePath(ctx, segsToPoints(rr.mergeOuter), copperTube);
-      if (rr.mergeInner) strokeTubePath(ctx, segsToPoints(rr.mergeInner), copperGuide);
     }
     ctx.restore();
   }
@@ -673,14 +673,16 @@
     var inner = segsToPoints(ramp.guides).reverse();
     if (outer.length < 2 || inner.length < 2) return;
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
+    var filler = ramp.id === 'fill-l' || ramp.id === 'fill-r';
 
     var hull = outer.concat(inner);
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    // Copper: one smooth hull (no chord ticks). Cyan stays exact. Physics unchanged.
-    var strokeHull = cyan ? strokeExact : strokeSmooth;
+    // Copper: one smooth hull (no chord ticks). Cyan/fillers/phone stay exact.
+    // Phone/simple: no ellipse/scale — strokeExact only.
+    var strokeHull = (cyan || simple || filler) ? strokeExact : strokeSmooth;
     strokeHull(ctx, hull, true);
     ctx.fillStyle = cyan ? '#061820' : '#2a1206';
     ctx.fill();
@@ -1296,16 +1298,17 @@
 
   function drawLaunchLaneRail(ctx, state) {
     var x = root.PinballSim.LAUNCH_LANE_LEFT;
+    var joinY = root.PinballSim.LAUNCH_WIRE_Y1;
     ctx.save();
     var railGrad = ctx.createLinearGradient(x - 8, 0, x + 2, 0);
     railGrad.addColorStop(0, 'rgba(255,190,80,0.95)');
     railGrad.addColorStop(1, 'rgba(160,70,20,0.88)');
     ctx.strokeStyle = railGrad;
     ctx.lineWidth = 4;
-    ctx.lineCap = 'round';
+    ctx.lineCap = 'butt';
     applyShadow(ctx, 'rgba(255,140,40,0.45)', 10);
     ctx.beginPath();
-    ctx.moveTo(x, root.PinballSim.LAUNCH_WIRE_Y1);
+    ctx.moveTo(x, joinY);
     ctx.lineTo(x, state.tableH - 72);
     ctx.stroke();
 
