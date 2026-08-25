@@ -271,10 +271,10 @@
     laneGrad.addColorStop(0, 'rgba(42,18,8,0.92)');
     laneGrad.addColorStop(1, 'rgba(88,36,12,0.96)');
     ctx.fillStyle = laneGrad;
-    ctx.fillRect(laneLeft, 148, tw - laneLeft - 4, th - 218);
+    ctx.fillRect(laneLeft, 70, tw - laneLeft - 4, th - 140);
     ctx.strokeStyle = 'rgba(255,160,64,0.28)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(laneLeft + 1, 148, tw - laneLeft - 6, th - 220);
+    ctx.strokeRect(laneLeft + 1, 70, tw - laneLeft - 6, th - 142);
   }
 
   /**
@@ -440,7 +440,7 @@
         if (kind === 'rail' && wall.arc) {
           var gmx = (wall.x1 + wall.x2) * 0.5;
           var gmy = (wall.y1 + wall.y2) * 0.5;
-          if (gmy < 118 && gmx > 70 && gmx < 420) return;
+          if (gmy < 100 && gmx > 70 && gmx < 420) return;
         }
         if (wall.arc || kind === 'rail' || kind === 'habitrail') {
           ctx.strokeStyle = kind === 'habitrail' ? 'rgba(255, 170, 60, 0.20)' : 'rgba(100, 200, 255, 0.22)';
@@ -462,7 +462,7 @@
       if (kind === 'rail' && wall.arc) {
         var mx = (wall.x1 + wall.x2) * 0.5;
         var my = (wall.y1 + wall.y2) * 0.5;
-        if (my < 118 && mx > 70 && mx < 420) return;
+        if (my < 100 && mx > 70 && mx < 420) return;
       }
       if (kind === 'habitrail') {
         strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, {
@@ -572,8 +572,8 @@
     ctx.fill();
     strokeSmooth(ctx, hull, true);
     var g = cyan
-      ? ctx.createLinearGradient(30, 140, 130, 560)
-      : ctx.createLinearGradient(300, 140, 390, 560);
+      ? ctx.createLinearGradient(30, 80, 130, 400)
+      : ctx.createLinearGradient(300, 80, 390, 400);
     if (cyan) {
       g.addColorStop(0, 'rgba(120, 230, 255, 1)');
       g.addColorStop(0.4, 'rgba(24, 140, 190, 1)');
@@ -1086,12 +1086,12 @@
 
   function drawApron(ctx, state) {
     ctx.save();
-    var apronGrad = ctx.createLinearGradient(0, state.tableH - 170, 0, state.tableH);
+    var apronGrad = ctx.createLinearGradient(0, state.tableH - 130, 0, state.tableH);
     apronGrad.addColorStop(0, 'rgba(15,30,50,0.0)');
     apronGrad.addColorStop(0.35, 'rgba(18,35,55,0.85)');
     apronGrad.addColorStop(1, 'rgba(10,18,30,0.95)');
     ctx.fillStyle = apronGrad;
-    ctx.fillRect(36, state.tableH - 150, root.PinballSim.LAUNCH_LANE_LEFT - 36, 150);
+    ctx.fillRect(36, state.tableH - 110, root.PinballSim.LAUNCH_LANE_LEFT - 36, 110);
     ctx.restore();
   }
 
@@ -1106,7 +1106,7 @@
     ctx.lineCap = 'round';
     applyShadow(ctx, 'rgba(255,140,40,0.45)', 10);
     ctx.beginPath();
-    ctx.moveTo(x, 148);
+    ctx.moveTo(x, 70);
     ctx.lineTo(x, state.tableH - 72);
     ctx.stroke();
 

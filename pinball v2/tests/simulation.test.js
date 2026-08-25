@@ -373,7 +373,7 @@ function slapSpeedAtFraction(frac) {
   var state = fresh();
   var sp = state.spinner;
   assert(sp.x >= 185 && sp.x <= 215, 'spinner x in open field below U, got ' + sp.x);
-  assert(sp.y >= 230 && sp.y <= 265, 'spinner y below lifted channel, got ' + sp.y);
+  assert(sp.y >= 195 && sp.y <= 230, 'spinner y below lifted channel, got ' + sp.y);
   assert(sp.x <= 220, 'spinner clear of apex bumper x');
   console.log('PASS: spinner in open field below U');
 })();

@@ -10,8 +10,8 @@
   var TABLE_W = 480;
   var TABLE_H = 860;
   var FLIPPER_INLANE_X = 88;
-  var LEFT_INLANE_POST_TOP = 400;
-  var FLIPPER_ROW_Y = TABLE_H - 148;
+  var LEFT_INLANE_POST_TOP = 430;
+  var FLIPPER_ROW_Y = TABLE_H - 108;
   var FLIPPER_LEFT_PIVOT_X = Math.round(4.5 / 20.25 * TABLE_W);
   var FLIPPER_RIGHT_PIVOT_X = Math.round(11.625 / 20.25 * TABLE_W);
   var FLIPPER_PIVOT_SPACING = FLIPPER_RIGHT_PIVOT_X - FLIPPER_LEFT_PIVOT_X;
@@ -84,8 +84,8 @@
   var LAUNCH_LANE_RIGHT = TABLE_W - 36;
   var PLUNGER_REST_Y = TABLE_H - 88;
   var LAUNCH_LANE_TOP = TABLE_H - 200;
-  var LAUNCH_WIRE_Y1 = 130;
-  var LAUNCH_WIRE_Y2 = 102;
+  var LAUNCH_WIRE_Y1 = 103;
+  var LAUNCH_WIRE_Y2 = 80;
   var LAUNCH_WIRE_X2 = 324;
   var WIRE_FORM_X1 = LAUNCH_LANE_LEFT;
   var WIRE_FORM_Y1 = LAUNCH_WIRE_Y1;
@@ -161,14 +161,14 @@
   function createBumpers() {
     return [
       // Skill / apex - 180 below the horseshoe join, out of the channel
-      { x: 240, y: 310, radius: 16, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0, hit: false },
-      // Wings - lower and farther apart, clear of slide channels
-      { x: 155, y: 345, radius: 22, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0, hit: false },
-      { x: 305, y: 345, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0, hit: false },
+      { x: 240, y: 275, radius: 16, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0, hit: false },
+      // Wings - mid-field under the lifted U, clear of slide mouths
+      { x: 155, y: 308, radius: 22, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0, hit: false },
+      { x: 298, y: 308, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0, hit: false },
       {
         // Weaker / smaller saver - outlane tension
         x: 210,
-        y: 430,
+        y: 455,
         radius: 14,
         score: 120,
         color: '#55ffaa',
@@ -221,7 +221,7 @@
   function createSideRoutes() {
     // Horseshoe orbit: left slide + top channel + right slide meet under the arch.
     // Outer / inner polylines are also the draw hulls (cyan left, copper right).
-    // Top channel ~40px (outer y=52, inner y=92 at x=240). Inner U is a dense habitrail wall.
+    // Top channel ~38px (outer y=32, inner y=70 at x=240). Inner U is a dense habitrail wall.
     return {
       leftCaptive: {
         id: 'captive-l',
@@ -235,80 +235,80 @@
         id: 'ramp-l',
         score: 800,
         cooldown: 0,
-        entry: { x: 74, y: 422, w: 40, h: 48 },
-        exit: { x: 340, y: 418 },
-        via: { x: 88, y: 96 },
+        entry: { x: 74, y: 337, w: 40, h: 48 },
+        exit: { x: 340, y: 334 },
+        via: { x: 88, y: 76 },
         boost: 360,
         segments: [
-          { x1: 60, y1: 432, x2: 46, y2: 348 },
-          { x1: 46, y1: 348, x2: 36, y2: 252 },
-          { x1: 36, y1: 252, x2: 42, y2: 184 },
-          { x1: 42, y1: 184, x2: 62, y2: 136 },
-          { x1: 62, y1: 136, x2: 88, y2: 96 },
-          { x1: 88, y1: 96, x2: 150, y2: 56 },
-          { x1: 150, y1: 56, x2: 240, y2: 52 },
-          { x1: 240, y1: 52, x2: 330, y2: 56 }
+          { x1: 60, y1: 345, x2: 46, y2: 278 },
+          { x1: 46, y1: 278, x2: 36, y2: 200 },
+          { x1: 36, y1: 200, x2: 42, y2: 146 },
+          { x1: 42, y1: 146, x2: 62, y2: 107 },
+          { x1: 62, y1: 107, x2: 88, y2: 76 },
+          { x1: 88, y1: 76, x2: 150, y2: 36 },
+          { x1: 150, y1: 36, x2: 240, y2: 32 },
+          { x1: 240, y1: 32, x2: 330, y2: 36 }
         ],
         guides: [
-          { x1: 100, y1: 428, x2: 80, y2: 346 },
-          { x1: 80, y1: 346, x2: 74, y2: 252 },
-          { x1: 74, y1: 252, x2: 80, y2: 184 },
-          { x1: 80, y1: 184, x2: 96, y2: 152 },
-          { x1: 96, y1: 152, x2: 110, y2: 130 },
-          { x1: 110, y1: 130, x2: 126, y2: 112 },
-          { x1: 126, y1: 112, x2: 146, y2: 98 },
-          { x1: 146, y1: 98, x2: 168, y2: 94 },
-          { x1: 168, y1: 94, x2: 200, y2: 92 },
-          { x1: 200, y1: 92, x2: 240, y2: 92 },
-          { x1: 240, y1: 92, x2: 280, y2: 92 },
-          { x1: 280, y1: 92, x2: 318, y2: 94 }
+          { x1: 100, y1: 342, x2: 80, y2: 276 },
+          { x1: 80, y1: 276, x2: 74, y2: 200 },
+          { x1: 74, y1: 200, x2: 80, y2: 146 },
+          { x1: 80, y1: 146, x2: 96, y2: 120 },
+          { x1: 96, y1: 120, x2: 110, y2: 102 },
+          { x1: 110, y1: 102, x2: 126, y2: 88 },
+          { x1: 126, y1: 88, x2: 146, y2: 77 },
+          { x1: 146, y1: 77, x2: 168, y2: 76 },
+          { x1: 168, y1: 76, x2: 200, y2: 72 },
+          { x1: 200, y1: 72, x2: 240, y2: 70 },
+          { x1: 240, y1: 70, x2: 280, y2: 72 },
+          { x1: 280, y1: 72, x2: 318, y2: 76 }
         ]
       },
       rightRamp: {
         id: 'ramp-r',
         score: 750,
         cooldown: 0,
-        entry: { x: 350, y: 420, w: 40, h: 48 },
-        exit: { x: 90, y: 418 },
-        via: { x: 390, y: 96 },
+        entry: { x: 350, y: 335, w: 40, h: 48 },
+        exit: { x: 90, y: 334 },
+        via: { x: 390, y: 76 },
         boost: 360,
         segments: [
-          { x1: 150, y1: 56, x2: 240, y2: 52 },
-          { x1: 240, y1: 52, x2: 330, y2: 56 },
-          { x1: 330, y1: 56, x2: 390, y2: 96 },
-          { x1: 390, y1: 96, x2: 388, y2: 200 },
-          { x1: 388, y1: 200, x2: 386, y2: 271 },
-          { x1: 386, y1: 271, x2: 380, y2: 358 },
-          { x1: 380, y1: 358, x2: 364, y2: 432 }
+          { x1: 150, y1: 36, x2: 240, y2: 32 },
+          { x1: 240, y1: 32, x2: 330, y2: 36 },
+          { x1: 330, y1: 36, x2: 390, y2: 76 },
+          { x1: 390, y1: 76, x2: 388, y2: 159 },
+          { x1: 388, y1: 159, x2: 386, y2: 216 },
+          { x1: 386, y1: 216, x2: 380, y2: 286 },
+          { x1: 380, y1: 286, x2: 364, y2: 345 }
         ],
         guides: [
-          { x1: 168, y1: 94, x2: 200, y2: 92 },
-          { x1: 200, y1: 92, x2: 240, y2: 92 },
-          { x1: 240, y1: 92, x2: 280, y2: 92 },
-          { x1: 280, y1: 92, x2: 318, y2: 94 },
-          { x1: 318, y1: 94, x2: 336, y2: 106 },
-          { x1: 336, y1: 106, x2: 350, y2: 118 },
-          { x1: 350, y1: 118, x2: 354, y2: 128 },
-          { x1: 354, y1: 128, x2: 348, y2: 200 },
-          { x1: 348, y1: 200, x2: 346, y2: 271 },
-          { x1: 346, y1: 271, x2: 342, y2: 358 },
-          { x1: 342, y1: 358, x2: 328, y2: 428 }
+          { x1: 168, y1: 76, x2: 200, y2: 72 },
+          { x1: 200, y1: 72, x2: 240, y2: 70 },
+          { x1: 240, y1: 70, x2: 280, y2: 72 },
+          { x1: 280, y1: 72, x2: 318, y2: 76 },
+          { x1: 318, y1: 76, x2: 336, y2: 83 },
+          { x1: 336, y1: 83, x2: 350, y2: 93 },
+          { x1: 350, y1: 93, x2: 354, y2: 101 },
+          { x1: 354, y1: 101, x2: 348, y2: 159 },
+          { x1: 348, y1: 159, x2: 346, y2: 216 },
+          { x1: 346, y1: 216, x2: 342, y2: 286 },
+          { x1: 342, y1: 286, x2: 328, y2: 342 }
         ],
         mergeOuter: [
-          { x1: 428, y1: 158, x2: 408, y2: 126 },
-          { x1: 408, y1: 126, x2: 392, y2: 96 },
-          { x1: 392, y1: 96, x2: 360, y2: 70 },
-          { x1: 360, y1: 70, x2: 330, y2: 56 }
+          { x1: 428, y1: 125, x2: 408, y2: 99 },
+          { x1: 408, y1: 99, x2: 392, y2: 76 },
+          { x1: 392, y1: 76, x2: 360, y2: 50 },
+          { x1: 360, y1: 50, x2: 330, y2: 36 }
         ],
         mergeInner: [
-          { x1: 392, y1: 170, x2: 384, y2: 148 },
-          { x1: 384, y1: 148, x2: 354, y2: 128 },
-          { x1: 354, y1: 128, x2: 318, y2: 94 }
+          { x1: 392, y1: 135, x2: 384, y2: 117 },
+          { x1: 384, y1: 117, x2: 354, y2: 101 },
+          { x1: 354, y1: 101, x2: 318, y2: 76 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
-        y1: 432,
+        y1: 345,
         x2: LAUNCH_LANE_LEFT - 60,
-        y2: 200
+        y2: 159
       }
     };
   }
@@ -370,7 +370,7 @@
     return [
       { id: 'lane-l', x1: 72, y1: 180, x2: 72, y2: 280, width: 18, score: 500, lit: false, occupied: false },
       // Playfield side of launch wall (not inside shooter lane)
-      { id: 'lane-r', x1: LAUNCH_LANE_LEFT - 36, y1: 260, x2: LAUNCH_LANE_LEFT - 36, y2: 360, width: 18, score: 500, lit: false, occupied: false },
+      { id: 'lane-r', x1: LAUNCH_LANE_LEFT - 36, y1: 190, x2: LAUNCH_LANE_LEFT - 36, y2: 290, width: 18, score: 500, lit: false, occupied: false },
       // Mid-field rollover â€” shot path without bumper party
       { id: 'lane-mid', x1: 195, y1: 412, x2: 285, y2: 412, width: 16, score: 600, lit: false, occupied: false }
     ];
@@ -455,7 +455,7 @@
 
   function createSpinner() {
     // Open inner field below the U â€” clear of lower apex (240,310) and left habitrail exit (~150,136)
-    return { x: 200, y: 248, radius: 15, angle: 0, score: 200, spinVel: 0, hitCooldown: 0 };
+    return { x: 200, y: 210, radius: 15, angle: 0, score: 200, spinVel: 0, hitCooldown: 0 };
   }
 
   function getRestDrainBounds() {
@@ -493,22 +493,22 @@
     // Rounded top arch (ball rides underside â€” green path annotation)
     // Ellipse upper half: PI â†’ 2PI (left â†’ top center â†’ right)
     var archCx = TABLE_W * 0.5;
-    var archCy = 100;
+    var archCy = 76;
     var archRx = 200;
-    var archRy = 52;
+    var archRy = 50;
     walls = walls.concat(ellipseArcSegments(archCx, archCy, archRx, archRy, Math.PI, Math.PI * 2, 18, 'rail'));
 
     // Left side rail from arch end down
     var archLeftX = archCx - archRx;
     var archLeftY = archCy;
-    walls.push({ x1: archLeftX, y1: archLeftY, x2: 36, y2: 140, kind: 'rail' });
-    walls.push({ x1: 36, y1: 140, x2: 36, y2: TABLE_H - 80, kind: 'rail' });
+    walls.push({ x1: archLeftX, y1: archLeftY, x2: 36, y2: 110, kind: 'rail' });
+    walls.push({ x1: 36, y1: 110, x2: 36, y2: TABLE_H - 80, kind: 'rail' });
 
     // Outer right (cabinet edge past launch lane)
-    walls.push({ x1: TABLE_W - 36, y1: 90, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' });
+    walls.push({ x1: TABLE_W - 36, y1: 70, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' });
 
     // Launch lane
-    walls.push({ x1: LAUNCH_LANE_LEFT, y1: 90, x2: LAUNCH_LANE_LEFT, y2: LAUNCH_WIRE_Y1, rail: true, kind: 'lane' });
+    walls.push({ x1: LAUNCH_LANE_LEFT, y1: 48, x2: LAUNCH_LANE_LEFT, y2: LAUNCH_WIRE_Y1, rail: true, kind: 'lane' });
     walls.push({ x1: LAUNCH_LANE_LEFT, y1: LAUNCH_WIRE_Y1, x2: LAUNCH_WIRE_X2, y2: LAUNCH_WIRE_Y2, wireform: true, kind: 'lane' });
     walls.push({ x1: LAUNCH_LANE_LEFT, y1: LAUNCH_WIRE_Y1, x2: LAUNCH_LANE_LEFT, y2: TABLE_H - 80, rail: true, kind: 'lane' });
 
@@ -1247,7 +1247,7 @@
   function rejectPlayfieldTunnelIn(state) {
     var ball = state.ball;
     if (!ball || state.activeHabitrail) return;
-    if (ball.y < 50 || ball.y > 160) return;
+    if (ball.y < 24 || ball.y > 140) return;
     if (ball.vy >= -20) return;
     if (ball.x < 120 || ball.x > 350) return;
     var left = state.sideRoutes.leftRamp;
@@ -1265,7 +1265,7 @@
    */
   function containHorseshoeInner(state) {
     var ball = state.ball;
-    if (!ball || ball.y < 50 || ball.y > 160) return;
+    if (!ball || ball.y < 24 || ball.y > 140) return;
     if (ball.x < 88 || ball.x > 368) return;
     if (ball.vy < 20) return;
     if (nearHorseshoeSpinner(state, ball)) return;
@@ -2311,7 +2311,7 @@
 
     // Right orbit vs shooter slot: live bounce-loops are often faster than the crawl gate.
     var rightRtEarly = state.sideRoutes && state.sideRoutes.rightRamp;
-    if (rightRtEarly && rightRtEarly.segments && ball.y > 140 && ball.y < 420 && ball.x < LAUNCH_LANE_LEFT) {
+    if (rightRtEarly && rightRtEarly.segments && ball.y > 70 && ball.y < 360 && ball.x < LAUNCH_LANE_LEFT) {
       var npRE = nearestPointOnSegments(ball.x, ball.y, rightRtEarly.segments);
       var inSlotEarly =
         ball.x + r > LAUNCH_LANE_LEFT - 40 &&
@@ -2376,7 +2376,7 @@
     }
     // Live ping-pong in the slot between right orbit outer and shooter wall
     var rightRt = state.sideRoutes && state.sideRoutes.rightRamp;
-    if (rightRt && rightRt.segments && ball.y > 140 && ball.y < 420 && ball.x < LAUNCH_LANE_LEFT) {
+    if (rightRt && rightRt.segments && ball.y > 70 && ball.y < 360 && ball.x < LAUNCH_LANE_LEFT) {
       var npR = nearestPointOnSegments(ball.x, ball.y, rightRt.segments);
       var inSlot =
         ball.x + r > LAUNCH_LANE_LEFT - 36 &&
