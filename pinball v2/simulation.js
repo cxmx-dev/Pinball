@@ -440,12 +440,8 @@
   }
 
   function createPosts() {
-    // Small rubber near the left saucer so that box is not empty.
-    return [
-      { id: 'saucer-post', x: 132, y: 568, radius: 7, score: 50, color: '#88ccee', flash: 0 },
-      { id: 'right-mid-post', x: 328, y: 548, radius: 7, score: 50, color: '#88ccee', flash: 0 },
-      { id: 'upper-gap-post', x: 248, y: 618, radius: 6, score: 40, color: '#9ad0e8', flash: 0 }
-    ];
+    // Circled glowing posts removed (VOID PULSE annotation). Saucer/HOLE at (95,520) stays.
+    return [];
   }
 
   function createSaucer() {
@@ -464,10 +460,10 @@
   }
 
   function createGateSpinner() {
-    // Vertical gate in the left U dump channel, below the top-left curve.
+    // Vertical gate at/above the right copper ramp mouth (entry ~350,335).
     return {
-      x: 58,
-      y: 168,
+      x: 350,
+      y: 318,
       h: 42,
       angle: 0,
       spinVel: 0,
@@ -1413,6 +1409,8 @@
   }
 
   function peelLeftInlaneWedge(state) {
+    // Leftover invisible inlane-wedge kick -- dash corridors stay open.
+    return;
     var ball = state.ball;
     if (!ball || !ball.inPlay || !state.exitedLaunchLane) return;
     if (ball.x < 60 || ball.x > 130 || ball.y < 465 || ball.y > 545) return;
@@ -2424,12 +2422,12 @@
       }
     }
 
-    var onLeftRail = ball.x - r <= 36 + 8 && ball.y > 155 && ball.y < FLIPPER_ROW_Y - 24;
+    var onLeftRail = ball.x - r <= 36 + 8 && ball.y > 155 && ball.y < LEFT_INLANE_POST_TOP;
     var onRightPlay =
       ball.x + r >= LAUNCH_LANE_LEFT - 8 &&
       ball.x < LAUNCH_LANE_LEFT + r + 2 &&
       ball.y > 155 &&
-      ball.y < FLIPPER_ROW_Y - 24;
+      ball.y < LEFT_INLANE_POST_TOP;
     if (onLeftRail && (absVx < 50 || speed < 130)) {
       ball.x = 36 + r + 18;
       ball.vx = Math.max(ball.vx, 240);
@@ -2498,6 +2496,8 @@
   }
 
   function guardLeftOutlaneShelf(state) {
+    // Leftover invisible shelf kick -- left dash/outlane stays open.
+    return;
     if (!state.ball.inPlay || !state.exitedLaunchLane) return;
     if (apronAssistsBlocked(state)) return;
     if (inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp)) return;
@@ -2525,6 +2525,8 @@
   }
 
   function guardRightOutlaneShelf(state) {
+    // Leftover invisible shelf kick -- right dash/outlane stays open.
+    return;
     if (!state.ball.inPlay || !state.exitedLaunchLane) return;
     if (apronAssistsBlocked(state)) return;
     if (inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp)) return;

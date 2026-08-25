@@ -321,7 +321,7 @@ function slapSpeedAtFraction(frac) {
   console.log('PASS: charge launch holds at max power');
 })();
 
-(function testLeftOutlaneShelfBlocksUpperIntrusion() {
+(function testOutlaneDashCorridorsStayOpen() {
   var state = fresh();
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
@@ -329,12 +329,14 @@ function slapSpeedAtFraction(frac) {
   state.ball.y = sim.FLIPPER_ROW_Y - 48;
   state.ball.vx = -40;
   state.ball.vy = 220;
+  var x0 = state.ball.x;
   sim.stepPhysics(state, 0.016);
   assert(
-    state.ball.x + state.ball.radius >= sim.FLIPPER_INLANE_X - 2,
-    'extended inlane post should keep ball out of left outlane shelf'
+    state.ball.x < sim.FLIPPER_INLANE_X,
+    'left dash corridor must not ghost-kick out of the outlane (x=' + state.ball.x.toFixed(1) + ')'
   );
-  console.log('PASS: left outlane shelf blocks upper intrusion');
+  assert(state.ball.x <= x0 + 4, 'left outlane must not teleport inward');
+  console.log('PASS: left outlane dash corridor stays open');
 })();
 
 (function testStrongLaunchReachesTopBumperZone() {
@@ -1367,11 +1369,18 @@ console.log('=============================');
   console.log('PASS: saucer second lock starts two-ball MB (live=' + live + ')');
 })();
 
+(function testCircledGlowingPostsRemoved() {
+  var state = fresh();
+  assert(!state.posts || state.posts.length === 0, 'circled glowing posts removed');
+  assert(state.saucer && state.saucer.x === 95 && state.saucer.y === 520, 'saucer/HOLE stays');
+  console.log('PASS: circled posts gone, saucer kept');
+})();
+
 (function testGateSpinnerAwardsOnPass() {
   var state = fresh();
   var g = state.gateSpinner;
   assert(g, 'vertical gate spinner exists');
-  assert(g.x < 90 && g.y > 130 && g.y < 220, 'gate sits in the left U dump channel');
+  assert(g.x >= 336 && g.x <= 366 && g.y >= 300 && g.y <= 340, 'gate sits at the right copper ramp mouth');
   assert(state.spinner.x >= 185 && state.spinner.y >= 195, 'flat spinner stays in the open field');
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
