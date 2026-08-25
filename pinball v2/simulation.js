@@ -295,12 +295,13 @@
           { x1: 342, y1: 286, x2: 328, y2: 342 }
         ],
         mergeOuter: [
-          { x1: 444, y1: 92, x2: 428, y2: 70 },
-          { x1: 428, y1: 70, x2: 408, y2: 54 },
-          { x1: 408, y1: 54, x2: 392, y2: 46 }
+          { x1: 444, y1: 94, x2: 430, y2: 78 },
+          { x1: 430, y1: 78, x2: 412, y2: 68 },
+          { x1: 412, y1: 68, x2: 392, y2: 64 }
         ],
         mergeInner: [
-          { x1: 392, y1: 103, x2: 392, y2: 86 }
+          { x1: 392, y1: 103, x2: 388, y2: 94 },
+          { x1: 388, y1: 94, x2: 386, y2: 86 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 345,
@@ -910,20 +911,23 @@
     state.exitedLaunchLane = true;
     state.skillShotWindow = true;
     state.launchTick = 0;
-    // Dump into the right horseshoe channel (not under the inner U at 214,80).
-    var targetX = 280;
-    var targetY = 52;
+    // Ride the right horseshoe / copper outer. Never dump into the open U at 280,52.
+    var targetX = 330;
+    var targetY = 40;
     state.activeHabitrail = 'ramp-r';
     var tx = targetX - ball.x;
     var ty = targetY - ball.y;
     var dist = vecLen(tx, ty);
-    var exitSpeed = Math.max(speed, 420);
+    var curSp = vecLen(ball.vx, ball.vy);
+    var exitSpeed = Math.max(curSp, speed, 380);
     if (dist > 1e-6) {
-      ball.vx = (tx / dist) * exitSpeed;
-      ball.vy = (ty / dist) * exitSpeed;
+      var ax = tx / dist;
+      var ay = ty / dist;
+      ball.vx = ball.vx * 0.42 + ax * exitSpeed * 0.58;
+      ball.vy = ball.vy * 0.42 + ay * exitSpeed * 0.58;
     } else {
-      ball.vx = -exitSpeed * 0.85;
-      ball.vy = -exitSpeed * 0.25;
+      ball.vx = -Math.max(Math.abs(ball.vx), exitSpeed * 0.7);
+      ball.vy = Math.min(ball.vy, -exitSpeed * 0.35);
     }
   }
 
@@ -960,9 +964,10 @@
       return;
     }
 
-    var onWireform = state.launchRailT != null || ball.y < WIRE_FORM_Y1;
+    if (ball.y <= LAUNCH_WIRE_Y1 && state.launchRailT == null) state.launchRailT = 0;
+    var atMerge = ball.y <= LAUNCH_WIRE_Y1 || state.launchRailT != null;
 
-    if (!onWireform) {
+    if (!atMerge) {
       if (ball.x + r < LAUNCH_LANE_LEFT - 6) return;
       if (ball.x - r < LAUNCH_LANE_LEFT) {
         ball.x = LAUNCH_LANE_LEFT + r;
@@ -985,26 +990,27 @@
 
     if (!canRideRail) return;
 
-    var tan = wireformTangent();
-    var offset = r + 4;
-    if (state.launchRailT == null) state.launchRailT = wireformProgress(ball);
-    state.launchRailT = clamp(
-      state.launchRailT + (4.2 + boost * 1.6) * dt,
-      0,
-      1
-    );
-    var t = state.launchRailT;
-    var railX = WIRE_FORM_X1 + WIRE_FORM_DX * t + tan.px * offset;
-    var railY = WIRE_FORM_Y1 + WIRE_FORM_DY * t + tan.py * offset;
-    ball.x = railX;
-    ball.y = railY;
-
-    var speed = Math.max(340, 520 * boost);
-    ball.vx = tan.ux * speed;
-    ball.vy = tan.uy * speed;
-
-    if (t >= 0.995) {
-      releaseFromWireform(state, speed);
+    // Roll onto the merge. No ball.x/y rewrite onto the short wire.
+    if (ball.x + r > LAUNCH_LANE_RIGHT) {
+      ball.x = LAUNCH_LANE_RIGHT - r;
+      if (ball.vx > 0) ball.vx *= -0.08;
+    }
+    var cur = vecLen(ball.vx, ball.vy);
+    var assist = Math.max(cur, 360 + boost * 220);
+    var mx = 372 - ball.x;
+    var my = 80 - ball.y;
+    var md = vecLen(mx, my);
+    if (md > 1e-6) {
+      var blend = Math.min(0.55, 9.5 * dt);
+      ball.vx += ((mx / md) * assist - ball.vx) * blend;
+      ball.vy += ((my / md) * assist - ball.vy) * blend;
+    }
+    if (ball.x > 386 && ball.y < 80) {
+      if (ball.vy < 0) ball.vy *= 0.25;
+      ball.vy += 240 * dt;
+    }
+    if (ball.x < 386 && ball.y >= 66 && ball.y <= 102) {
+      releaseFromWireform(state, assist);
     }
   }
 
@@ -1647,6 +1653,14 @@
           inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp))) {
         return;
       }
+      // Launch merge is a raised channel over the right-orbit outer corner.
+      if (!state.exitedLaunchLane && state.launchRailT != null && wall.kind === 'habitrail' && ball.y < 115) {
+        var minX = Math.min(wall.x1, wall.x2);
+        var maxX = Math.max(wall.x1, wall.x2);
+        var minY = Math.min(wall.y1, wall.y2);
+        // Tall right-orbit outer + copper diagonal at the mouth.
+        if (minX > 328 && maxX < 396 && minY < 90 && minX > 200) return;
+      }
       // Soft short deck stubs â€” less bounce so they don't steal lower play
       var rest = WALL_RESTITUTION;
       if (wall.kind === 'deck') rest = WALL_RESTITUTION * 0.55;
@@ -1865,7 +1879,7 @@
     var ridingHorse = !!(state.activeHabitrail ||
       inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp) ||
       inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp));
-    if (!ridingHorse && wlenSq > 1e-6 && ball.y < LAUNCH_WIRE_Y1 + 40 && ball.x > WIRE_FORM_X2 - 30) {
+    if (!ridingHorse && wlenSq > 1e-6 && ball.y < LAUNCH_WIRE_Y1 + 40 && ball.x > WIRE_FORM_X2 - 12 && ball.x < LAUNCH_LANE_LEFT - 10) {
       var wt = clamp(((ball.x - wx1) * wdx + (ball.y - wy1) * wdy) / wlenSq, 0, 1);
       var wcx = wx1 + wt * wdx;
       var wcy = wy1 + wt * wdy;
