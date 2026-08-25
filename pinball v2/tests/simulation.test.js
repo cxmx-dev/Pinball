@@ -1613,16 +1613,44 @@ console.log('All tests passed.');
   var right = state.sideRoutes.rightFiller;
   assert(left && left.id === 'fill-l', 'left orange filler present');
   assert(right && right.id === 'fill-r', 'right cyan filler present');
-  assert(left.segments[0].x1 === 36 && left.segments[0].y1 === 180, 'left filler hugs rail at 36,180');
-  assert(left.guides.some(function (s) { return s.x2 === 84 && s.y2 === 250; }), 'left bulge peaks at 84,250');
-  assert(right.segments[0].x1 === 392 && right.segments[0].y1 === 182, 'right filler hugs plunger wall 392');
-  assert(right.guides.some(function (s) { return s.x2 === 344 && s.y2 === 250; }), 'right bulge peaks at 344,250');
+  assert(left.theme === 'copper', 'lower-left is copper (opposite of top cyan)');
+  assert(right.theme === 'cyan', 'lower-right is cyan (opposite of top copper)');
+  assert(left.segments[0].x1 === 36 && left.segments[0].y1 === 640, 'left filler hugs rail at 36,640');
+  assert(left.guides.some(function (s) { return s.x2 === 74 && s.y2 === 700; }), 'left bulge peaks at 74,700');
+  assert(right.segments[0].x1 === 392 && right.segments[0].y1 === 642, 'right filler hugs plunger wall 392,642');
+  assert(right.guides.some(function (s) { return s.x2 === 354 && s.y2 === 702; }), 'right bulge peaks at 354,702');
   var fillerWalls = state.walls.filter(function (w) { return w.kind === 'filler'; });
   assert(fillerWalls.length >= 16, 'filler physics walls exist (' + fillerWalls.length + ')');
-  assert(fillerWalls.some(function (w) { return w.x1 === 36 && w.y1 === 180; }), 'left filler wall 36,180');
-  assert(fillerWalls.some(function (w) { return w.x1 === 392 && w.y1 === 182; }), 'right filler wall 392,182');
-  assert(fillerWalls.some(function (w) { return w.x1 === 84 && w.y1 === 250; }), 'left inner wall at bulge');
-  assert(fillerWalls.some(function (w) { return w.x1 === 344 && w.y1 === 250; }), 'right inner wall at bulge');
+  assert(fillerWalls.some(function (w) { return w.x1 === 36 && w.y1 === 640; }), 'left filler wall 36,640');
+  assert(fillerWalls.some(function (w) { return w.x1 === 392 && w.y1 === 642; }), 'right filler wall 392,642');
+  assert(fillerWalls.some(function (w) { return w.x1 === 74 && w.y1 === 700; }), 'left inner wall at bulge');
+  assert(fillerWalls.some(function (w) { return w.x1 === 354 && w.y1 === 702; }), 'right inner wall at bulge');
+  var midU = fillerWalls.some(function (w) {
+    var y = Math.min(w.y1, w.y2);
+    return y >= 170 && y <= 330;
+  });
+  assert(!midU, 'no mid-height filler sausages on the U rails');
+  function ptsY(fill) {
+    var ys = [];
+    fill.segments.concat(fill.guides).forEach(function (s) {
+      ys.push(s.y1, s.y2);
+    });
+    return ys;
+  }
+  var lys = ptsY(left);
+  var rys = ptsY(right);
+  assert(Math.min.apply(null, lys) >= 620 && Math.max.apply(null, lys) <= 750, 'left filler sits just above flippers');
+  assert(Math.min.apply(null, rys) >= 620 && Math.max.apply(null, rys) <= 750, 'right filler sits just above flippers');
+  assert(Math.max.apply(null, left.guides.map(function (s) { return Math.max(s.x1, s.x2); })) <= 80, 'left filler does not pinch inlane/saucer');
+  assert(Math.min.apply(null, right.guides.map(function (s) { return Math.min(s.x1, s.x2); })) >= 348, 'right filler does not pinch inlane');
+  assert(Math.max.apply(null, right.segments.map(function (s) { return Math.max(s.x1, s.x2); })) <= 392, 'right filler stays at launch wall 392');
+  var segs = state.sideRoutes.rightRamp.segments;
+  var jagged = segs.some(function (s) { return s.x1 === 330 && s.y1 === 36 && s.x2 === 390 && s.y2 === 76; });
+  assert(!jagged, 'old one-chord copper corner must be gone');
+  var i;
+  for (i = 0; i < segs.length - 1; i++) {
+    assert(segs[i].x2 === segs[i + 1].x1 && segs[i].y2 === segs[i + 1].y1, 'copper outer is one continuous polyline at ' + i);
+  }
   assert(state.targets.length === 0, 'grey standup rectangles removed');
   assert(state.flippers[0].length === 66, 'FLIPPER_LEN stays 66');
   assert(sim.HABITRAIL_ASSIST === 0, 'HABITRAIL_ASSIST stays 0');
@@ -1634,5 +1662,5 @@ console.log('All tests passed.');
   var rightMouthY = state.sideRoutes.rightRamp.entry.y;
   assert(leftMouthY >= 330 && leftMouthY <= 345, 'left mouth ~336');
   assert(rightMouthY >= 330 && rightMouthY <= 345, 'right mouth ~336');
-  console.log('PASS: side hull fillers (orange left / cyan right) + standup clutter gone');
+  console.log('PASS: lower hull fillers (copper left / cyan right) just above flippers');
 })();
