@@ -290,7 +290,7 @@
     var i;
     for (i = 0; i < dashes.length; i++) {
       var d = dashes[i];
-      if (d.y < 360) continue;
+      if (d.y < 660) continue;
       var intensity = d.intensity != null ? d.intensity : (d.lit ? 1 : 0);
       if (intensity < 0) intensity = 0;
       if (intensity > 1) intensity = 1;
@@ -497,13 +497,14 @@
       state.walls.forEach(function (wall) {
         var kind = wall.kind || 'rail';
         if (kind === 'lane' || kind === 'chute' || kind === 'filler') return;
+        if (kind === 'rail' && !wall.arc && Math.min(wall.x1, wall.x2) >= 390) return;
         if (kind === 'rail' && wall.arc) {
           var gmx = (wall.x1 + wall.x2) * 0.5;
           var gmy = (wall.y1 + wall.y2) * 0.5;
           if (gmy < 100 && gmx > 70 && gmx < 420) return;
         }
         if (wall.arc || kind === 'rail' || kind === 'habitrail') {
-          var glowCyan = kind !== 'habitrail' || (!wall.merge && wall.x1 < 220 && wall.x2 < 220);
+          var glowCyan = !!(wall.cyan || kind !== 'habitrail' || (!wall.merge && wall.x1 < 220 && wall.x2 < 220));
           if (kind === 'habitrail' && !glowCyan) return;
           ctx.strokeStyle = (kind === 'habitrail' && !glowCyan) ? 'rgba(255, 170, 60, 0.20)' : 'rgba(100, 200, 255, 0.22)';
           ctx.lineWidth = 10;
@@ -536,8 +537,7 @@
         if (my < 100 && mx > 70 && mx < 420) return;
       }
       if (kind === 'habitrail' || kind === 'guide') {
-        var leftRail = !wall.merge && wall.x1 < 220 && wall.x2 < 220;
-        var cyan = leftRail;
+        var cyan = !!(wall.cyan || (!wall.merge && wall.x1 < 220 && wall.x2 < 220));
         if (!cyan) return;
         if (kind === 'habitrail') {
           strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, cyan ? {
@@ -576,6 +576,10 @@
         ctx.strokeStyle = 'rgba(160,180,210,0.28)';
         ctx.lineWidth = 2;
         ctx.shadowBlur = 0;
+      } else if (!wall.arc && Math.min(wall.x1, wall.x2) >= 390) {
+        ctx.strokeStyle = 'rgba(200, 110, 40, 0.9)';
+        ctx.lineWidth = 5;
+        applyShadow(ctx, 'rgba(255,140,40,0.35)', 8);
       } else {
         ctx.strokeStyle = wall.arc ? 'rgba(160, 230, 255, 0.95)' : 'rgba(180,200,230,0.85)';
         ctx.lineWidth = wall.arc ? 6 : 5;
@@ -700,6 +704,11 @@
     if (outer.length < 2 || inner.length < 2) return;
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
     var filler = ramp.id === 'fill-l' || ramp.id === 'fill-r';
+    // Keep physics flush on the rail; inset the draw hull so copper/cyan rims do not paint the neighbor channel.
+    if (filler) {
+      var insetX = ramp.id === 'fill-l' ? 3 : -3;
+      outer = outer.map(function (pt) { return { x: pt.x + insetX, y: pt.y }; });
+    }
 
     var hull = outer.concat(inner);
     ctx.save();

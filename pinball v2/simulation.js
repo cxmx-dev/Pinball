@@ -75,9 +75,9 @@
   var HIT_COOLDOWN_SPINNER = 0.35;
   var HIT_COOLDOWN_SLING = 0.18;
   var SLING_KICK_GAIN = 1.05;
-  var SLING_KICK_MIN = 90;
-  var SLING_KICK_MAX = 300;
-  var SLING_UP_BIAS = 0.38;
+  var SLING_KICK_MIN = 120;
+  var SLING_KICK_MAX = 260;
+  var SLING_UP_BIAS = 0.55;
   var HIT_COOLDOWN_BUMPER = 0.24;
   var MIN_BUMPER_EXIT_SPEED = 185;
   var SAVER_BUMPER_EXIT_SPEED = 150;
@@ -185,13 +185,13 @@
     ];
   }
 
-  /** Rubber bands on sausage mid-face only — not classic flipper-row triangles. */
+  /** Rubber on sausage climb/upward face only — last-resort save, never downhill or triangle. */
   function createSlingshots() {
     return [
+      { side: 'left', x1: 62, y1: 598, x2: 72, y2: 623, score: 150, cooldown: 0 },
       { side: 'left', x1: 72, y1: 623, x2: 75, y2: 651, score: 150, cooldown: 0 },
-      { side: 'left', x1: 75, y1: 651, x2: 69, y2: 675, score: 150, cooldown: 0 },
-      { side: 'right', x1: 352, y1: 652, x2: 342, y2: 689, score: 150, cooldown: 0 },
-      { side: 'right', x1: 342, y1: 689, x2: 356, y2: 726, score: 150, cooldown: 0 }
+      { side: 'right', x1: 371, y1: 623, x2: 352, y2: 652, score: 150, cooldown: 0 },
+      { side: 'right', x1: 352, y1: 652, x2: 342, y2: 689, score: 150, cooldown: 0 }
     ];
   }
 
@@ -248,8 +248,12 @@
           { x1: 36, y1: 200, x2: 42, y2: 146 },
           { x1: 42, y1: 146, x2: 62, y2: 107 },
           { x1: 62, y1: 107, x2: 88, y2: 76 },
-          { x1: 88, y1: 76, x2: 150, y2: 36 },
-          { x1: 150, y1: 36, x2: 240, y2: 32 }
+          { x1: 88, y1: 76, x2: 150, y2: 32 },
+          { x1: 150, y1: 32, x2: 190, y2: 28 },
+          { x1: 190, y1: 28, x2: 240, y2: 26 },
+          { x1: 240, y1: 26, x2: 280, y2: 28 },
+          { x1: 280, y1: 28, x2: 310, y2: 31 },
+          { x1: 310, y1: 31, x2: 328, y2: 34 }
         ],
         guides: [
           { x1: 100, y1: 342, x2: 76, y2: 276 },
@@ -261,7 +265,10 @@
           { x1: 122, y1: 88, x2: 146, y2: 77 },
           { x1: 146, y1: 77, x2: 168, y2: 76 },
           { x1: 168, y1: 76, x2: 200, y2: 72 },
-          { x1: 200, y1: 72, x2: 240, y2: 70 }
+          { x1: 200, y1: 72, x2: 240, y2: 72 },
+          { x1: 240, y1: 72, x2: 280, y2: 72 },
+          { x1: 280, y1: 72, x2: 306, y2: 74 },
+          { x1: 306, y1: 74, x2: 322, y2: 74 }
         ]
       },
       rightRamp: {
@@ -272,8 +279,7 @@
         exit: { x: 350, y: 335 },
         boost: 0,
         segments: [
-          { x1: 150, y1: 36, x2: 240, y2: 32 },
-          { x1: 240, y1: 32, x2: 330, y2: 36 },
+          { x1: 328, y1: 34, x2: 330, y2: 36 },
           { x1: 330, y1: 36, x2: 342, y2: 37 },
           { x1: 342, y1: 37, x2: 354, y2: 41 },
           { x1: 354, y1: 41, x2: 365, y2: 47 },
@@ -287,11 +293,7 @@
           { x1: 388, y1: 286, x2: 364, y2: 345 }
         ],
         guides: [
-          { x1: 168, y1: 76, x2: 200, y2: 72 },
-          { x1: 200, y1: 72, x2: 240, y2: 70 },
-          { x1: 240, y1: 70, x2: 280, y2: 72 },
-          { x1: 280, y1: 72, x2: 318, y2: 76 },
-          { x1: 318, y1: 76, x2: 336, y2: 83 },
+          { x1: 322, y1: 74, x2: 336, y2: 83 },
           { x1: 336, y1: 83, x2: 350, y2: 93 },
           { x1: 350, y1: 93, x2: 356, y2: 110 },
           { x1: 356, y1: 110, x2: 364, y2: 159 },
@@ -363,17 +365,19 @@
   function createHabitrailWalls() {
     var routes = createSideRoutes();
     var walls = [];
-    function pushPath(segs, kind) {
+    function pushPath(segs, kind, flags) {
       if (!segs) return;
       var i;
       for (i = 0; i < segs.length; i++) {
-        walls.push({
+        var w = {
           x1: segs[i].x1,
           y1: segs[i].y1,
           x2: segs[i].x2,
           y2: segs[i].y2,
           kind: kind
-        });
+        };
+        if (flags && flags.cyan) w.cyan = true;
+        walls.push(w);
       }
     }
     function subdivideSeg(seg, maxLen) {
@@ -395,18 +399,18 @@
       }
       return out;
     }
-    function pushInner(segs) {
+    function pushInner(segs, flags) {
       if (!segs) return;
       var i;
       for (i = 0; i < segs.length; i++) {
         var seg = segs[i];
         var top = seg.y1 < 200 && seg.y2 < 200;
         var pieces = top ? subdivideSeg(seg, 20) : [seg];
-        pushPath(pieces, top ? 'habitrail' : 'guide');
+        pushPath(pieces, top ? 'habitrail' : 'guide', flags);
       }
     }
-    pushPath(routes.leftRamp.segments, 'habitrail');
-    pushInner(routes.leftRamp.guides);
+    pushPath(routes.leftRamp.segments, 'habitrail', { cyan: true });
+    pushInner(routes.leftRamp.guides, { cyan: true });
     pushPath(routes.rightRamp.segments, 'habitrail');
     pushInner(routes.rightRamp.guides);
     function pushMerge(segs, kind) {
@@ -458,9 +462,9 @@
    */
   function createLaunchLaneDashes() {
     var dashes = [];
-    var count = 9;
+    var count = 4;
     var yBot = PLUNGER_REST_Y - 40;
-    var yTop = 500; // lower shooter only; no oval in the upper merge/copper lane
+    var yTop = 690; // plunger berth only; no mid-rail oval lights on either side
     var i;
     for (i = 0; i < count; i++) {
       var t = count === 1 ? 0 : i / (count - 1);
