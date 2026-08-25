@@ -1621,22 +1621,22 @@ console.log('All tests passed.');
   assert(right && right.id === 'fill-r', 'right cyan filler present');
   assert(left.theme === 'copper', 'lower-left is copper (opposite of top cyan)');
   assert(right.theme === 'cyan', 'lower-right is cyan (opposite of top copper)');
-  assert(left.segments[0].x1 === 36 && left.segments[0].y1 === 586, 'left filler flush on x=36');
-  assert(left.guides.some(function (s) { return s.x2 === 75 && s.y2 === 651; }), 'left bulge after CW rotate');
-  assert(right.segments[0].x1 === 392 && right.segments[0].y1 === 548, 'right filler grown up the plunger wall');
-  assert(right.guides.some(function (s) { return s.x2 === 342 && s.y2 === 689; }), 'right bulge larger than 354,702');
+  assert(left.segments[0].x1 === 36 && left.segments[0].y1 === 568, 'left filler flush on x=36');
+  assert(left.guides.some(function (s) { return s.x2 === 80 && s.y2 === 652; }), 'left sausage peaks at 80,652');
+  assert(right.segments[0].x1 === 392 && right.segments[0].y1 === 538, 'right filler grown up the plunger wall');
+  assert(right.guides.some(function (s) { return s.x2 === 334 && s.y2 === 662; }), 'right sausage peaks at 334,662');
   var fillerWalls = state.walls.filter(function (w) { return w.kind === 'filler'; });
   assert(fillerWalls.length >= 16, 'filler physics walls exist (' + fillerWalls.length + ')');
-  assert(fillerWalls.some(function (w) { return w.x1 === 36 && w.y1 === 586; }), 'left filler wall flush on rail');
-  assert(fillerWalls.some(function (w) { return w.x1 === 392 && w.y1 === 548; }), 'right filler wall grown upward');
-  assert(!fillerWalls.some(function (w) { return w.x1 === 62 && w.y1 === 598 && w.x2 === 72 && w.y2 === 623; }), 'left climb rubber is sling not filler');
-  assert(!fillerWalls.some(function (w) { return w.x1 === 72 && w.y1 === 623 && w.x2 === 75 && w.y2 === 651; }), 'left peak rubber is sling not filler');
-  assert(fillerWalls.some(function (w) { return w.x1 === 75 && w.y1 === 651 && w.x2 === 69 && w.y2 === 675; }), 'left downhill after peak stays filler');
-  assert(!fillerWalls.some(function (w) { return w.x1 === 371 && w.y1 === 623 && w.x2 === 352 && w.y2 === 652; }), 'right climb rubber is sling not filler');
-  assert(!fillerWalls.some(function (w) { return w.x1 === 352 && w.y1 === 652 && w.x2 === 342 && w.y2 === 689; }), 'right peak rubber is sling not filler');
-  assert(fillerWalls.some(function (w) { return w.x1 === 342 && w.y1 === 689 && w.x2 === 356 && w.y2 === 726; }), 'right downhill after peak stays filler');
-  assert(fillerWalls.some(function (w) { return w.x1 === 69 && w.y1 === 675 && w.x2 === 56 && w.y2 === 687; }), 'left bottom inner stays filler');
-  assert(fillerWalls.some(function (w) { return w.x1 === 356 && w.y1 === 726 && w.x2 === 366 && w.y2 === 738; }), 'right bottom inner stays filler');
+  assert(fillerWalls.some(function (w) { return w.x1 === 36 && w.y1 === 568; }), 'left filler wall flush on rail');
+  assert(fillerWalls.some(function (w) { return w.x1 === 392 && w.y1 === 538; }), 'right filler wall grown upward');
+  assert(!fillerWalls.some(function (w) { return w.x1 === 64 && w.y1 === 598 && w.x2 === 76 && w.y2 === 628; }), 'left climb rubber is sling not filler');
+  assert(!fillerWalls.some(function (w) { return w.x1 === 76 && w.y1 === 628 && w.x2 === 80 && w.y2 === 652; }), 'left peak rubber is sling not filler');
+  assert(fillerWalls.some(function (w) { return w.x1 === 80 && w.y1 === 652 && w.x2 === 74 && w.y2 === 676; }), 'left downhill after peak stays filler');
+  assert(!fillerWalls.some(function (w) { return w.x1 === 348 && w.y1 === 580 && w.x2 === 338 && w.y2 === 622; }), 'right climb rubber is sling not filler');
+  assert(!fillerWalls.some(function (w) { return w.x1 === 338 && w.y1 === 622 && w.x2 === 334 && w.y2 === 662; }), 'right peak rubber is sling not filler');
+  assert(fillerWalls.some(function (w) { return w.x1 === 334 && w.y1 === 662 && w.x2 === 340 && w.y2 === 698; }), 'right downhill after peak stays filler');
+  assert(fillerWalls.some(function (w) { return w.x1 === 58 && w.y1 === 694 && w.x2 === 42 && w.y2 === 706; }), 'left bottom inner stays filler');
+  assert(fillerWalls.some(function (w) { return w.x1 === 354 && w.y1 === 722 && w.x2 === 372 && w.y2 === 736; }), 'right bottom inner stays filler');
   var midU = fillerWalls.some(function (w) {
     var y = Math.min(w.y1, w.y2);
     return y >= 170 && y <= 330;
@@ -1651,9 +1651,9 @@ console.log('All tests passed.');
   }
   var lys = ptsY(left);
   var rys = ptsY(right);
-  assert(Math.min.apply(null, lys) >= 560 && Math.min.apply(null, lys) <= 610, 'left filler y-min moved up table');
+  assert(Math.min.apply(null, lys) >= 560 && Math.min.apply(null, lys) <= 580, 'left filler y-min meets cyan rail');
   assert(Math.max.apply(null, lys) <= 720, 'left filler stays above flipper');
-  assert(Math.min.apply(null, rys) >= 520 && Math.min.apply(null, rys) <= 560, 'right filler grown upward');
+  assert(Math.min.apply(null, rys) >= 520 && Math.min.apply(null, rys) <= 540, 'right filler grown upward');
   assert(Math.max.apply(null, rys) <= 750, 'right filler stays above flipper');
   assert(Math.max.apply(null, left.guides.map(function (s) { return Math.max(s.x1, s.x2); })) <= 82, 'left filler does not pinch inlane/saucer');
   assert(Math.min.apply(null, right.guides.map(function (s) { return Math.min(s.x1, s.x2); })) >= 330, 'right filler fatter but not inlane');
@@ -1691,13 +1691,13 @@ console.log('All tests passed.');
       return s.side === side && s.x1 === x1 && s.y1 === y1 && s.x2 === x2 && s.y2 === y2 && s.score === 150;
     });
   }
-  assert(hasSeg('left', 62, 598, 72, 623), 'left climb rubber 62,598-72,623');
-  assert(hasSeg('left', 72, 623, 75, 651), 'left climb rubber 72,623-75,651');
-  assert(hasSeg('right', 371, 623, 352, 652), 'right climb rubber 371,623-352,652');
-  assert(hasSeg('right', 352, 652, 342, 689), 'right climb rubber 352,652-342,689');
-  assert(hasSeg('right', 376, 542, 360, 556), 'right top rubber 376,542-360,556');
-  assert(!hasSeg('left', 75, 651, 69, 675), 'no left downhill rubber after peak');
-  assert(!hasSeg('right', 342, 689, 356, 726), 'no right downhill rubber after peak');
+  assert(hasSeg('left', 64, 598, 76, 628), 'left climb rubber 64,598-76,628');
+  assert(hasSeg('left', 76, 628, 80, 652), 'left climb rubber 76,628-80,652');
+  assert(hasSeg('right', 348, 580, 338, 622), 'right climb rubber 348,580-338,622');
+  assert(hasSeg('right', 338, 622, 334, 662), 'right climb rubber 338,622-334,662');
+  assert(hasSeg('right', 378, 534, 362, 548), 'right top rubber 378,534-362,548');
+  assert(!hasSeg('left', 80, 652, 74, 676), 'no left downhill rubber after peak');
+  assert(!hasSeg('right', 334, 662, 340, 698), 'no right downhill rubber after peak');
   var classic = slings.some(function (s) {
     return s.y1 === sim.FLIPPER_ROW_Y - 4 || s.y2 === sim.FLIPPER_ROW_Y - 42;
   });
@@ -1733,14 +1733,39 @@ console.log('All tests passed.');
   var topR = slings.filter(function (s) { return s.side === 'right' && s.face === 'top'; });
   assert.strictEqual(climbR.length, 2, 'right climb slings still two segs');
   assert.strictEqual(topR.length, 1, 'right top rubber is one short band');
-  assert(topR[0].x1 === 376 && topR[0].y1 === 542 && topR[0].x2 === 360 && topR[0].y2 === 556);
+  assert(topR[0].x1 === 378 && topR[0].y1 === 534 && topR[0].x2 === 362 && topR[0].y2 === 548);
   assert(!slings.some(function (s) { return s.side === 'left' && s.face === 'top'; }), 'no invented left top rubber');
   var right = state.sideRoutes.rightFiller;
-  assert(right.segments[0].y1 === 548, 'right filler starts higher');
-  assert(right.guides.some(function (s) { return s.x1 === 376 && s.y1 === 542 && s.x2 === 360 && s.y2 === 556; }), 'top double-curve is on the hull');
+  assert(right.segments[0].y1 === 538, 'right filler starts higher');
+  assert(right.guides.some(function (s) { return s.x1 === 378 && s.y1 === 534 && s.x2 === 362 && s.y2 === 548; }), 'top cap is on the hull');
   var fillerWalls = state.walls.filter(function (w) { return w.kind === 'filler'; });
-  assert(!fillerWalls.some(function (w) { return w.x1 === 376 && w.y1 === 542 && w.x2 === 360 && w.y2 === 556; }), 'top rubber is sling not filler');
-  assert(!fillerWalls.some(function (w) { return w.x1 === 371 && w.y1 === 623 && w.x2 === 352 && w.y2 === 652; }), 'right climb still sling not filler');
-  assert(fillerWalls.some(function (w) { return w.x1 === 342 && w.y1 === 689 && w.x2 === 356 && w.y2 === 726; }), 'right downhill after peak stays filler');
-  console.log('PASS: hall1 dashes/ovals/merge/right-top-rubber');
+  assert(!fillerWalls.some(function (w) { return w.x1 === 378 && w.y1 === 534 && w.x2 === 362 && w.y2 === 548; }), 'top rubber is sling not filler');
+  assert(!fillerWalls.some(function (w) { return w.x1 === 348 && w.y1 === 580 && w.x2 === 338 && w.y2 === 622; }), 'right climb still sling not filler');
+  assert(fillerWalls.some(function (w) { return w.x1 === 334 && w.y1 === 662 && w.x2 === 340 && w.y2 === 698; }), 'right downhill after peak stays filler');
+  dashes.forEach(function (d) {
+    assert(d.intensity >= 0.2, 'dash idle dim so they read as lights (i=' + d.intensity + ')');
+  });
+  assert(renSrc.indexOf('idlePulse') !== -1, 'renderer idle dim glow');
+  assert(renSrc.indexOf('insetX') === -1, 'no filler draw inset skeleton');
+  assert(renSrc.indexOf('Math.max(s.y1, s.y2) < 112') === -1, 'no split top hull double-drawing merge');
+  assert(state.walls.some(function (w) { return w.kind === 'rail' && w.cyan && w.x1 === 36; }), 'left wall is cyan to the sausage');
+  function monotonicToPeak(guides, inwardSign) {
+    var xs = [guides[0].x1];
+    guides.forEach(function (s) { xs.push(s.x2); });
+    var peak = 0;
+    var i;
+    for (i = 1; i < xs.length; i++) {
+      if (inwardSign > 0 ? xs[i] >= xs[peak] : xs[i] <= xs[peak]) peak = i;
+    }
+    for (i = 1; i <= peak; i++) {
+      if (inwardSign > 0 ? xs[i] < xs[i - 1] : xs[i] > xs[i - 1]) return false;
+    }
+    for (i = peak + 1; i < xs.length; i++) {
+      if (inwardSign > 0 ? xs[i] > xs[i - 1] : xs[i] < xs[i - 1]) return false;
+    }
+    return peak > 1 && peak < xs.length - 1;
+  }
+  assert(monotonicToPeak(state.sideRoutes.leftFiller.guides, 1), 'left sausage is a smooth wedge, not a triangle/sawtooth');
+  assert(monotonicToPeak(state.sideRoutes.rightFiller.guides, -1), 'right sausage is a smooth wedge, not a sawtooth skeleton');
+  console.log('PASS: sense1 dashes/ovals/merge/sausages');
 })();

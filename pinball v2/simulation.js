@@ -188,11 +188,11 @@
   /** Rubber on sausage climb/upward face only — last-resort save, never downhill or triangle. */
   function createSlingshots() {
     return [
-      { side: 'left', x1: 62, y1: 598, x2: 72, y2: 623, score: 150, cooldown: 0 },
-      { side: 'left', x1: 72, y1: 623, x2: 75, y2: 651, score: 150, cooldown: 0 },
-      { side: 'right', x1: 371, y1: 623, x2: 352, y2: 652, score: 150, cooldown: 0 },
-      { side: 'right', x1: 352, y1: 652, x2: 342, y2: 689, score: 150, cooldown: 0 },
-      { side: 'right', face: 'top', x1: 376, y1: 542, x2: 360, y2: 556, score: 150, cooldown: 0 }
+      { side: 'left', x1: 64, y1: 598, x2: 76, y2: 628, score: 150, cooldown: 0 },
+      { side: 'left', x1: 76, y1: 628, x2: 80, y2: 652, score: 150, cooldown: 0 },
+      { side: 'right', x1: 348, y1: 580, x2: 338, y2: 622, score: 150, cooldown: 0 },
+      { side: 'right', x1: 338, y1: 622, x2: 334, y2: 662, score: 150, cooldown: 0 },
+      { side: 'right', face: 'top', x1: 378, y1: 534, x2: 362, y2: 548, score: 150, cooldown: 0 }
     ];
   }
 
@@ -327,39 +327,42 @@
         id: 'fill-l',
         theme: 'copper',
         segments: [
-          { x1: 36, y1: 586, x2: 36, y2: 621 },
-          { x1: 36, y1: 621, x2: 36, y2: 653 },
-          { x1: 36, y1: 653, x2: 36, y2: 675 },
-          { x1: 36, y1: 675, x2: 36, y2: 691 }
+          { x1: 36, y1: 568, x2: 36, y2: 610 },
+          { x1: 36, y1: 610, x2: 36, y2: 650 },
+          { x1: 36, y1: 650, x2: 36, y2: 680 },
+          { x1: 36, y1: 680, x2: 36, y2: 708 }
         ],
         guides: [
-          { x1: 36, y1: 586, x2: 62, y2: 598 },
-          { x1: 62, y1: 598, x2: 72, y2: 623 },
-          { x1: 72, y1: 623, x2: 75, y2: 651 },
-          { x1: 75, y1: 651, x2: 69, y2: 675 },
-          { x1: 69, y1: 675, x2: 56, y2: 687 },
-          { x1: 56, y1: 687, x2: 36, y2: 691 }
+          { x1: 36, y1: 568, x2: 48, y2: 578 },
+          { x1: 48, y1: 578, x2: 64, y2: 598 },
+          { x1: 64, y1: 598, x2: 76, y2: 628 },
+          { x1: 76, y1: 628, x2: 80, y2: 652 },
+          { x1: 80, y1: 652, x2: 74, y2: 676 },
+          { x1: 74, y1: 676, x2: 58, y2: 694 },
+          { x1: 58, y1: 694, x2: 42, y2: 706 },
+          { x1: 42, y1: 706, x2: 36, y2: 708 }
         ]
       },
       rightFiller: {
         id: 'fill-r',
         theme: 'cyan',
         segments: [
-          { x1: 392, y1: 548, x2: 392, y2: 609 },
-          { x1: 392, y1: 609, x2: 392, y2: 657 },
-          { x1: 392, y1: 657, x2: 392, y2: 699 },
-          { x1: 392, y1: 699, x2: 392, y2: 732 },
-          { x1: 392, y1: 732, x2: 392, y2: 744 }
+          { x1: 392, y1: 538, x2: 392, y2: 590 },
+          { x1: 392, y1: 590, x2: 392, y2: 640 },
+          { x1: 392, y1: 640, x2: 392, y2: 690 },
+          { x1: 392, y1: 690, x2: 392, y2: 720 },
+          { x1: 392, y1: 720, x2: 392, y2: 744 }
         ],
         guides: [
-          { x1: 392, y1: 548, x2: 376, y2: 542 },
-          { x1: 376, y1: 542, x2: 360, y2: 556 },
-          { x1: 360, y1: 556, x2: 371, y2: 623 },
-          { x1: 371, y1: 623, x2: 352, y2: 652 },
-          { x1: 352, y1: 652, x2: 342, y2: 689 },
-          { x1: 342, y1: 689, x2: 356, y2: 726 },
-          { x1: 356, y1: 726, x2: 366, y2: 738 },
-          { x1: 366, y1: 738, x2: 392, y2: 744 }
+          { x1: 392, y1: 538, x2: 378, y2: 534 },
+          { x1: 378, y1: 534, x2: 362, y2: 548 },
+          { x1: 362, y1: 548, x2: 348, y2: 580 },
+          { x1: 348, y1: 580, x2: 338, y2: 622 },
+          { x1: 338, y1: 622, x2: 334, y2: 662 },
+          { x1: 334, y1: 662, x2: 340, y2: 698 },
+          { x1: 340, y1: 698, x2: 354, y2: 722 },
+          { x1: 354, y1: 722, x2: 372, y2: 736 },
+          { x1: 372, y1: 736, x2: 392, y2: 744 }
         ]
       }
     };
@@ -479,7 +482,7 @@
         w: 12,
         h: 22,
         lit: false,
-        intensity: 0,
+        intensity: 0.26,
         flash: 0,
         occupied: false
       });
@@ -677,8 +680,8 @@
     // Left side rail from arch end down
     var archLeftX = archCx - archRx;
     var archLeftY = archCy;
-    walls.push({ x1: archLeftX, y1: archLeftY, x2: 36, y2: 110, kind: 'rail' });
-    walls.push({ x1: 36, y1: 110, x2: 36, y2: TABLE_H - 80, kind: 'rail' });
+    walls.push({ x1: archLeftX, y1: archLeftY, x2: 36, y2: 110, kind: 'rail', cyan: true });
+    walls.push({ x1: 36, y1: 110, x2: 36, y2: TABLE_H - 80, kind: 'rail', cyan: true });
 
     // Outer right (cabinet edge past launch lane)
     walls.push({ x1: TABLE_W - 36, y1: LAUNCH_WIRE_Y1, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' });
@@ -745,6 +748,7 @@
       launchDashReversing: false,
       launchDashReverseI: -1,
       launchDashFadeT: 0,
+      launchDashIdleT: 0,
       kickers: createKickers(),
       posts: createPosts(),
       spinner: createSpinner(),
@@ -1721,6 +1725,18 @@
     for (i = 0; i < n; i++) {
       if (dashes[i].lit && dashes[i].intensity < 1 && !state.launchDashReversing) {
         dashes[i].intensity = 1;
+      }
+    }
+
+    // Idle running glow: hall lights stay dim bulbs, not empty holes.
+    if (state.launchDashIdleT == null) state.launchDashIdleT = 0;
+    state.launchDashIdleT += dt;
+    if (!state.launchDashReversing) {
+      for (i = 0; i < n; i++) {
+        if (dashes[i].lit && dashes[i].intensity >= 0.95) continue;
+        if (dashes[i].occupied) continue;
+        var wave = 0.5 + 0.5 * Math.sin(state.launchDashIdleT * 3.4 + i * 0.72);
+        dashes[i].intensity = 0.22 + 0.20 * wave;
       }
     }
 

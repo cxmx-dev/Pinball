@@ -300,13 +300,15 @@
       var x0 = d.x - w * 0.5;
       var y0 = d.y - h * 0.5;
       ctx.save();
-      // Dim base always
+      // Idle dim floor so hall lights never read as empty holes (game-over / pre-plunge).
+      var idlePulse = 0.20 + 0.10 * (0.5 + 0.5 * Math.sin(glowPulse * 2.6 + i * 0.7));
+      if (intensity < idlePulse) intensity = idlePulse;
       ctx.shadowBlur = 0;
       ctx.globalAlpha = 1;
-      ctx.fillStyle = 'rgba(70, 32, 10, 0.62)';
+      ctx.fillStyle = 'rgba(120, 52, 14, 0.82)';
       drawRoundedRect(ctx, x0, y0, w, h, 5);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,170,70,0.28)';
+      ctx.strokeStyle = 'rgba(255,190,80,0.45)';
       ctx.lineWidth = 1;
       drawRoundedRect(ctx, x0, y0, w, h, 5);
       ctx.stroke();
@@ -498,6 +500,7 @@
         var kind = wall.kind || 'rail';
         if (kind === 'lane' || kind === 'chute' || kind === 'filler') return;
         if (kind === 'rail' && !wall.arc && Math.min(wall.x1, wall.x2) >= 390) return;
+        if (kind === 'rail' && wall.cyan && Math.min(wall.y1, wall.y2) >= 568) return;
         if (kind === 'rail' && wall.arc) {
           var gmx = (wall.x1 + wall.x2) * 0.5;
           var gmy = (wall.y1 + wall.y2) * 0.5;
@@ -535,6 +538,20 @@
         var mx = (wall.x1 + wall.x2) * 0.5;
         var my = (wall.y1 + wall.y2) * 0.5;
         if (my < 100 && mx > 70 && mx < 420) return;
+      }
+      if (kind === 'rail' && wall.cyan && !wall.arc) {
+        var rx1 = wall.x1, ry1 = wall.y1, rx2 = wall.x2, ry2 = wall.y2;
+        var sausageTop = 568;
+        if (ry1 >= sausageTop && ry2 >= sausageTop) return;
+        if (ry1 < sausageTop && ry2 > sausageTop) ry2 = sausageTop;
+        if (ry2 < sausageTop && ry1 > sausageTop) ry1 = sausageTop;
+        strokeTubeSegment(ctx, rx1, ry1, rx2, ry2, {
+          core: 'rgba(80, 230, 255, 0.95)',
+          glow: 'rgba(40, 180, 255, 0.45)',
+          hi: 'rgba(220, 250, 255, 0.7)',
+          width: 6
+        });
+        return;
       }
       if (kind === 'habitrail' || kind === 'guide') {
         var cyan = !!(wall.cyan || (!wall.merge && wall.x1 < 220 && wall.x2 < 220));
@@ -688,11 +705,7 @@
     if (outer.length < 2 || inner.length < 2) return;
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
     var filler = ramp.id === 'fill-l' || ramp.id === 'fill-r';
-    // Keep physics flush on the rail; inset the draw hull so copper/cyan rims do not paint the neighbor channel.
-    if (filler) {
-      var insetX = ramp.id === 'fill-l' ? 3 : -3;
-      outer = outer.map(function (pt) { return { x: pt.x + insetX, y: pt.y }; });
-    }
+    // Draw hull = physics outline. No inset (that made a skeleton off the rail).
 
     var hull = outer.concat(inner);
     ctx.save();
@@ -703,7 +716,7 @@
     // Phone/simple: no ellipse/scale — strokeExact only.
     var strokeHull = (cyan || simple || filler) ? strokeExact : strokeSmooth;
     strokeHull(ctx, hull, true);
-    ctx.fillStyle = cyan ? '#061820' : '#2a1206';
+    ctx.fillStyle = cyan ? (filler ? '#0a3040' : '#061820') : (filler ? '#4a1c08' : '#2a1206');
     ctx.fill();
     strokeHull(ctx, hull, true);
     var minX = hull[0].x, maxX = hull[0].x, minY = hull[0].y, maxY = hull[0].y;
@@ -718,13 +731,13 @@
       ? ctx.createLinearGradient(minX, minY, maxX, maxY)
       : ctx.createLinearGradient(minX, minY, maxX, maxY);
     if (cyan) {
-      g.addColorStop(0, 'rgba(120, 230, 255, 1)');
-      g.addColorStop(0.4, 'rgba(24, 140, 190, 1)');
-      g.addColorStop(1, 'rgba(8, 40, 70, 1)');
+      g.addColorStop(0, filler ? 'rgba(90, 224, 255, 1)' : 'rgba(120, 230, 255, 1)');
+      g.addColorStop(0.4, filler ? 'rgba(18, 150, 200, 1)' : 'rgba(24, 140, 190, 1)');
+      g.addColorStop(1, filler ? 'rgba(6, 70, 100, 1)' : 'rgba(8, 40, 70, 1)');
     } else {
-      g.addColorStop(0, 'rgba(255, 184, 72, 1)');
-      g.addColorStop(0.4, 'rgba(214, 96, 24, 1)');
-      g.addColorStop(1, 'rgba(110, 40, 10, 1)');
+      g.addColorStop(0, filler ? 'rgba(255, 176, 64, 1)' : 'rgba(255, 184, 72, 1)');
+      g.addColorStop(0.4, filler ? 'rgba(214, 88, 20, 1)' : 'rgba(214, 96, 24, 1)');
+      g.addColorStop(1, filler ? 'rgba(120, 44, 8, 1)' : 'rgba(110, 40, 10, 1)');
     }
     ctx.fillStyle = g;
     ctx.fill();
@@ -821,21 +834,10 @@
 
     var ramp = state.sideRoutes.rightRamp;
     if (ramp) {
-      // Split the copper hull so the vertical shooter wall is not a filled orange blob.
-      var top = {
-        id: 'ramp-r',
-        segments: ramp.segments.filter(function (s) { return Math.max(s.y1, s.y2) < 112; }),
-        guides: ramp.guides.filter(function (s) { return Math.max(s.y1, s.y2) < 112; })
-      };
-      var bot = {
-        id: 'ramp-r',
-        segments: ramp.segments.filter(function (s) { return Math.min(s.y1, s.y2) > 200; }),
-        guides: ramp.guides.filter(function (s) { return Math.min(s.y1, s.y2) > 200; })
-      };
-      if (top.segments.length >= 1 && top.guides.length >= 1) drawPioneerRamp(ctx, top, pulse);
-      if (bot.segments.length >= 1 && bot.guides.length >= 1) drawPioneerRamp(ctx, bot, pulse);
+      // One copper hull from the cyan handoff down the right slide. Merge is rims only
+      // (no second filled tube over the brown alley).
+      drawPioneerRamp(ctx, ramp, pulse);
       if (ramp.mergeOuter && ramp.mergeInner) {
-        // Join rails only — no filled sausage/oval over the brown lane or through the U.
         drawMergeJoinRims(ctx, ramp.mergeOuter, ramp.mergeInner);
       }
     }
