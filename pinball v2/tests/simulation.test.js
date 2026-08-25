@@ -43,6 +43,101 @@ console.log('Pinball simulation unit tests');
   console.log('PASS: double-tap ignored while glowing (charge=' + left.chargeLeft.toFixed(2) + ')');
 })();
 
+
+(function testMergeOnRampDoesNotCrossShooterWell() {
+  var state = fresh();
+  var right = state.sideRoutes.rightRamp;
+  var segs = (right.mergeOuter || []).concat(right.mergeInner || []);
+  var i;
+  for (i = 0; i < segs.length; i++) {
+    var s = segs[i];
+    var crosses =
+      (s.x1 < sim.LAUNCH_LANE_LEFT + 2 && s.x2 < sim.LAUNCH_LANE_LEFT + 2 && s.y1 > 112 && s.y2 > 112);
+    assert(!crosses, 'merge must not drop a wall down the shooter at x<392 y>112 (' + s.x1 + ',' + s.y1 + ')-(' + s.x2 + ',' + s.y2 + ')');
+    var inWell =
+      Math.min(s.x1, s.x2) < sim.LAUNCH_LANE_RIGHT &&
+      Math.max(s.x1, s.x2) > sim.LAUNCH_LANE_LEFT &&
+      Math.min(s.y1, s.y2) > 112;
+    assert(!inWell, 'merge segment must not sit inside the shooter well below the join');
+  }
+  var walls = state.walls || [];
+  var blocked = false;
+  for (i = 0; i < walls.length; i++) {
+    var w = walls[i];
+    if (w.kind !== 'habitrail' && w.kind !== 'guide') continue;
+    if (Math.min(w.y1, w.y2) > 112 &&
+        Math.min(w.x1, w.x2) > sim.LAUNCH_LANE_LEFT - 2 &&
+        Math.max(w.x1, w.x2) < sim.LAUNCH_LANE_RIGHT + 2) blocked = true;
+  }
+  assert(!blocked, 'no habitrail/guide wall may brick the shooter well');
+  console.log('PASS: merge on-ramp stays above the shooter well');
+})();
+
+(function testCyanSlideNeverTeleportsToFarExit() {
+  var state = fresh();
+  placeInLeftMouth(state, 980);
+  var prevX = state.ball.x;
+  var prevY = state.ball.y;
+  var apex = false;
+  var teleported = false;
+  var maxJump = 0;
+  var i;
+  for (i = 0; i < 240; i++) {
+    sim.stepPhysics(state, 1 / 60);
+    var b = state.ball;
+    var jump = Math.sqrt((b.x - prevX) * (b.x - prevX) + (b.y - prevY) * (b.y - prevY));
+    if (jump > maxJump) maxJump = jump;
+    if (b.x > 200 && b.x < 280 && b.y < 100) apex = true;
+    if (!apex && b.x > 300 && b.y < 180 && jump > 36) teleported = true;
+    prevX = b.x;
+    prevY = b.y;
+    if (b.y > 500) break;
+  }
+  assert(!teleported, 'LTR must not jump to the right horseshoe before the apex');
+  assert(maxJump < 40, 'cyan climb must not teleport (maxJump=' + maxJump.toFixed(1) + ')');
+  console.log('PASS: cyan climb no far-side teleport (maxJump=' + maxJump.toFixed(1) + ' apex=' + apex + ')');
+})();
+
+(function testPlayfieldCyanTopDoesNotSnapToWire() {
+  var state = fresh();
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = false;
+  state.activeLaunchPower = 1400;
+  state.ball.x = 88;
+  state.ball.y = 76;
+  state.ball.vx = 40;
+  state.ball.vy = -80;
+  var i;
+  for (i = 0; i < 8; i++) sim.stepPhysics(state, 1 / 60);
+  assert(state.ball.x < 200, 'top-of-cyan ball must not snap onto the copper wire (x=' + state.ball.x.toFixed(1) + ')');
+  console.log('PASS: playfield cyan top does not snap to wire (x=' + state.ball.x.toFixed(1) + ')');
+})();
+
+(function testMediumPlungeStillExitsAndChargedEntersU() {
+  function run(power) {
+    var state = fresh();
+    sim.launchBall(state, power);
+    var inU = false;
+    var i;
+    for (i = 0; i < 180; i++) {
+      sim.tick(state, 1 / 60);
+      if (state.exitedLaunchLane && state.ball.y < 90 && state.ball.x > 140 && state.ball.x < 360) inU = true;
+      if (state.exitedLaunchLane && state.ball.y > 420) break;
+      if (!state.ball.inPlay && i > 12) break;
+    }
+    return { ex: state.exitedLaunchLane, inU: inU, x: state.ball.x, y: state.ball.y, remaining: state.ballsRemaining };
+  }
+  var mid = run(600);
+  assert(mid.ex, '600 plunge must still exit the launch lane');
+  assert(mid.remaining === 3, '600 plunge must not drain in the shooter');
+  var hot = run(1400);
+  assert(hot.ex, '1400 plunge must leave the lane');
+  assert(hot.inU, '1400 plunge must ride the merge into the U (x=' + hot.x.toFixed(1) + ' y=' + hot.y.toFixed(1) + ')');
+  var med = run(800);
+  assert(med.ex, '800 plunge must leave the lane');
+  assert(med.inU, '800 plunge should ride the merge into the U');
+  console.log('PASS: 600 exits; 800/1400 enter U');
+})();
 console.log('=============================');
 
 (function testGravityUpdatesPositionAndVelocity() {
@@ -208,7 +303,7 @@ function slapSpeedAtFraction(frac) {
   assert(!lost, 'medium launch should not drain while still in lane');
   assert(state.exitedLaunchLane, 'medium launch should exit launch lane');
   assert(state.ball.y < 140, 'medium launch should feed ball through top wireform');
-  assert(state.ball.x < sim.LAUNCH_LANE_LEFT - 40, 'medium launch should exit left toward bumpers');
+  assert(state.ball.x < sim.LAUNCH_LANE_LEFT - 8, 'medium launch should leave the shooter (U merge or playfield)');
   console.log('PASS: medium launch exits lane without drain');
 })();
 

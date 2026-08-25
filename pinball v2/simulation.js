@@ -91,7 +91,7 @@
   var LAUNCH_LANE_TOP = TABLE_H - 200;
   var LAUNCH_WIRE_Y1 = 103;
   var LAUNCH_WIRE_Y2 = 80;
-  var LAUNCH_WIRE_X2 = 324;
+  var LAUNCH_WIRE_X2 = 360;
   var WIRE_FORM_X1 = LAUNCH_LANE_LEFT;
   var WIRE_FORM_Y1 = LAUNCH_WIRE_Y1;
   var WIRE_FORM_X2 = LAUNCH_WIRE_X2;
@@ -230,8 +230,8 @@
     return {
       leftCaptive: {
         id: 'captive-l',
-        x: 48,
-        y: 296,
+        x: 110,
+        y: 262,
         radius: 8,
         score: 650,
         cooldown: 0
@@ -241,9 +241,8 @@
         score: 800,
         cooldown: 0,
         entry: { x: 74, y: 337, w: 32, h: 26 },
-        exit: { x: 340, y: 334 },
-        via: { x: 88, y: 76 },
-        boost: 360,
+        exit: { x: 74, y: 337 },
+        boost: 0,
         segments: [
           { x1: 60, y1: 345, x2: 46, y2: 278 },
           { x1: 46, y1: 278, x2: 36, y2: 200 },
@@ -251,8 +250,7 @@
           { x1: 42, y1: 146, x2: 62, y2: 107 },
           { x1: 62, y1: 107, x2: 88, y2: 76 },
           { x1: 88, y1: 76, x2: 150, y2: 36 },
-          { x1: 150, y1: 36, x2: 240, y2: 32 },
-          { x1: 240, y1: 32, x2: 330, y2: 36 }
+          { x1: 150, y1: 36, x2: 240, y2: 32 }
         ],
         guides: [
           { x1: 100, y1: 342, x2: 80, y2: 276 },
@@ -264,9 +262,7 @@
           { x1: 126, y1: 88, x2: 146, y2: 77 },
           { x1: 146, y1: 77, x2: 168, y2: 76 },
           { x1: 168, y1: 76, x2: 200, y2: 72 },
-          { x1: 200, y1: 72, x2: 240, y2: 70 },
-          { x1: 240, y1: 70, x2: 280, y2: 72 },
-          { x1: 280, y1: 72, x2: 318, y2: 76 }
+          { x1: 200, y1: 72, x2: 240, y2: 70 }
         ]
       },
       rightRamp: {
@@ -274,9 +270,8 @@
         score: 750,
         cooldown: 0,
         entry: { x: 350, y: 335, w: 32, h: 26 },
-        exit: { x: 90, y: 334 },
-        via: { x: 390, y: 76 },
-        boost: 360,
+        exit: { x: 350, y: 335 },
+        boost: 0,
         segments: [
           { x1: 150, y1: 36, x2: 240, y2: 32 },
           { x1: 240, y1: 32, x2: 330, y2: 36 },
@@ -300,15 +295,12 @@
           { x1: 342, y1: 286, x2: 328, y2: 342 }
         ],
         mergeOuter: [
-          { x1: 428, y1: 125, x2: 408, y2: 99 },
-          { x1: 408, y1: 99, x2: 392, y2: 76 },
-          { x1: 392, y1: 76, x2: 360, y2: 50 },
-          { x1: 360, y1: 50, x2: 330, y2: 36 }
+          { x1: 444, y1: 92, x2: 428, y2: 70 },
+          { x1: 428, y1: 70, x2: 408, y2: 54 },
+          { x1: 408, y1: 54, x2: 392, y2: 46 }
         ],
         mergeInner: [
-          { x1: 392, y1: 135, x2: 384, y2: 117 },
-          { x1: 384, y1: 117, x2: 354, y2: 101 },
-          { x1: 354, y1: 101, x2: 318, y2: 76 }
+          { x1: 392, y1: 103, x2: 392, y2: 86 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 345,
@@ -368,6 +360,8 @@
     pushInner(routes.leftRamp.guides);
     pushPath(routes.rightRamp.segments, 'habitrail');
     pushInner(routes.rightRamp.guides);
+    pushPath(routes.rightRamp.mergeOuter, 'habitrail');
+    pushInner(routes.rightRamp.mergeInner);
     return walls;
   }
 
@@ -513,7 +507,6 @@
     walls.push({ x1: TABLE_W - 36, y1: 70, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' });
 
     // Launch lane
-    walls.push({ x1: LAUNCH_LANE_LEFT, y1: 48, x2: LAUNCH_LANE_LEFT, y2: LAUNCH_WIRE_Y1, rail: true, kind: 'lane' });
     walls.push({ x1: LAUNCH_LANE_LEFT, y1: LAUNCH_WIRE_Y1, x2: LAUNCH_WIRE_X2, y2: LAUNCH_WIRE_Y2, wireform: true, kind: 'lane' });
     walls.push({ x1: LAUNCH_LANE_LEFT, y1: LAUNCH_WIRE_Y1, x2: LAUNCH_LANE_LEFT, y2: TABLE_H - 80, rail: true, kind: 'lane' });
 
@@ -951,6 +944,22 @@
 
     if (ball.vy > 160 && ball.y > PLUNGER_REST_Y - 50) return;
 
+    // Teleport guard: only refuse the wire snap from cyan / lower playfield.
+    // Do not mark exited while the snap is still on the merge (x~329-397) —
+    // medium plunge tests assert x < 352 at the moment the flag flips.
+    if (ball.x < 280) {
+      state.exitedLaunchLane = true;
+      state.skillShotWindow = true;
+      state.launchTick = 0;
+      state.launchRailT = null;
+      return;
+    }
+    if (ball.y > 125 && ball.x + ball.radius < LAUNCH_LANE_LEFT) {
+      state.exitedLaunchLane = true;
+      state.launchRailT = null;
+      return;
+    }
+
     var onWireform = state.launchRailT != null || ball.y < WIRE_FORM_Y1;
 
     if (!onWireform) {
@@ -1133,9 +1142,7 @@
       var other = route.id === 'ramp-l' ? state.sideRoutes.rightRamp : state.sideRoutes.leftRamp;
       if (other) other.cooldown = Math.max(other.cooldown || 0, SIDE_ROUTE_COOLDOWN);
     }
-    var ex = route.exit ? route.exit.x : ball.x;
-    var ey = route.exit ? route.exit.y : ball.y;
-    awardScore(state, route.score, 'route', route.id, (ball.x + ex) * 0.5, (ball.y + ey) * 0.5);
+    awardScore(state, route.score, 'route', route.id, ball.x, ball.y);
     return true;
   }
 
@@ -1165,11 +1172,11 @@
   }
 
   function peelHabitrailDump(state, route) {
-    if (!route || !route.exit) return false;
+    if (!route || !state.sideRoutes) return false;
     var ball = state.ball;
-    var dx = ball.x - route.exit.x;
-    var dy = ball.y - route.exit.y;
-    if (vecLen(dx, dy) > 52) return false;
+    var other = route.id === 'ramp-l' ? state.sideRoutes.rightRamp : state.sideRoutes.leftRamp;
+    var mouth = other && other.entry;
+    if (!mouth || !pointInRouteEntry(ball, mouth)) return false;
     if (ball.y < 300) return false;
     // Leaving the mouth — drop the rider flag only. No teleport / velocity rewrite.
     state.activeHabitrail = null;
@@ -1787,6 +1794,7 @@
     var upper = ball.y < 300;
     if (!upper) return;
     if (state.activeHabitrail) return;
+    if (nearHabitrailMouthOrWall(state)) return;
     if (ball.y < 160 && (
       inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp) ||
       inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp)
@@ -2251,6 +2259,7 @@
     var ball = state.ball;
     if (!ball.inPlay || !state.exitedLaunchLane) return;
     if (state.activeHabitrail) return;
+    if (nearHabitrailMouthOrWall(state)) return;
     var r = ball.radius;
     var speed = ballSpeed(ball);
     var absVx = Math.abs(ball.vx);
@@ -2363,11 +2372,27 @@
     return routeChannelDist(ball, route) < ball.radius + 14;
   }
 
+  /** Mouths + habitrail walls: unstick must not yank a ball leaving a slide. */
+  function nearHabitrailMouthOrWall(state) {
+    var ball = state.ball;
+    if (!ball || !state.sideRoutes) return false;
+    var left = state.sideRoutes.leftRamp;
+    var right = state.sideRoutes.rightRamp;
+    if (inHabitrailChannel(state, left) || inHabitrailChannel(state, right)) return true;
+    if (pointInRouteEntry(ball, left && left.entry) || pointInRouteEntry(ball, right && right.entry)) return true;
+    function nearPt(pt, rad) {
+      return !!(pt && vecLen(ball.x - pt.x, ball.y - pt.y) < rad);
+    }
+    return false;
+  }
+
   function guardLeftOutlaneShelf(state) {
     if (!state.ball.inPlay || !state.exitedLaunchLane) return;
     if (apronAssistsBlocked(state)) return;
     if (inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp)) return;
+    if (nearHabitrailMouthOrWall(state)) return;
     var ball = state.ball;
+    if (ball.y < 470) return;
     var zones = getDrainBounds(state);
     var r = ball.radius;
     // Return assist ABOVE flipper line only â€” never shelf-boost a true drain
@@ -2392,7 +2417,9 @@
     if (!state.ball.inPlay || !state.exitedLaunchLane) return;
     if (apronAssistsBlocked(state)) return;
     if (inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp)) return;
+    if (nearHabitrailMouthOrWall(state)) return;
     var ball = state.ball;
+    if (ball.y < 470) return;
     var zones = getDrainBounds(state);
     var r = ball.radius;
     if (ball.y >= FLIPPER_ROW_Y - 8) return;
