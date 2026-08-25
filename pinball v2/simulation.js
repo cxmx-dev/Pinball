@@ -258,9 +258,9 @@
         ],
         guides: [
           { x1: 100, y1: 342, x2: 76, y2: 276 },
-          { x1: 76, y1: 276, x2: 70, y2: 200 },
-          { x1: 70, y1: 200, x2: 76, y2: 146 },
-          { x1: 76, y1: 146, x2: 92, y2: 120 },
+          { x1: 76, y1: 276, x2: 66, y2: 200 },
+          { x1: 66, y1: 200, x2: 74, y2: 146 },
+          { x1: 74, y1: 146, x2: 92, y2: 120 },
           { x1: 92, y1: 120, x2: 106, y2: 102 },
           { x1: 106, y1: 102, x2: 122, y2: 88 },
           { x1: 122, y1: 88, x2: 146, y2: 77 },
@@ -280,10 +280,10 @@
           { x1: 150, y1: 36, x2: 240, y2: 32 },
           { x1: 240, y1: 32, x2: 330, y2: 36 },
           { x1: 330, y1: 36, x2: 390, y2: 76 },
-          { x1: 390, y1: 76, x2: 388, y2: 159 },
-          { x1: 388, y1: 159, x2: 386, y2: 216 },
-          { x1: 386, y1: 216, x2: 380, y2: 286 },
-          { x1: 380, y1: 286, x2: 364, y2: 345 }
+          { x1: 390, y1: 76, x2: 390, y2: 159 },
+          { x1: 390, y1: 159, x2: 390, y2: 216 },
+          { x1: 390, y1: 216, x2: 388, y2: 286 },
+          { x1: 388, y1: 286, x2: 364, y2: 345 }
         ],
         guides: [
           { x1: 168, y1: 76, x2: 200, y2: 72 },
@@ -293,10 +293,10 @@
           { x1: 318, y1: 76, x2: 336, y2: 83 },
           { x1: 336, y1: 83, x2: 350, y2: 93 },
           { x1: 350, y1: 93, x2: 356, y2: 110 },
-          { x1: 356, y1: 110, x2: 356, y2: 159 },
-          { x1: 356, y1: 159, x2: 348, y2: 216 },
-          { x1: 348, y1: 216, x2: 342, y2: 286 },
-          { x1: 342, y1: 286, x2: 328, y2: 342 }
+          { x1: 356, y1: 110, x2: 364, y2: 159 },
+          { x1: 364, y1: 159, x2: 364, y2: 216 },
+          { x1: 364, y1: 216, x2: 362, y2: 286 },
+          { x1: 362, y1: 286, x2: 328, y2: 342 }
         ],
         mergeOuter: [
           { x1: 444, y1: 94, x2: 430, y2: 76 },
@@ -392,9 +392,9 @@
 
   function createRollovers() {
     return [
-      { id: 'lane-l', x1: 72, y1: 180, x2: 72, y2: 280, width: 18, score: 500, lit: false, occupied: false },
+      { id: 'lane-l', x1: 64, y1: 180, x2: 64, y2: 280, width: 18, score: 500, lit: false, occupied: false },
       // Playfield side of launch wall (not inside shooter lane)
-      { id: 'lane-r', x1: LAUNCH_LANE_LEFT - 36, y1: 190, x2: LAUNCH_LANE_LEFT - 36, y2: 290, width: 18, score: 500, lit: false, occupied: false },
+      { id: 'lane-r', x1: LAUNCH_LANE_LEFT - 28, y1: 190, x2: LAUNCH_LANE_LEFT - 28, y2: 290, width: 18, score: 500, lit: false, occupied: false },
       // Mid-field rollover â€” shot path without bumper party
       { id: 'lane-mid', x1: 195, y1: 412, x2: 285, y2: 412, width: 16, score: 600, lit: false, occupied: false }
     ];
@@ -475,10 +475,27 @@
     };
   }
 
+  function createSaucer3() {
+    // Top-left open pocket beside the cyan inner curve (third lock / MB hole).
+    return {
+      x: 100,
+      y: 208,
+      radius: 15,
+      score: 1500,
+      holdSec: 1.2,
+      holdT: 0,
+      captured: false,
+      cooldown: 0,
+      lit: false,
+      flash: 0
+    };
+  }
+
   function saucersOf(state) {
     var out = [];
     if (state && state.saucer) out.push(state.saucer);
     if (state && state.saucer2) out.push(state.saucer2);
+    if (state && state.saucer3) out.push(state.saucer3);
     return out;
   }
 
@@ -674,6 +691,7 @@
       spinner: createSpinner(),
       saucer: createSaucer(),
       saucer2: createSaucer2(),
+      saucer3: createSaucer3(),
       gateSpinner: createGateSpinner(),
       walls: createWalls(),
       lockCount: 0,
@@ -2851,7 +2869,10 @@
       ball.vx = 0;
       ball.vy = 0;
       s.flash = 0.6;
-      awardScore(state, s.score, 'saucer', s === state.saucer2 ? 'saucer2' : 'saucer', s.x, s.y);
+      var holeId = 'saucer';
+      if (s === state.saucer2) holeId = 'saucer2';
+      else if (s === state.saucer3) holeId = 'saucer3';
+      awardScore(state, s.score, 'saucer', holeId, s.x, s.y);
       awardLock(state, { holdForSaucer: true, hole: s, ball: ball });
     }
   }

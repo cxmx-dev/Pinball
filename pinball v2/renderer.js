@@ -883,6 +883,7 @@
   function drawSaucer(ctx, state, pulse) {
     if (state.saucer) drawSaucerHole(ctx, state, state.saucer, pulse);
     if (state.saucer2) drawSaucerHole(ctx, state, state.saucer2, pulse);
+    if (state.saucer3) drawSaucerHole(ctx, state, state.saucer3, pulse);
   }
 
   function drawGateSpinner(ctx, state, pulse) {
@@ -1353,7 +1354,7 @@
       ctx.fillStyle = '#66f0ff';
       applyShadow(ctx, '#22d0ff', 14);
       ctx.fillText(state.multiballBanner, canvas.width - 24, 64);
-    } else if (!state.multiball && ((state.saucer && state.saucer.lit) || (state.saucer2 && state.saucer2.lit))) {
+    } else if (!state.multiball && ((state.saucer && state.saucer.lit) || (state.saucer2 && state.saucer2.lit) || (state.saucer3 && state.saucer3.lit))) {
       ctx.fillStyle = '#88e8ff';
       applyShadow(ctx, '#44c8ff', 10);
       ctx.fillText('LOCK LIT', canvas.width - 24, 64);

@@ -1201,7 +1201,7 @@ function placeInRightMouth(state, speed) {
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
   state.phase = 'playing';
-  state.ball.x = 362;
+  state.ball.x = 376;
   state.ball.y = 240;
   state.ball.vx = 25;
   state.ball.vy = -speed;
@@ -1474,7 +1474,7 @@ console.log('All tests passed.');
   for (i = 0; i < 8; i++) sim.tick(state, 1 / 60);
   assert(state.saucer2.captured, 'UR saucer should catch');
   assert(state.lockCount >= 1, 'UR saucer should lock');
-  assert(state.saucer.lit && state.saucer2.lit, 'both holes light LOCK');
+  assert(state.saucer.lit && state.saucer2.lit && state.saucer3.lit, 'all three holes light LOCK');
   console.log('PASS: upper-right saucer locks (' + state.saucer2.x + ',' + state.saucer2.y + ')');
 })();
 
@@ -1504,21 +1504,25 @@ console.log('All tests passed.');
   var state = fresh();
   var lg = state.sideRoutes.leftRamp.guides;
   var rg = state.sideRoutes.rightRamp.guides;
-  var leftMid = null;
-  var rightMid = null;
-  var i;
-  for (i = 0; i < lg.length; i++) {
-    if (Math.min(lg[i].y1, lg[i].y2) <= 200 && Math.max(lg[i].y1, lg[i].y2) >= 200) leftMid = lg[i];
+  function xAtY(segs, y) {
+    var i;
+    for (i = 0; i < segs.length; i++) {
+      var a = segs[i];
+      var minY = Math.min(a.y1, a.y2);
+      var maxY = Math.max(a.y1, a.y2);
+      if (minY <= y && maxY >= y && maxY !== minY) {
+        var t = (y - a.y1) / (a.y2 - a.y1);
+        return a.x1 + (a.x2 - a.x1) * t;
+      }
+    }
+    return null;
   }
-  for (i = 0; i < rg.length; i++) {
-    if (Math.min(rg[i].y1, rg[i].y2) <= 160 && Math.max(rg[i].y1, rg[i].y2) >= 160) rightMid = rg[i];
-  }
-  assert(leftMid, 'left mid inner exists');
-  assert(rightMid, 'right mid inner exists');
-  var leftX = (leftMid.x1 + leftMid.x2) / 2;
-  var rightX = (rightMid.x1 + rightMid.x2) / 2;
-  assert(leftX <= 73, 'left filler inner sits toward x=36 (got ' + leftX.toFixed(1) + ')');
-  assert(rightX >= 352, 'right filler inner sits toward the launch wall (got ' + rightX.toFixed(1) + ')');
+  var leftX = xAtY(lg, 200);
+  var rightX = xAtY(rg, 160);
+  assert(leftX != null, 'left mid inner exists');
+  assert(rightX != null, 'right mid inner exists');
+  assert(leftX <= 66, 'left filler inner sits toward x=36 (got ' + leftX.toFixed(1) + ')');
+  assert(rightX >= 360, 'right filler inner sits toward the launch wall (got ' + rightX.toFixed(1) + ')');
   var leftOuter = state.sideRoutes.leftRamp.segments;
   assert(leftOuter[leftOuter.length - 1].y2 === 32, 'U outer stays y=32');
   assert(lg[lg.length - 1].y2 === 70, 'U inner stays y=70');
@@ -1557,6 +1561,28 @@ console.log('All tests passed.');
   console.log('PASS: copper curve cleared of UR saucer');
 })();
 
+
+(function testTopLeftSaucerLocks() {
+  var state = fresh();
+  assert(state.saucer3, 'top-left saucer exists');
+  assert(state.saucer3.x >= 90 && state.saucer3.x <= 110, 'TL saucer in the open pocket');
+  assert(state.saucer3.y >= 190 && state.saucer3.y <= 230, 'TL saucer under/beside the cyan curve');
+  assert(state.saucer3.x !== 95 || state.saucer3.y !== 520, 'TL saucer is not the lower-left lock');
+  assert(!(state.saucer3.x === 330 && state.saucer3.y === 148), 'TL saucer is not the UR lock');
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.ball.x = state.saucer3.x;
+  state.ball.y = state.saucer3.y;
+  state.ball.vx = 12;
+  state.ball.vy = 16;
+  var i;
+  for (i = 0; i < 8; i++) sim.tick(state, 1 / 60);
+  assert(state.saucer3.captured, 'TL saucer should catch');
+  assert(state.lockCount >= 1, 'TL saucer should lock');
+  assert(state.saucer.lit && state.saucer2.lit && state.saucer3.lit, 'all three holes light LOCK');
+  console.log('PASS: top-left saucer locks (' + state.saucer3.x + ',' + state.saucer3.y + ')');
+})();
 (function testEitherHoleStartsMultiball() {
   var state = fresh();
   state.ball.inPlay = true;
