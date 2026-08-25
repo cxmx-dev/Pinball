@@ -1049,6 +1049,123 @@ function slapSpeedAtFraction(frac) {
 })();
 
 
+
+(function testTopArchFloorAboveHorseshoeChannel() {
+  var floor = sim.topArchFloorY(240);
+  assert(floor < 32, 'arch underside must sit above U outer y=32, got ' + floor);
+  assert(floor > 20 && floor < 30, 'arch floor should match lifted ellipse cy=76 ry=50, got ' + floor);
+  console.log('PASS: top arch floor above horseshoe channel (floor=' + floor.toFixed(1) + ')');
+})();
+
+function placeInLeftMouth(state, speed) {
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.ball.x = 80;
+  state.ball.y = 310;
+  state.ball.vx = -40;
+  state.ball.vy = -speed;
+  state.activeHabitrail = 'ramp-l';
+}
+
+function placeInRightMouth(state, speed) {
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.ball.x = 362;
+  state.ball.y = 240;
+  state.ball.vx = 25;
+  state.ball.vy = -speed;
+  state.activeHabitrail = 'ramp-r';
+}
+
+function runOrbit(place, dirLabel, speed) {
+  var state = fresh();
+  place(state, speed || 920);
+  var crossedApex = false;
+  var farSide = false;
+  var droppedThrough = false;
+  var minYAtApex = 999;
+  var i;
+  for (i = 0; i < 240; i++) {
+    sim.stepPhysics(state, 1 / 60);
+    var b = state.ball;
+    if (b.x > 200 && b.x < 280 && b.y < 100) {
+      crossedApex = true;
+      minYAtApex = Math.min(minYAtApex, b.y);
+      if (b.y > 95 && Math.abs(b.vx) < 30) droppedThrough = true;
+    }
+    if (dirLabel === 'LTR' && b.x > 320 && b.y < 160) farSide = true;
+    if (dirLabel === 'RTL' && b.x < 120 && b.y < 160) farSide = true;
+    if (farSide) break;
+  }
+  return { crossedApex: crossedApex, farSide: farSide, droppedThrough: droppedThrough, minYAtApex: minYAtApex, x: state.ball.x, y: state.ball.y, vx: state.ball.vx };
+}
+
+(function testHorseshoeOrbitBothWays() {
+  var ltr = runOrbit(placeInLeftMouth, 'LTR', 980);
+  assert(ltr.crossedApex, 'LTR should crest the U (x=' + ltr.x.toFixed(1) + ' y=' + ltr.y.toFixed(1) + ')');
+  assert(ltr.farSide, 'LTR should reach the right channel, not drop at the apex');
+  assert(!ltr.droppedThrough, 'LTR must not kill vx and fall through the top');
+  var rtl = runOrbit(placeInRightMouth, 'RTL', 920);
+  assert(rtl.crossedApex, 'RTL should crest the U');
+  assert(rtl.farSide, 'RTL should reach the left channel, not drop at the apex');
+  assert(!rtl.droppedThrough, 'RTL must not kill vx and fall through the top');
+  console.log('PASS: horseshoe orbit LTR and RTL (LTR y=' + ltr.minYAtApex.toFixed(1) + ' RTL y=' + rtl.minYAtApex.toFixed(1) + ')');
+})();
+
+(function testRampShotKeepsMomentumNoSnap() {
+  var state = fresh();
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  // Cyan 300 bumper — mid-field, must not magnetize onto the left rail.
+  state.ball.x = 155;
+  state.ball.y = 308;
+  state.ball.vx = 90;
+  state.ball.vy = -220;
+  var x0 = state.ball.x;
+  var i;
+  for (i = 0; i < 8; i++) sim.stepPhysics(state, 1 / 60);
+  assert(Math.abs(state.ball.x - x0) < 80, 'bumper shot must not snap across to a center rail (x=' + state.ball.x.toFixed(1) + ')');
+  assert(!state.activeHabitrail, 'mid-field bumper shot must not become a habitrail rider');
+  console.log('PASS: ramp capture does not steal bumper shots');
+})();
+
+(function testGravitySlowsUphillRamp() {
+  var state = fresh();
+  placeInLeftMouth(state, 620);
+  var speed0 = Math.sqrt(state.ball.vx * state.ball.vx + state.ball.vy * state.ball.vy);
+  var i;
+  for (i = 0; i < 18; i++) sim.stepPhysics(state, 1 / 60);
+  var speed1 = Math.sqrt(state.ball.vx * state.ball.vx + state.ball.vy * state.ball.vy);
+  assert(state.ball.y < 310, 'ball should climb');
+  assert(speed1 < speed0 - 20, 'uphill should lose speed (' + speed0.toFixed(1) + ' -> ' + speed1.toFixed(1) + ')');
+  console.log('PASS: gravity slows uphill ramp (' + speed0.toFixed(1) + ' -> ' + speed1.toFixed(1) + ')');
+})();
+
+(function testParkedFlipperIsNotASling() {
+  assert(sim.FLIPPER_RESTITUTION_PASSIVE < 0.7, 'parked bat rest must be inelastic');
+  assert(sim.FLIPPER_RESTITUTION_SWEEP > 1, 'powered slap can stay strong');
+  console.log('PASS: parked flipper rest=' + sim.FLIPPER_RESTITUTION_PASSIVE + ' sweep=' + sim.FLIPPER_RESTITUTION_SWEEP);
+})();
+
+(function testChargedPlungeEntersHorseshoe() {
+  var state = fresh();
+  sim.launchBall(state, 1400);
+  var inChannel = false;
+  var i;
+  for (i = 0; i < 160; i++) {
+    sim.tick(state, 1 / 60);
+    if (state.exitedLaunchLane && state.ball.y < 90 && state.ball.x < 360 && state.ball.x > 140) {
+      inChannel = true;
+      break;
+    }
+  }
+  assert(state.exitedLaunchLane, 'charged plunge should leave the lane');
+  assert(inChannel || (state.ball.y < 130 && state.ball.x < 360), 'charged plunge should enter the U channel');
+  console.log('PASS: charged plunge enters horseshoe (x=' + state.ball.x.toFixed(1) + ' y=' + state.ball.y.toFixed(1) + ')');
+})();
+
 console.log('=============================');
 
 console.log('All tests passed.');

@@ -34,16 +34,16 @@
   /** Tip-weight exponent on contact fraction t/segLen. */
   var FLIPPER_TIP_POWER = 1.2;
   var FLIPPER_RESTITUTION_SWEEP = 1.26;
-  var FLIPPER_RESTITUTION_PASSIVE = 1.05;
+  var FLIPPER_RESTITUTION_PASSIVE = 0.45;
   var DECK_DRAIN_SPEED = 220;
   var WALL_RESTITUTION = 0.72;
   /** Habitrail/guide bounce â€” livelier than cabinet rails so channels do not crawl. */
   var HABITRAIL_RESTITUTION = 0.92;
   var GUIDE_RESTITUTION = 0.88;
   /** Min along-rail speed (px/s) while ball is inside a habitrail channel. */
-  var HABITRAIL_MIN_SPEED = 240;
+  var HABITRAIL_MIN_SPEED = 0;
   /** Continuous along-path assist while riding a habitrail (px/s^2). */
-  var HABITRAIL_ASSIST = 520;
+  var HABITRAIL_ASSIST = 0;
   var BUMPER_RESTITUTION = 1.15;
   var FLIPPER_RESTITUTION = FLIPPER_RESTITUTION_PASSIVE;
   var SLING_RESTITUTION = 1.08;
@@ -441,11 +441,11 @@
 
   /** Approx underside Y of top arch at playfield x (for clamps / unstick). */
   function topArchFloorY(x) {
-    // Match createWalls top ellipse: cx=240, cy=100, rx=200, ry=52, upper half
+    // Match createWalls top ellipse: cx=240, cy=76, rx=200, ry=50, upper half
     var cx = TABLE_W * 0.5;
-    var cy = 100;
+    var cy = 76;
     var rx = 200;
-    var ry = 52;
+    var ry = 50;
     var dx = (x - cx) / rx;
     if (dx < -1) dx = -1;
     if (dx > 1) dx = 1;
@@ -912,8 +912,9 @@
     state.exitedLaunchLane = true;
     state.skillShotWindow = true;
     state.launchTick = 0;
-    var targetX = 214;
-    var targetY = 80;
+    // Dump into the right horseshoe channel (not under the inner U at 214,80).
+    var targetX = 280;
+    var targetY = 52;
     state.activeHabitrail = 'ramp-r';
     var tx = targetX - ball.x;
     var ty = targetY - ball.y;
@@ -923,8 +924,8 @@
       ball.vx = (tx / dist) * exitSpeed;
       ball.vy = (ty / dist) * exitSpeed;
     } else {
-      ball.vx = -exitSpeed * 0.55;
-      ball.vy = -exitSpeed * 0.82;
+      ball.vx = -exitSpeed * 0.85;
+      ball.vy = -exitSpeed * 0.25;
     }
   }
 
@@ -1113,34 +1114,26 @@
   }
 
   /** Along-path boost when entering a habitrail from below (carry through, not crawl). */
+  /** Award when the ball actually enters a mouth going up. Keep its momentum. */
   function tryHabitrailEntry(state, route, towardCenterSign) {
     if (!route || route.cooldown > 0) return false;
     var ball = state.ball;
     if (!pointInRouteEntry(ball, route.entry)) return false;
-    if (ball.vy > 40) return false;
-    var boost = route.boost || 280;
-    var aimX = route.via ? route.via.x : (route.exit ? route.exit.x : ball.x);
-    var aimY = route.via ? route.via.y : (route.exit ? route.exit.y : ball.y - 80);
-    var dir = normalize(aimX - ball.x, aimY - ball.y);
-    // Mouths sit at similar Y to the far dump — never launch sideways across the playfield.
-    if (dir.y > -0.35) dir = normalize(towardCenterSign * 0.12, -1);
-    var along = Math.max(boost, HABITRAIL_MIN_SPEED + 40);
-    ball.vx = dir.x * along + towardCenterSign * 25;
-    ball.vy = Math.min(ball.vy, dir.y * along);
-    if (ball.vy > -boost * 0.45) ball.vy = dir.y * along;
+    if (ball.vy > 20) return false;
+    // Already in/near the tube — do not steal bumper / mid-field shots.
+    if (routeChannelDist(ball, route) > ball.radius + 16) return false;
     route.cooldown = SIDE_ROUTE_COOLDOWN * 1.6;
     state.activeHabitrail = route.id;
     if (state.sideRoutes) {
       var other = route.id === 'ramp-l' ? state.sideRoutes.rightRamp : state.sideRoutes.leftRamp;
       if (other) other.cooldown = Math.max(other.cooldown || 0, SIDE_ROUTE_COOLDOWN);
     }
-    var ex = route.exit ? route.exit.x : aimX;
-    var ey = route.exit ? route.exit.y : aimY;
+    var ex = route.exit ? route.exit.x : ball.x;
+    var ey = route.exit ? route.exit.y : ball.y;
     awardScore(state, route.score, 'route', route.id, (ball.x + ex) * 0.5, (ball.y + ey) * 0.5);
     return true;
   }
 
-  /** Full horseshoe centerline, left mouth → top → right mouth (assist travel). */
   function horseshoeTravelSegs(leftRamp, rightRamp) {
     var segs = [];
     if (leftRamp && leftRamp.segments) {
@@ -1172,11 +1165,8 @@
     var dx = ball.x - route.exit.x;
     var dy = ball.y - route.exit.y;
     if (vecLen(dx, dy) > 52) return false;
-    if (ball.y < 380) return false;
-    var inward = route.exit.x > TABLE_W * 0.5 ? -1 : 1;
-    ball.x += inward * 22;
-    ball.vx = inward * Math.max(180, Math.abs(ball.vx) * 0.4);
-    ball.vy = Math.max(Math.abs(ball.vy) * 0.3, 160);
+    if (ball.y < 300) return false;
+    // Leaving the mouth — drop the rider flag only. No teleport / velocity rewrite.
     state.activeHabitrail = null;
     if (state.sideRoutes && state.sideRoutes.leftRamp) {
       state.sideRoutes.leftRamp.cooldown = Math.max(state.sideRoutes.leftRamp.cooldown || 0, SIDE_ROUTE_COOLDOWN);
@@ -1265,7 +1255,8 @@
    */
   function containHorseshoeInner(state) {
     var ball = state.ball;
-    if (!ball || ball.y < 24 || ball.y > 140) return;
+    if (!ball || !state.activeHabitrail) return;
+    if (ball.y < 24 || ball.y > 140) return;
     if (ball.x < 88 || ball.x > 368) return;
     if (ball.vy < 20) return;
     if (nearHorseshoeSpinner(state, ball)) return;
@@ -1280,7 +1271,6 @@
     if (nearOuter) nearDist = Math.min(nearDist, nearOuter.dist);
     if (nearDist > 30) return;
     if (ball.y <= nearInner.y + 3) return;
-    if (!state.activeHabitrail) return;
     if (!(nearOuter && nearOuter.dist <= 56) && nearInner.dist > 22) return;
     var lift = nearInner.y - ball.radius - 4;
     if (nearOuter) {
@@ -1288,29 +1278,11 @@
       if (lift < nearOuter.y + 8) lift = midY;
     }
     ball.y = Math.min(ball.y, lift);
-    if (ball.vy > 40) ball.vy = -Math.max(140, Math.abs(ball.vy) * 0.35);
-    var travel = horseshoeTravelSegs(left, right);
-    var wall = nearestPointOnSegments(ball.x, ball.y, travel) || nearOuter || nearInner;
-    if (wall && wall.seg) {
-      var fwd = normalize(wall.seg.x2 - wall.seg.x1, wall.seg.y2 - wall.seg.y1);
-      var ride = state.activeHabitrail;
-      var dir;
-      if (ride === 'ramp-r') dir = { x: -fwd.x, y: -fwd.y };
-      else if (ride === 'ramp-l') dir = fwd;
-      else {
-        var already = dot(ball.vx, ball.vy, fwd.x, fwd.y);
-        dir = already >= 0 ? fwd : { x: -fwd.x, y: -fwd.y };
-      }
-      var along = dot(ball.vx, ball.vy, dir.x, dir.y);
-      if (along < HABITRAIL_MIN_SPEED) {
-        var need = HABITRAIL_MIN_SPEED - along;
-        ball.vx += dir.x * need;
-        ball.vy += dir.y * need;
-      }
-    }
+    // Stop falling through the deck; keep vx (do not kill horizontal momentum).
+    if (ball.vy > 0) ball.vy *= 0.15;
   }
 
-  /** Keep ball moving through habitrail/guide channels; kill multi-second crawls. */
+  /** Leak-contain only. No snap-to-path, no constant-speed conveyor. */
   function assistHabitrails(state, dt) {
     if (!state.sideRoutes || !state.ball.inPlay || !state.exitedLaunchLane) return;
     var ball = state.ball;
@@ -1331,47 +1303,15 @@
       if (!nearOuter) continue;
       var channelDist = nearOuter.dist;
       if (nearGuide) channelDist = Math.min(channelDist, nearGuide.dist);
-      if (channelDist > ball.radius + 22) continue;
-      if (state.spinner && ball.y > 110) {
-        var spAssist = state.spinner;
-        if (vecLen(ball.x - spAssist.x, ball.y - spAssist.y) < spAssist.radius + ball.radius + 18) continue;
-      }
+      if (channelDist > ball.radius + 16) continue;
       if (nearGuide) {
-        var loX = Math.min(nearOuter.x, nearGuide.x) - 8;
-        var hiX = Math.max(nearOuter.x, nearGuide.x) + 8;
-        var loY = Math.min(nearOuter.y, nearGuide.y) - 8;
-        var hiY = Math.max(nearOuter.y, nearGuide.y) + 8;
+        var loX = Math.min(nearOuter.x, nearGuide.x) - 6;
+        var hiX = Math.max(nearOuter.x, nearGuide.x) + 6;
+        var loY = Math.min(nearOuter.y, nearGuide.y) - 6;
+        var hiY = Math.max(nearOuter.y, nearGuide.y) + 6;
         if (ball.x < loX || ball.x > hiX || ball.y < loY || ball.y > hiY) continue;
       }
       inChannel = true;
-      if (!state.activeHabitrail && ball.y > 200) {
-        state.activeHabitrail = route.id;
-      }
-      var wall = nearTravel && nearTravel.dist <= channelDist + 6 ? nearTravel : nearOuter;
-      var fwd = normalize(wall.seg.x2 - wall.seg.x1, wall.seg.y2 - wall.seg.y1);
-      var ride = state.activeHabitrail;
-      var dir;
-      if (ride === 'ramp-r') dir = { x: -fwd.x, y: -fwd.y };
-      else if (ride === 'ramp-l') dir = fwd;
-      else {
-        var already = dot(ball.vx, ball.vy, fwd.x, fwd.y);
-        dir = already >= 0 ? fwd : { x: -fwd.x, y: -fwd.y };
-      }
-      var speed = ballSpeed(ball);
-      var along = dot(ball.vx, ball.vy, dir.x, dir.y);
-      ball.vx += dir.x * HABITRAIL_ASSIST * dt;
-      ball.vy += dir.y * HABITRAIL_ASSIST * dt;
-      if (speed < HABITRAIL_MIN_SPEED || along < HABITRAIL_MIN_SPEED * 0.35) {
-        var need = HABITRAIL_MIN_SPEED - Math.max(0, along);
-        ball.vx += dir.x * need;
-        ball.vy += dir.y * need;
-        var nWall = nearGuide && nearGuide.dist < nearOuter.dist ? nearGuide : nearOuter;
-        var n = normalize(ball.x - nWall.x, ball.y - nWall.y);
-        ball.x += n.x * 1.5;
-        ball.y += n.y * 1.5;
-        ball.vx += n.x * 40;
-        ball.vy += n.y * 20;
-      }
     }
     if (state.activeHabitrail === 'ramp-l' && left) peelHabitrailDump(state, left);
     if (state.activeHabitrail === 'ramp-r' && right) peelHabitrailDump(state, right);
@@ -1380,7 +1320,6 @@
     }
   }
 
-  /** Slow ball wedged lower-left (standup / old return V) — peel inward, not loft. */
   function peelLeftInlaneWedge(state) {
     var ball = state.ball;
     if (!ball || !ball.inPlay || !state.exitedLaunchLane) return;
@@ -1715,18 +1654,23 @@
       ball.x = 36 + r;
       ball.vx = Math.abs(ball.vx) * WALL_RESTITUTION;
     }
-    // Follow rounded top arch (no flat y=60 ceiling)
-    if (ball.x > 40 && ball.x < LAUNCH_LANE_LEFT + 10) {
+    // Cabinet arch underside. Horseshoe riders sit in the U (outer y=32) under the
+    // real arch (y~26) — never apply the leftover y=48/52 ceiling that cut the channel.
+    var ridingHorse = !!(state.activeHabitrail ||
+      (ball.y < 160 && (
+        inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp) ||
+        inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp)
+      )));
+    if (!ridingHorse && ball.x > 40 && ball.x < LAUNCH_LANE_LEFT + 10) {
       var floorY = topArchFloorY(ball.x);
       if (ball.y - r < floorY) {
         ball.y = floorY + r + 0.5;
         if (ball.vy < 0) ball.vy = Math.abs(ball.vy) * WALL_RESTITUTION;
-        // Nudge along tangent so ball "rides" the curve instead of sticking
         var mid = TABLE_W * 0.5;
         ball.vx += (ball.x < mid ? -1 : 1) * 25;
       }
-    } else if (ball.y - r < 48) {
-      ball.y = 48 + r;
+    } else if (!ridingHorse && ball.y - r < 22) {
+      ball.y = 22 + r;
       if (ball.vy < 0) ball.vy = Math.abs(ball.vy) * WALL_RESTITUTION;
     }
   }
@@ -1844,6 +1788,11 @@
     var r = ball.radius;
     var upper = ball.y < 300;
     if (!upper) return;
+    if (state.activeHabitrail) return;
+    if (ball.y < 160 && (
+      inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp) ||
+      inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp)
+    )) return;
 
     // Spinner-left cusp vs habitrail/arch: kick into playfield (right+down), never outlane.
     // Live bounce-loops here can exceed the slow-crawl speed gate.
@@ -2412,8 +2361,7 @@
   function inHabitrailChannel(state, route) {
     var ball = state.ball;
     if (!ball || !route) return false;
-    if (pointInRouteEntry(ball, route.entry)) return true;
-    return routeChannelDist(ball, route) < ball.radius + 24;
+    return routeChannelDist(ball, route) < ball.radius + 14;
   }
 
   function guardLeftOutlaneShelf(state) {
@@ -2814,6 +2762,9 @@
     MAX_BALL_SPEED: MAX_BALL_SPEED,
     FLIPPER_SPEED: FLIPPER_SPEED,
     FLIPPER_OMEGA_DEAD: FLIPPER_OMEGA_DEAD,
+    FLIPPER_RESTITUTION_PASSIVE: FLIPPER_RESTITUTION_PASSIVE,
+    FLIPPER_RESTITUTION_SWEEP: FLIPPER_RESTITUTION_SWEEP,
+    HABITRAIL_ASSIST: HABITRAIL_ASSIST,
     FLIPPER_IMPULSE_GAIN: FLIPPER_IMPULSE_GAIN,
     FLIPPER_TAP_MULT: FLIPPER_TAP_MULT,
     FLIPPER_DBL_TAP_WINDOW: FLIPPER_DBL_TAP_WINDOW,
