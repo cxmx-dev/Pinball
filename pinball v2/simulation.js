@@ -221,7 +221,7 @@
   function createSideRoutes() {
     // Horseshoe orbit: left slide + top channel + right slide meet under the arch.
     // Outer / inner polylines are also the draw hulls (cyan left, copper right).
-    // Top channel ~42px (outer y=58, inner y=100 at x=240). Inners follow the same U.
+    // Top channel ~40px (outer y=58, inner y=100 at x=240). Inner U is a dense habitrail wall.
     return {
       leftCaptive: {
         id: 'captive-l',
@@ -254,10 +254,14 @@
           { x1: 86, y1: 350, x2: 78, y2: 255 },
           { x1: 78, y1: 255, x2: 84, y2: 190 },
           { x1: 84, y1: 190, x2: 100, y2: 164 },
-          { x1: 100, y1: 164, x2: 118, y2: 136 },
-          { x1: 118, y1: 136, x2: 162, y2: 101 },
-          { x1: 162, y1: 101, x2: 240, y2: 100 },
-          { x1: 240, y1: 100, x2: 318, y2: 101 }
+          { x1: 100, y1: 164, x2: 114, y2: 144 },
+          { x1: 114, y1: 144, x2: 128, y2: 126 },
+          { x1: 128, y1: 126, x2: 146, y2: 110 },
+          { x1: 146, y1: 110, x2: 168, y2: 102 },
+          { x1: 168, y1: 102, x2: 200, y2: 100 },
+          { x1: 200, y1: 100, x2: 240, y2: 100 },
+          { x1: 240, y1: 100, x2: 280, y2: 100 },
+          { x1: 280, y1: 100, x2: 318, y2: 102 }
         ]
       },
       rightRamp: {
@@ -278,9 +282,13 @@
           { x1: 378, y1: 363, x2: 352, y2: 450 }
         ],
         guides: [
-          { x1: 162, y1: 101, x2: 240, y2: 100 },
-          { x1: 240, y1: 100, x2: 318, y2: 101 },
-          { x1: 318, y1: 101, x2: 352, y2: 136 },
+          { x1: 168, y1: 102, x2: 200, y2: 100 },
+          { x1: 200, y1: 100, x2: 240, y2: 100 },
+          { x1: 240, y1: 100, x2: 280, y2: 100 },
+          { x1: 280, y1: 100, x2: 318, y2: 102 },
+          { x1: 318, y1: 102, x2: 336, y2: 114 },
+          { x1: 336, y1: 114, x2: 348, y2: 128 },
+          { x1: 348, y1: 128, x2: 352, y2: 136 },
           { x1: 352, y1: 136, x2: 346, y2: 200 },
           { x1: 346, y1: 200, x2: 344, y2: 271 },
           { x1: 344, y1: 271, x2: 338, y2: 363 },
@@ -295,7 +303,7 @@
         mergeInner: [
           { x1: 392, y1: 170, x2: 384, y2: 148 },
           { x1: 384, y1: 148, x2: 352, y2: 136 },
-          { x1: 352, y1: 136, x2: 318, y2: 101 }
+          { x1: 352, y1: 136, x2: 318, y2: 102 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 450,
@@ -322,10 +330,39 @@
         });
       }
     }
+    function subdivideSeg(seg, maxLen) {
+      var dx = seg.x2 - seg.x1;
+      var dy = seg.y2 - seg.y1;
+      var len = Math.sqrt(dx * dx + dy * dy);
+      var n = Math.max(1, Math.ceil(len / Math.max(8, maxLen || 22)));
+      var out = [];
+      var i;
+      for (i = 0; i < n; i++) {
+        var t0 = i / n;
+        var t1 = (i + 1) / n;
+        out.push({
+          x1: seg.x1 + dx * t0,
+          y1: seg.y1 + dy * t0,
+          x2: seg.x1 + dx * t1,
+          y2: seg.y1 + dy * t1
+        });
+      }
+      return out;
+    }
+    function pushInner(segs) {
+      if (!segs) return;
+      var i;
+      for (i = 0; i < segs.length; i++) {
+        var seg = segs[i];
+        var top = seg.y1 < 200 && seg.y2 < 200;
+        var pieces = top ? subdivideSeg(seg, 20) : [seg];
+        pushPath(pieces, top ? 'habitrail' : 'guide');
+      }
+    }
     pushPath(routes.leftRamp.segments, 'habitrail');
-    pushPath(routes.leftRamp.guides, 'guide');
+    pushInner(routes.leftRamp.guides);
     pushPath(routes.rightRamp.segments, 'habitrail');
-    pushPath(routes.rightRamp.guides, 'guide');
+    pushInner(routes.rightRamp.guides);
     return walls;
   }
 
@@ -1177,12 +1214,118 @@
     return best;
   }
 
+  function topHorseshoeInnerSegs(leftRamp, rightRamp) {
+    var segs = [];
+    function add(list) {
+      if (!list) return;
+      var i;
+      for (i = 0; i < list.length; i++) {
+        var s = list[i];
+        if (s.y1 < 200 || s.y2 < 200) segs.push(s);
+      }
+    }
+    add(leftRamp && leftRamp.guides);
+    add(rightRamp && rightRamp.guides);
+    return segs;
+  }
+
+  /**
+   * If the ball slips through the inner U in the top band, push it back
+   * into the channel. Tight gate so open-playfield bumper shots stay free.
+   */
+  function horseshoeOuterSegs(leftRamp, rightRamp) {
+    var outers = [];
+    if (leftRamp && leftRamp.segments) {
+      var oi;
+      for (oi = 0; oi < leftRamp.segments.length; oi++) outers.push(leftRamp.segments[oi]);
+    }
+    if (rightRamp && rightRamp.segments) {
+      var oj;
+      for (oj = 0; oj < rightRamp.segments.length; oj++) outers.push(rightRamp.segments[oj]);
+    }
+    return outers;
+  }
+
+  function nearHorseshoeSpinner(state, ball) {
+    var sp = state.spinner;
+    return !!(sp && vecLen(ball.x - sp.x, ball.y - sp.y) < sp.radius + ball.radius + 18);
+  }
+
+  /** Playfield ball that tunneled up through the inner U — bounce it back down. */
+  function rejectPlayfieldTunnelIn(state) {
+    var ball = state.ball;
+    if (!ball || state.activeHabitrail) return;
+    if (ball.y < 50 || ball.y > 160) return;
+    if (ball.vy >= -20) return;
+    if (ball.x < 120 || ball.x > 350) return;
+    var left = state.sideRoutes.leftRamp;
+    var right = state.sideRoutes.rightRamp;
+    var nearInner = nearestPointOnSegments(ball.x, ball.y, topHorseshoeInnerSegs(left, right));
+    if (!nearInner || nearInner.dist > 28) return;
+    if (ball.y >= nearInner.y) return;
+    ball.y = nearInner.y + ball.radius + 3;
+    if (ball.vy < 0) ball.vy = Math.abs(ball.vy) * 0.72;
+  }
+
+  /**
+   * If a channel rider slips through the inner U in the top band, push it
+   * back into the channel. Tight gate so open-playfield bumper shots stay free.
+   */
+  function containHorseshoeInner(state) {
+    var ball = state.ball;
+    if (!ball || ball.y < 50 || ball.y > 160) return;
+    if (ball.x < 88 || ball.x > 368) return;
+    if (ball.vy < 20) return;
+    if (nearHorseshoeSpinner(state, ball)) return;
+    var left = state.sideRoutes.leftRamp;
+    var right = state.sideRoutes.rightRamp;
+    var inners = topHorseshoeInnerSegs(left, right);
+    var outers = horseshoeOuterSegs(left, right);
+    var nearInner = nearestPointOnSegments(ball.x, ball.y, inners);
+    var nearOuter = nearestPointOnSegments(ball.x, ball.y, outers);
+    if (!nearInner) return;
+    var nearDist = nearInner.dist;
+    if (nearOuter) nearDist = Math.min(nearDist, nearOuter.dist);
+    if (nearDist > 30) return;
+    if (ball.y <= nearInner.y + 3) return;
+    if (!state.activeHabitrail) return;
+    if (!(nearOuter && nearOuter.dist <= 56) && nearInner.dist > 22) return;
+    var lift = nearInner.y - ball.radius - 4;
+    if (nearOuter) {
+      var midY = (nearOuter.y + nearInner.y) * 0.5;
+      if (lift < nearOuter.y + 8) lift = midY;
+    }
+    ball.y = Math.min(ball.y, lift);
+    if (ball.vy > 40) ball.vy = -Math.max(140, Math.abs(ball.vy) * 0.35);
+    var travel = horseshoeTravelSegs(left, right);
+    var wall = nearestPointOnSegments(ball.x, ball.y, travel) || nearOuter || nearInner;
+    if (wall && wall.seg) {
+      var fwd = normalize(wall.seg.x2 - wall.seg.x1, wall.seg.y2 - wall.seg.y1);
+      var ride = state.activeHabitrail;
+      var dir;
+      if (ride === 'ramp-r') dir = { x: -fwd.x, y: -fwd.y };
+      else if (ride === 'ramp-l') dir = fwd;
+      else {
+        var already = dot(ball.vx, ball.vy, fwd.x, fwd.y);
+        dir = already >= 0 ? fwd : { x: -fwd.x, y: -fwd.y };
+      }
+      var along = dot(ball.vx, ball.vy, dir.x, dir.y);
+      if (along < HABITRAIL_MIN_SPEED) {
+        var need = HABITRAIL_MIN_SPEED - along;
+        ball.vx += dir.x * need;
+        ball.vy += dir.y * need;
+      }
+    }
+  }
+
   /** Keep ball moving through habitrail/guide channels; kill multi-second crawls. */
   function assistHabitrails(state, dt) {
     if (!state.sideRoutes || !state.ball.inPlay || !state.exitedLaunchLane) return;
     var ball = state.ball;
     var left = state.sideRoutes.leftRamp;
     var right = state.sideRoutes.rightRamp;
+    rejectPlayfieldTunnelIn(state);
+    containHorseshoeInner(state);
     var travel = horseshoeTravelSegs(left, right);
     var nearTravel = nearestPointOnSegments(ball.x, ball.y, travel);
     var routes = [left, right];
@@ -1209,6 +1352,9 @@
         if (ball.x < loX || ball.x > hiX || ball.y < loY || ball.y > hiY) continue;
       }
       inChannel = true;
+      if (!state.activeHabitrail && ball.y > 200) {
+        state.activeHabitrail = route.id;
+      }
       var wall = nearTravel && nearTravel.dist <= channelDist + 6 ? nearTravel : nearOuter;
       var fwd = normalize(wall.seg.x2 - wall.seg.x1, wall.seg.y2 - wall.seg.y1);
       var ride = state.activeHabitrail;
