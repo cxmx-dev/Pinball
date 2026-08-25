@@ -663,15 +663,12 @@
   window.addEventListener('keyup', handleKeyUp);
   document.addEventListener('contextmenu', blockContextMenu);
   window.addEventListener('contextmenu', blockContextMenu);
-  canvas.addEventListener('pointerdown', function (e) {
+  document.addEventListener('pointerdown', function (e) {
     hideSwipeHint();
     handlePointerDown(e);
-  });
-  canvas.addEventListener('pointerup', handlePointerUp);
-  canvas.addEventListener('pointercancel', handlePointerUp);
-  canvas.addEventListener('pointerleave', function (e) {
-    if (e.pointerType === 'mouse') handlePointerUp(e);
-  });
+  }, true);
+  document.addEventListener('pointerup', handlePointerUp, true);
+  document.addEventListener('pointercancel', handlePointerUp, true);
   document.body.addEventListener('auxclick', function (e) {
     if (e.button === 2) e.preventDefault();
   });
