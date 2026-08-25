@@ -428,6 +428,64 @@
     ctx.restore();
   }
 
+  function strokeTubePath(ctx, pts, opts) {
+    if (!pts || pts.length < 2) return;
+    opts = opts || {};
+    var core = opts.core;
+    var glow = opts.glow;
+    var hi = opts.hi;
+    var shadow = opts.shadow || 'rgba(0,0,0,0.35)';
+    var w = opts.width || 6;
+    var smooth = !!opts.smooth;
+    function paint() {
+      if (smooth) strokeSmooth(ctx, pts, false);
+      else strokeExact(ctx, pts, false);
+    }
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (q().tubeDetail === 'simple') {
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = glow;
+      ctx.lineWidth = w + 1.5;
+      ctx.globalAlpha = 0.5;
+      paint();
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = core;
+      ctx.lineWidth = w;
+      paint();
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+    ctx.strokeStyle = shadow;
+    ctx.lineWidth = w + 4;
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 0.55;
+    paint();
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = glow;
+    ctx.lineWidth = w + 3;
+    ctx.shadowColor = glow;
+    ctx.shadowBlur = 10;
+    paint();
+    ctx.stroke();
+    ctx.shadowBlur = 4;
+    ctx.strokeStyle = core;
+    ctx.lineWidth = w;
+    paint();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = hi;
+    ctx.lineWidth = Math.max(1.2, w * 0.28);
+    ctx.globalAlpha = 0.75;
+    paint();
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawWalls(ctx, state) {
     ctx.save();
     ctx.lineCap = 'round';
@@ -444,6 +502,7 @@
         }
         if (wall.arc || kind === 'rail' || kind === 'habitrail') {
           var glowCyan = kind !== 'habitrail' || (!wall.merge && wall.x1 < 220 && wall.x2 < 220);
+          if (kind === 'habitrail' && !glowCyan) return;
           ctx.strokeStyle = (kind === 'habitrail' && !glowCyan) ? 'rgba(255, 170, 60, 0.20)' : 'rgba(100, 200, 255, 0.22)';
           ctx.lineWidth = 10;
           ctx.shadowColor = kind === 'habitrail' ? 'rgba(255, 160, 40, 0.35)' : 'rgba(0, 220, 255, 0.35)';
@@ -477,6 +536,7 @@
       if (kind === 'habitrail' || kind === 'guide') {
         var leftRail = !wall.merge && wall.x1 < 220 && wall.x2 < 220;
         var cyan = leftRail;
+        if (!cyan) return;
         if (kind === 'habitrail') {
           strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, cyan ? {
             core: 'rgba(80, 230, 255, 0.95)',
@@ -524,6 +584,27 @@
       ctx.lineTo(wall.x2, wall.y2);
       ctx.stroke();
     });
+    if (state.sideRoutes && state.sideRoutes.rightRamp) {
+      var rr = state.sideRoutes.rightRamp;
+      var copperTube = {
+        core: 'rgba(255, 190, 90, 0.92)',
+        glow: 'rgba(255, 150, 40, 0.42)',
+        hi: 'rgba(255, 245, 210, 0.65)',
+        width: 6,
+        smooth: true
+      };
+      var copperGuide = {
+        core: 'rgba(255, 220, 140, 0.55)',
+        glow: 'rgba(255, 180, 60, 0.22)',
+        hi: 'rgba(255,255,255,0.4)',
+        width: 3.5,
+        smooth: true
+      };
+      strokeTubePath(ctx, segsToPoints(rr.segments), copperTube);
+      strokeTubePath(ctx, segsToPoints(rr.guides), copperGuide);
+      if (rr.mergeOuter) strokeTubePath(ctx, segsToPoints(rr.mergeOuter), copperTube);
+      if (rr.mergeInner) strokeTubePath(ctx, segsToPoints(rr.mergeInner), copperGuide);
+    }
     ctx.restore();
   }
 
@@ -598,11 +679,12 @@
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    // Fill on the physics polylines (same coords as walls) so the glow IS the wall.
-    strokeExact(ctx, hull, true);
+    // Copper: one smooth hull (no chord ticks). Cyan stays exact. Physics unchanged.
+    var strokeHull = cyan ? strokeExact : strokeSmooth;
+    strokeHull(ctx, hull, true);
     ctx.fillStyle = cyan ? '#061820' : '#2a1206';
     ctx.fill();
-    strokeExact(ctx, hull, true);
+    strokeHull(ctx, hull, true);
     var minX = hull[0].x, maxX = hull[0].x, minY = hull[0].y, maxY = hull[0].y;
     var hi;
     for (hi = 1; hi < hull.length; hi++) {
@@ -632,7 +714,7 @@
     }
 
     function paintRim(pts, width) {
-      strokeExact(ctx, pts, false);
+      strokeHull(ctx, pts, false);
       ctx.strokeStyle = cyan ? 'rgba(80, 220, 255, 0.95)' : 'rgba(255, 168, 64, 0.95)';
       ctx.lineWidth = width;
       ctx.stroke();
@@ -640,11 +722,11 @@
         ctx.shadowBlur = 0;
         ctx.strokeStyle = cyan ? 'rgba(200, 245, 255, 0.55)' : 'rgba(255, 230, 170, 0.55)';
         ctx.lineWidth = Math.max(2, width * 0.28);
-        strokeExact(ctx, pts, false);
+        strokeHull(ctx, pts, false);
         ctx.stroke();
       }
     }
-    // Thin rims on the physics chords — drawWalls paints the glowing rails on top.
+    // Thin rims; copper uses the smooth hull path so chord joints stay hidden.
     paintRim(outer, simple ? 5 : 6);
     paintRim(inner.slice().reverse(), simple ? 4 : 5);
 
