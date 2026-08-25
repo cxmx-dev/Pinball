@@ -257,13 +257,13 @@
           { x1: 150, y1: 36, x2: 240, y2: 32 }
         ],
         guides: [
-          { x1: 100, y1: 342, x2: 80, y2: 276 },
-          { x1: 80, y1: 276, x2: 74, y2: 200 },
-          { x1: 74, y1: 200, x2: 80, y2: 146 },
-          { x1: 80, y1: 146, x2: 96, y2: 120 },
-          { x1: 96, y1: 120, x2: 110, y2: 102 },
-          { x1: 110, y1: 102, x2: 126, y2: 88 },
-          { x1: 126, y1: 88, x2: 146, y2: 77 },
+          { x1: 100, y1: 342, x2: 76, y2: 276 },
+          { x1: 76, y1: 276, x2: 70, y2: 200 },
+          { x1: 70, y1: 200, x2: 76, y2: 146 },
+          { x1: 76, y1: 146, x2: 92, y2: 120 },
+          { x1: 92, y1: 120, x2: 106, y2: 102 },
+          { x1: 106, y1: 102, x2: 122, y2: 88 },
+          { x1: 122, y1: 88, x2: 146, y2: 77 },
           { x1: 146, y1: 77, x2: 168, y2: 76 },
           { x1: 168, y1: 76, x2: 200, y2: 72 },
           { x1: 200, y1: 72, x2: 240, y2: 70 }
@@ -292,10 +292,10 @@
           { x1: 280, y1: 72, x2: 318, y2: 76 },
           { x1: 318, y1: 76, x2: 336, y2: 83 },
           { x1: 336, y1: 83, x2: 350, y2: 93 },
-          { x1: 350, y1: 93, x2: 354, y2: 101 },
-          { x1: 354, y1: 101, x2: 348, y2: 159 },
-          { x1: 348, y1: 159, x2: 346, y2: 216 },
-          { x1: 346, y1: 216, x2: 342, y2: 286 },
+          { x1: 350, y1: 93, x2: 356, y2: 110 },
+          { x1: 356, y1: 110, x2: 356, y2: 159 },
+          { x1: 356, y1: 159, x2: 348, y2: 216 },
+          { x1: 348, y1: 216, x2: 342, y2: 286 },
           { x1: 342, y1: 286, x2: 328, y2: 342 }
         ],
         mergeOuter: [
@@ -459,11 +459,58 @@
     };
   }
 
-  function createGateSpinner() {
-    // Vertical gate at/above the right copper ramp mouth (entry ~350,335).
+  function createSaucer2() {
+    // Upper-right pocket just below the copper ramp (not in the shooter).
     return {
-      x: 350,
-      y: 318,
+      x: 330,
+      y: 148,
+      radius: 15,
+      score: 1500,
+      holdSec: 1.2,
+      holdT: 0,
+      captured: false,
+      cooldown: 0,
+      lit: false,
+      flash: 0
+    };
+  }
+
+  function saucersOf(state) {
+    var out = [];
+    if (state && state.saucer) out.push(state.saucer);
+    if (state && state.saucer2) out.push(state.saucer2);
+    return out;
+  }
+
+  function saucerHoldingBall(state, ball) {
+    var list = saucersOf(state);
+    var i;
+    for (i = 0; i < list.length; i++) {
+      if (list[i].captured && list[i].heldBall === ball) return list[i];
+    }
+    return null;
+  }
+
+  function lightLockSaucers(state, on) {
+    var list = saucersOf(state);
+    var i;
+    for (i = 0; i < list.length; i++) list[i].lit = !!on;
+  }
+
+  function anySaucerLit(state) {
+    var list = saucersOf(state);
+    var i;
+    for (i = 0; i < list.length; i++) {
+      if (list[i].lit) return true;
+    }
+    return false;
+  }
+
+  function createGateSpinner() {
+    // Vertical gate at board center, just above the saver bumper (210,455).
+    return {
+      x: 240,
+      y: 422,
       h: 42,
       angle: 0,
       spinVel: 0,
@@ -626,6 +673,7 @@
       posts: createPosts(),
       spinner: createSpinner(),
       saucer: createSaucer(),
+      saucer2: createSaucer2(),
       gateSpinner: createGateSpinner(),
       walls: createWalls(),
       lockCount: 0,
@@ -862,11 +910,11 @@
     if (state.gateSpinner && state.gateSpinner.hitCooldown > 0) {
       state.gateSpinner.hitCooldown -= dt;
     }
-    if (state.saucer && state.saucer.cooldown > 0) {
-      state.saucer.cooldown -= dt;
-    }
-    if (state.saucer && state.saucer.flash > 0) {
-      state.saucer.flash = Math.max(0, state.saucer.flash - dt);
+    var holes = saucersOf(state);
+    var hi;
+    for (hi = 0; hi < holes.length; hi++) {
+      if (holes[hi].cooldown > 0) holes[hi].cooldown -= dt;
+      if (holes[hi].flash > 0) holes[hi].flash = Math.max(0, holes[hi].flash - dt);
     }
     if (state.multiballBannerLife > 0) {
       state.multiballBannerLife -= dt;
@@ -1226,6 +1274,10 @@
       if (other) other.cooldown = Math.max(other.cooldown || 0, SIDE_ROUTE_COOLDOWN);
     }
     awardScore(state, route.score, 'route', route.id, ball.x, ball.y);
+    if (route.id === 'ramp-l') {
+      // Credit lock at the cyan mouth. Ball keeps rolling — no saucer teleport.
+      awardLock(state, { keepBall: true, x: route.entry.x, y: route.entry.y });
+    }
     return true;
   }
 
@@ -1414,7 +1466,9 @@
     var ball = state.ball;
     if (!ball || !ball.inPlay || !state.exitedLaunchLane) return;
     if (ball.x < 60 || ball.x > 130 || ball.y < 465 || ball.y > 545) return;
-    if (state.saucer && vecLen(ball.x - state.saucer.x, ball.y - state.saucer.y) < state.saucer.radius + 40) return;
+    if (saucersOf(state).some(function (hole) {
+      return vecLen(ball.x - hole.x, ball.y - hole.y) < hole.radius + 40;
+    })) return;
     if (ballSpeed(ball) > 90) return;
     var left = state.sideRoutes && state.sideRoutes.leftRamp;
     if (left && pointInRouteEntry(ball, left.entry)) return;
@@ -2223,11 +2277,11 @@
     state.ballSaveTimer = 0;
     state.multiball = false;
     state.balls = null;
-    if (state.saucer) {
-      state.saucer.captured = false;
-      state.saucer.heldBall = null;
-      state.saucer.holdT = 0;
-    }
+    saucersOf(state).forEach(function (hole) {
+      hole.captured = false;
+      hole.heldBall = null;
+      hole.holdT = 0;
+    });
     // Park off-table so nothing can soft-kick the lost ball back into the apron
     state.ball.inPlay = false;
     state.ball.x = TABLE_W * 0.5;
@@ -2696,17 +2750,36 @@
     ball._railT = state.launchRailT;
   }
 
-  function kickSaucer(state, ball) {
+  function kickSaucer(state, ball, hole) {
     if (!ball) ball = state.ball;
-    ball.x = state.saucer.x + 10;
-    ball.y = state.saucer.y - 6;
+    if (!hole) hole = saucerHoldingBall(state, ball) || state.saucer;
+    if (!hole || !ball) return;
+    ball.x = hole.x + 10;
+    ball.y = hole.y - 6;
     ball.vx = 200;
     ball.vy = -240;
     ball.inPlay = true;
-    state.saucer.captured = false;
-    state.saucer.holdT = 0;
-    state.saucer.cooldown = 0.55;
-    state.saucer.flash = 0.45;
+    hole.captured = false;
+    hole.heldBall = null;
+    hole.holdT = 0;
+    hole.cooldown = 0.55;
+    hole.flash = 0.45;
+  }
+
+  function awardLock(state, opts) {
+    opts = opts || {};
+    var alreadyLit = anySaucerLit(state);
+    state.lockCount = (state.lockCount || 0) + 1;
+    if (state.lockCount >= 1) lightLockSaucers(state, true);
+    var startMB = !state.multiball && (state.lockCount >= 2 || alreadyLit);
+    if (startMB) {
+      if (opts.holdForSaucer && opts.hole) {
+        opts.hole._pendingMB = true;
+      } else {
+        startMultiball(state, opts.ball || state.ball, { keepBall: true });
+      }
+    }
+    return startMB;
   }
 
   function countLiveBalls(state) {
@@ -2714,17 +2787,18 @@
     return n + extraLiveBalls(state).length;
   }
 
-  function startMultiball(state, currentBall) {
+  function startMultiball(state, currentBall, opts) {
+    opts = opts || {};
     if (state.multiball && countLiveBalls(state) >= 2) {
-      kickSaucer(state, currentBall);
+      if (!opts.keepBall) kickSaucer(state, currentBall);
       return;
     }
     state.multiball = true;
     state.multiballBanner = 'MULTIBALL';
     state.multiballBannerLife = 2.4;
     state.lockCount = 0;
-    if (state.saucer) state.saucer.lit = false;
-    kickSaucer(state, currentBall);
+    lightLockSaucers(state, false);
+    if (!(opts && opts.keepBall)) kickSaucer(state, currentBall);
     if (countLiveBalls(state) >= 2) return;
     var b2 = {
       x: LAUNCH_LANE_X,
@@ -2742,8 +2816,7 @@
     state.balls.push(b2);
   }
 
-  function resolveSaucer(state, dt) {
-    var s = state.saucer;
+  function resolveOneSaucer(state, s, dt) {
     if (!s) return;
     var ball = state.ball;
     if (s.captured && s.heldBall === ball) {
@@ -2759,7 +2832,7 @@
           s._pendingMB = false;
           startMultiball(state, ball);
         } else {
-          kickSaucer(state, ball);
+          kickSaucer(state, ball, s);
         }
       }
       return;
@@ -2767,6 +2840,7 @@
     if (s.captured) return;
     if (s.cooldown > 0) return;
     if (!ball || !ball.inPlay || !state.exitedLaunchLane) return;
+    if (saucerHoldingBall(state, ball)) return;
     var dist = vecLen(ball.x - s.x, ball.y - s.y);
     if (dist < s.radius + ball.radius * 0.42) {
       s.captured = true;
@@ -2777,12 +2851,15 @@
       ball.vx = 0;
       ball.vy = 0;
       s.flash = 0.6;
-      awardScore(state, s.score, 'saucer', 'saucer', s.x, s.y);
-      var alreadyLit = !!s.lit;
-      state.lockCount = (state.lockCount || 0) + 1;
-      if (!state.multiball && (state.lockCount >= 2 || alreadyLit)) s._pendingMB = true;
-      if (state.lockCount >= 1) s.lit = true;
+      awardScore(state, s.score, 'saucer', s === state.saucer2 ? 'saucer2' : 'saucer', s.x, s.y);
+      awardLock(state, { holdForSaucer: true, hole: s, ball: ball });
     }
+  }
+
+  function resolveSaucer(state, dt) {
+    var list = saucersOf(state);
+    var i;
+    for (i = 0; i < list.length; i++) resolveOneSaucer(state, list[i], dt);
   }
 
   function resolveGateSpinner(state) {
@@ -2807,7 +2884,7 @@
 
   function stepOneBallPhysics(state, dt) {
     var ball = state.ball;
-    if (state.saucer && state.saucer.captured && state.saucer.heldBall === ball) {
+    if (saucerHoldingBall(state, ball)) {
       resolveSaucer(state, dt);
       resolveGateSpinner(state);
       return;

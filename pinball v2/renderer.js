@@ -848,8 +848,7 @@
     });
   }
 
-  function drawSaucer(ctx, state, pulse) {
-    var s = state.saucer;
+  function drawSaucerHole(ctx, state, s, pulse) {
     if (!s) return;
     var simple = q().tubeDetail === 'simple' || q().tier === 'phone';
     ctx.save();
@@ -879,6 +878,11 @@
     ctx.shadowBlur = 0;
     ctx.fillText(s.lit && (state.lockCount || 0) >= 1 ? 'LOCK' : 'HOLE', s.x, s.y + s.radius + 10);
     ctx.restore();
+  }
+
+  function drawSaucer(ctx, state, pulse) {
+    if (state.saucer) drawSaucerHole(ctx, state, state.saucer, pulse);
+    if (state.saucer2) drawSaucerHole(ctx, state, state.saucer2, pulse);
   }
 
   function drawGateSpinner(ctx, state, pulse) {
@@ -1349,7 +1353,7 @@
       ctx.fillStyle = '#66f0ff';
       applyShadow(ctx, '#22d0ff', 14);
       ctx.fillText(state.multiballBanner, canvas.width - 24, 64);
-    } else if (state.saucer && state.saucer.lit && !state.multiball) {
+    } else if (!state.multiball && ((state.saucer && state.saucer.lit) || (state.saucer2 && state.saucer2.lit))) {
       ctx.fillStyle = '#88e8ff';
       applyShadow(ctx, '#44c8ff', 10);
       ctx.fillText('LOCK LIT', canvas.width - 24, 64);

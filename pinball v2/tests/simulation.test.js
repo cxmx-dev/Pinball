@@ -1380,7 +1380,8 @@ console.log('=============================');
   var state = fresh();
   var g = state.gateSpinner;
   assert(g, 'vertical gate spinner exists');
-  assert(g.x >= 336 && g.x <= 366 && g.y >= 300 && g.y <= 340, 'gate sits at the right copper ramp mouth');
+  assert(g.x >= 220 && g.x <= 260 && g.y >= 400 && g.y <= 430, 'gate sits at board center above the saver');
+  assert(Math.abs(g.x - 240) < 8, 'gate is centered on the board');
   assert(state.spinner.x >= 185 && state.spinner.y >= 195, 'flat spinner stays in the open field');
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
@@ -1454,3 +1455,128 @@ console.log('=============================');
 })();
 
 console.log('All tests passed.');
+
+(function testUpperRightSaucerLocks() {
+  var state = fresh();
+  assert(state.saucer && state.saucer.x === 95 && state.saucer.y === 520, 'left saucer stays');
+  assert(state.saucer2, 'upper-right saucer exists');
+  assert(state.saucer2.x >= 310 && state.saucer2.x <= 350, 'UR saucer in the open pocket');
+  assert(state.saucer2.y >= 130 && state.saucer2.y <= 190, 'UR saucer just below the copper ramp');
+  assert(state.saucer2.x < sim.LAUNCH_LANE_LEFT - 20, 'UR saucer is not in the shooter');
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.ball.x = state.saucer2.x;
+  state.ball.y = state.saucer2.y;
+  state.ball.vx = 20;
+  state.ball.vy = 20;
+  var i;
+  for (i = 0; i < 8; i++) sim.tick(state, 1 / 60);
+  assert(state.saucer2.captured, 'UR saucer should catch');
+  assert(state.lockCount >= 1, 'UR saucer should lock');
+  assert(state.saucer.lit && state.saucer2.lit, 'both holes light LOCK');
+  console.log('PASS: upper-right saucer locks (' + state.saucer2.x + ',' + state.saucer2.y + ')');
+})();
+
+(function testLeftRampMouthCreditsLock() {
+  var state = fresh();
+  placeInLeftMouth(state, 980);
+  state.ball.x = 80;
+  state.ball.y = 337;
+  state.ball.vx = -10;
+  state.ball.vy = -360;
+  state.activeHabitrail = null;
+  var y0 = state.ball.y;
+  var i;
+  for (i = 0; i < 20; i++) sim.stepPhysics(state, 1 / 60);
+  assert(state.lockCount >= 1, 'left ramp mouth should credit a lock');
+  assert(state.saucer.lit, 'left ramp feeds the lock light');
+  var dSaucer = Math.sqrt(
+    (state.ball.x - state.saucer.x) * (state.ball.x - state.saucer.x) +
+    (state.ball.y - state.saucer.y) * (state.ball.y - state.saucer.y)
+  );
+  assert(dSaucer > 40, 'left ramp lock must not teleport the ball to the saucer');
+  assert(state.ball.y < y0 + 8, 'ball keeps rolling after lock credit (y=' + state.ball.y.toFixed(1) + ')');
+  console.log('PASS: left ramp mouth credits lock without teleport (lock=' + state.lockCount + ' xy=' + state.ball.x.toFixed(1) + ',' + state.ball.y.toFixed(1) + ')');
+})();
+
+(function testFillersShiftedTowardRails() {
+  var state = fresh();
+  var lg = state.sideRoutes.leftRamp.guides;
+  var rg = state.sideRoutes.rightRamp.guides;
+  var leftMid = null;
+  var rightMid = null;
+  var i;
+  for (i = 0; i < lg.length; i++) {
+    if (Math.min(lg[i].y1, lg[i].y2) <= 200 && Math.max(lg[i].y1, lg[i].y2) >= 200) leftMid = lg[i];
+  }
+  for (i = 0; i < rg.length; i++) {
+    if (Math.min(rg[i].y1, rg[i].y2) <= 160 && Math.max(rg[i].y1, rg[i].y2) >= 160) rightMid = rg[i];
+  }
+  assert(leftMid, 'left mid inner exists');
+  assert(rightMid, 'right mid inner exists');
+  var leftX = (leftMid.x1 + leftMid.x2) / 2;
+  var rightX = (rightMid.x1 + rightMid.x2) / 2;
+  assert(leftX <= 73, 'left filler inner sits toward x=36 (got ' + leftX.toFixed(1) + ')');
+  assert(rightX >= 352, 'right filler inner sits toward the launch wall (got ' + rightX.toFixed(1) + ')');
+  var leftOuter = state.sideRoutes.leftRamp.segments;
+  assert(leftOuter[leftOuter.length - 1].y2 === 32, 'U outer stays y=32');
+  assert(lg[lg.length - 1].y2 === 70, 'U inner stays y=70');
+  var leftMouthY = state.sideRoutes.leftRamp.entry.y;
+  var rightMouthY = state.sideRoutes.rightRamp.entry.y;
+  assert(leftMouthY >= 330 && leftMouthY <= 345, 'left mouth ~336');
+  assert(rightMouthY >= 330 && rightMouthY <= 345, 'right mouth ~336');
+  console.log('PASS: fillers shifted out (leftMid=' + leftX.toFixed(1) + ' rightMid=' + rightX.toFixed(1) + ')');
+})();
+
+(function testCopperCurveClearsUpperRightSaucer() {
+  var state = fresh();
+  var s = state.saucer2;
+  var hit = null;
+  var oldLoop = false;
+  var i;
+  for (i = 0; i < state.walls.length; i++) {
+    var w = state.walls[i];
+    if (w.kind !== 'habitrail' && w.kind !== 'guide') continue;
+    var minX = Math.min(w.x1, w.x2);
+    var maxX = Math.max(w.x1, w.x2);
+    var minY = Math.min(w.y1, w.y2);
+    var maxY = Math.max(w.y1, w.y2);
+    if (minY >= 100 && maxY <= 170 && minX > 300 && minX <= 350) oldLoop = true;
+    var ax = w.x2 - w.x1;
+    var ay = w.y2 - w.y1;
+    var lenSq = ax * ax + ay * ay;
+    var t = lenSq < 1e-6 ? 0 : Math.max(0, Math.min(1, ((s.x - w.x1) * ax + (s.y - w.y1) * ay) / lenSq));
+    var px = w.x1 + ax * t;
+    var py = w.y1 + ay * t;
+    var dist = Math.sqrt((s.x - px) * (s.x - px) + (s.y - py) * (s.y - py));
+    if (dist < s.radius + 6) hit = { dist: dist };
+  }
+  assert(!oldLoop, 'old inward copper loop must not remain as an invisible wall');
+  assert(!hit, 'copper curve must clear the UR saucer (dist=' + (hit ? hit.dist.toFixed(1) : 'ok') + ')');
+  console.log('PASS: copper curve cleared of UR saucer');
+})();
+
+(function testEitherHoleStartsMultiball() {
+  var state = fresh();
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.lockCount = 1;
+  state.saucer.lit = true;
+  state.saucer2.lit = true;
+  state.ball.x = state.saucer2.x;
+  state.ball.y = state.saucer2.y;
+  state.ball.vx = 8;
+  state.ball.vy = 12;
+  var i;
+  for (i = 0; i < 100; i++) sim.tick(state, 1 / 60);
+  var live = 0;
+  if (state.balls) {
+    for (i = 0; i < state.balls.length; i++) if (state.balls[i] && state.balls[i].inPlay) live++;
+    if (state.ball && state.ball.inPlay && state.balls.indexOf(state.ball) < 0) live++;
+  } else if (state.ball && state.ball.inPlay) live = 1;
+  assert(state.multiball || live >= 2, 'second lock on either hole starts MB');
+  assert(live >= 2, 'two balls on table (live=' + live + ')');
+  console.log('PASS: either hole second lock starts two-ball MB (live=' + live + ')');
+})();
