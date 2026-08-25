@@ -1295,4 +1295,153 @@ function runOrbit(place, dirLabel, speed) {
 
 console.log('=============================');
 
+(function testMergeInnerFloorIsContinuousChannel() {
+  var state = fresh();
+  var inner = state.sideRoutes.rightRamp.mergeInner || [];
+  assert(inner.length >= 5, 'merge inner must be a real floor, not a stub');
+  var minX = 999, maxX = 0, maxY = 0;
+  var i;
+  for (i = 0; i < inner.length; i++) {
+    minX = Math.min(minX, inner[i].x1, inner[i].x2);
+    maxX = Math.max(maxX, inner[i].x1, inner[i].x2);
+    maxY = Math.max(maxY, inner[i].y1, inner[i].y2);
+  }
+  assert(maxX >= 390, 'merge inner must start at the shooter join');
+  assert(minX <= 300, 'merge inner must reach the copper U floor');
+  assert(maxY <= 112, 'merge inner must stay above the shooter well');
+  var tagged = 0;
+  for (i = 0; i < state.walls.length; i++) {
+    if (state.walls[i].merge) tagged++;
+  }
+  assert(tagged >= 8, 'merge walls must be tagged so launch does not skip the floor');
+  console.log('PASS: merge inner floor is a continuous channel (minX=' + minX + ' maxX=' + maxX + ')');
+})();
+
+(function testSaucerCatchesBall() {
+  var state = fresh();
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.ball.x = state.saucer.x;
+  state.ball.y = state.saucer.y;
+  state.ball.vx = 30;
+  state.ball.vy = 40;
+  var i;
+  for (i = 0; i < 8; i++) sim.tick(state, 1 / 60);
+  assert(state.saucer.captured, 'saucer should catch a ball placed on it');
+  assert(state.lockCount >= 1, 'first catch should lock');
+  assert(state.saucer.lit, 'LOCK should light after first catch');
+  for (i = 0; i < 90; i++) sim.tick(state, 1 / 60);
+  assert(!state.saucer.captured, 'saucer should kick out after the hold');
+  assert(state.ball.inPlay, 'kicked ball stays in play');
+  console.log('PASS: saucer catches, locks, kicks out');
+})();
+
+(function testSaucerStartsTwoBallMultiball() {
+  var state = fresh();
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.lockCount = 1;
+  state.saucer.lit = true;
+  state.ball.x = state.saucer.x;
+  state.ball.y = state.saucer.y;
+  state.ball.vx = 10;
+  state.ball.vy = 20;
+  var i;
+  for (i = 0; i < 100; i++) sim.tick(state, 1 / 60);
+  var extras = 0;
+  if (state.balls) {
+    for (i = 0; i < state.balls.length; i++) {
+      if (state.balls[i] && state.balls[i].inPlay) extras++;
+    }
+  }
+  var live = (state.ball && state.ball.inPlay ? 1 : 0);
+  if (state.balls) {
+    live = 0;
+    for (i = 0; i < state.balls.length; i++) if (state.balls[i] && state.balls[i].inPlay) live++;
+    if (state.ball && state.ball.inPlay && state.balls.indexOf(state.ball) < 0) live++;
+  }
+  assert(state.multiball || live >= 2, 'second saucer hit should start multiball');
+  assert(live >= 2, 'two balls should be on the table (live=' + live + ')');
+  console.log('PASS: saucer second lock starts two-ball MB (live=' + live + ')');
+})();
+
+(function testGateSpinnerAwardsOnPass() {
+  var state = fresh();
+  var g = state.gateSpinner;
+  assert(g, 'vertical gate spinner exists');
+  assert(g.x < 90 && g.y > 130 && g.y < 220, 'gate sits in the left U dump channel');
+  assert(state.spinner.x >= 185 && state.spinner.y >= 195, 'flat spinner stays in the open field');
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.ball.x = g.x - 8;
+  state.ball.y = g.y;
+  state.ball.vx = 220;
+  state.ball.vy = 40;
+  var score0 = state.score;
+  var i;
+  for (i = 0; i < 20; i++) sim.stepPhysics(state, 1 / 60);
+  assert(state.score > score0, 'gate should award like the flat spinner');
+  assert(Math.abs(g.spinVel) > 0 || Math.abs(g.angle) > 0, 'gate should spin');
+  console.log('PASS: vertical gate awards and spins (score=' + (state.score - score0) + ')');
+})();
+
+(function testPlungeStaysInMergeTube() {
+  function run(power) {
+    var state = fresh();
+    sim.launchBall(state, power);
+    var fell = false;
+    var inTube = false;
+    var i;
+    for (i = 0; i < 200; i++) {
+      sim.tick(state, 1 / 60);
+      var b = state.ball;
+      if (b.x > 250 && b.x < 420 && b.y < 120) {
+        inTube = true;
+        if (b.y > 118) fell = true;
+      }
+      if (state.exitedLaunchLane && b.y > 400) break;
+    }
+    return { ex: state.exitedLaunchLane, inTube: inTube, fell: fell, x: state.ball.x, y: state.ball.y, remaining: state.ballsRemaining };
+  }
+  var a = run(600);
+  assert(a.ex, '600 must exit the lane');
+  assert(a.remaining === 3, '600 must not drain');
+  var b = run(800);
+  assert(b.inTube && !b.fell, '800 must stay in the merge tube');
+  var c = run(1400);
+  assert(c.inTube && !c.fell, '1400 must stay in the merge tube');
+  console.log('PASS: plunge 600/800/1400 stay in merge (800 y=' + b.y.toFixed(1) + ' 1400 y=' + c.y.toFixed(1) + ')');
+})();
+
+
+(function testLeftHabitrailBounceOnDrawnChord() {
+  var state = fresh();
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  // Left inner guide ~ (80,276)-(100,342). Fire left into the chord.
+  state.ball.x = 104;
+  state.ball.y = 300;
+  state.ball.vx = -420;
+  state.ball.vy = 20;
+  var hit = false;
+  var contactX = 0;
+  var i;
+  for (i = 0; i < 40; i++) {
+    sim.stepPhysics(state, 1 / 60);
+    if (state.ball.vx > 0) {
+      hit = true;
+      contactX = state.ball.x;
+      break;
+    }
+  }
+  assert(hit, 'ball must bounce off the left inner habitrail');
+  // Chord at this height is ~x=86; bounce sits on the line + radius, not a ball-width inside.
+  assert(contactX > 86 && contactX < 112, 'left bounce must sit on the drawn chord (x=' + contactX.toFixed(1) + ')');
+  console.log('PASS: left habitrail bounce on drawn chord (x=' + contactX.toFixed(1) + ')');
+})();
+
 console.log('All tests passed.');

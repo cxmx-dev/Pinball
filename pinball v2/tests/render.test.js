@@ -105,4 +105,13 @@ console.log('=========================');
 })();
 
 console.log('=========================');
+(function testRendererAvoidsEllipseScale() {
+  var src = fs.readFileSync(path.join(__dirname, '../renderer.js'), 'utf8');
+  assert(src.indexOf('.ellipse(') < 0, 'renderer must not call ctx.ellipse (phone mock has no ellipse)');
+  assert(src.indexOf('.scale(') < 0, 'renderer must not call ctx.scale (phone mock has no scale)');
+  assert(!/x1 < 160 && wall.x2 < 160/.test(src), 'drawWalls must not skip left habitrail legs');
+  assert(!/x1 > 270 && wall.x2 > 270/.test(src), 'drawWalls must not skip right habitrail legs');
+  console.log('PASS: renderer draws physics rails and avoids ellipse/scale');
+})();
+
 console.log('All render tests passed.');

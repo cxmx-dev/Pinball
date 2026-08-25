@@ -210,7 +210,11 @@
   }
 
   function createTargets() {
-    return [];
+    return [
+      { id: 'stand-r1', x: 352, y: 428, w: 14, h: 26, score: 400, lit: false, occupied: false, flash: 0 },
+      { id: 'stand-r2', x: 352, y: 462, w: 14, h: 26, score: 400, lit: false, occupied: false, flash: 0 },
+      { id: 'stand-l', x: 64, y: 448, w: 14, h: 26, score: 400, lit: false, occupied: false, flash: 0 }
+    ];
   }
 
   /** Horizontal drop bank mid-table â€” complete all â†’ rush mode */
@@ -295,13 +299,19 @@
           { x1: 342, y1: 286, x2: 328, y2: 342 }
         ],
         mergeOuter: [
-          { x1: 444, y1: 94, x2: 430, y2: 78 },
-          { x1: 430, y1: 78, x2: 412, y2: 68 },
-          { x1: 412, y1: 68, x2: 392, y2: 64 }
+          { x1: 444, y1: 94, x2: 430, y2: 76 },
+          { x1: 430, y1: 76, x2: 412, y2: 60 },
+          { x1: 412, y1: 60, x2: 390, y2: 48 },
+          { x1: 390, y1: 48, x2: 360, y2: 38 },
+          { x1: 360, y1: 38, x2: 330, y2: 36 }
         ],
         mergeInner: [
-          { x1: 392, y1: 103, x2: 388, y2: 94 },
-          { x1: 388, y1: 94, x2: 386, y2: 86 }
+          { x1: 392, y1: 103, x2: 378, y2: 92 },
+          { x1: 378, y1: 92, x2: 362, y2: 84 },
+          { x1: 362, y1: 84, x2: 344, y2: 78 },
+          { x1: 344, y1: 78, x2: 324, y2: 74 },
+          { x1: 324, y1: 74, x2: 300, y2: 72 },
+          { x1: 300, y1: 72, x2: 280, y2: 72 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 345,
@@ -361,8 +371,22 @@
     pushInner(routes.leftRamp.guides);
     pushPath(routes.rightRamp.segments, 'habitrail');
     pushInner(routes.rightRamp.guides);
-    pushPath(routes.rightRamp.mergeOuter, 'habitrail');
-    pushInner(routes.rightRamp.mergeInner);
+    function pushMerge(segs, kind) {
+      if (!segs) return;
+      var m;
+      for (m = 0; m < segs.length; m++) {
+        walls.push({
+          x1: segs[m].x1,
+          y1: segs[m].y1,
+          x2: segs[m].x2,
+          y2: segs[m].y2,
+          kind: kind,
+          merge: true
+        });
+      }
+    }
+    pushMerge(routes.rightRamp.mergeOuter, 'habitrail');
+    pushMerge(routes.rightRamp.mergeInner, 'habitrail');
     return walls;
   }
 
@@ -416,7 +440,40 @@
   }
 
   function createPosts() {
-    return [];
+    // Small rubber near the left saucer so that box is not empty.
+    return [
+      { id: 'saucer-post', x: 132, y: 568, radius: 7, score: 50, color: '#88ccee', flash: 0 },
+      { id: 'right-mid-post', x: 328, y: 548, radius: 7, score: 50, color: '#88ccee', flash: 0 },
+      { id: 'upper-gap-post', x: 248, y: 618, radius: 6, score: 40, color: '#9ad0e8', flash: 0 }
+    ];
+  }
+
+  function createSaucer() {
+    return {
+      x: 95,
+      y: 520,
+      radius: 15,
+      score: 1500,
+      holdSec: 1.2,
+      holdT: 0,
+      captured: false,
+      cooldown: 0,
+      lit: false,
+      flash: 0
+    };
+  }
+
+  function createGateSpinner() {
+    // Vertical gate in the left U dump channel, below the top-left curve.
+    return {
+      x: 58,
+      y: 168,
+      h: 42,
+      angle: 0,
+      spinVel: 0,
+      score: 200,
+      hitCooldown: 0
+    };
   }
 
   /** Ellipse arc as wall segments (canvas y+ down). a0â†’a1 radians. */
@@ -572,7 +629,14 @@
       kickers: createKickers(),
       posts: createPosts(),
       spinner: createSpinner(),
+      saucer: createSaucer(),
+      gateSpinner: createGateSpinner(),
       walls: createWalls(),
+      lockCount: 0,
+      multiball: false,
+      multiballBanner: null,
+      multiballBannerLife: 0,
+      balls: null,
       score: 0,
       ballsRemaining: 3,
       launchPower: 0,
@@ -799,6 +863,22 @@
     if (state.spinner && state.spinner.hitCooldown > 0) {
       state.spinner.hitCooldown -= dt;
     }
+    if (state.gateSpinner && state.gateSpinner.hitCooldown > 0) {
+      state.gateSpinner.hitCooldown -= dt;
+    }
+    if (state.saucer && state.saucer.cooldown > 0) {
+      state.saucer.cooldown -= dt;
+    }
+    if (state.saucer && state.saucer.flash > 0) {
+      state.saucer.flash = Math.max(0, state.saucer.flash - dt);
+    }
+    if (state.multiballBannerLife > 0) {
+      state.multiballBannerLife -= dt;
+      if (state.multiballBannerLife <= 0) {
+        state.multiballBannerLife = 0;
+        state.multiballBanner = null;
+      }
+    }
     state.slingshots.forEach(function (s) {
       if (s.cooldown > 0) s.cooldown -= dt;
     });
@@ -911,6 +991,7 @@
     state.exitedLaunchLane = true;
     state.skillShotWindow = true;
     state.launchTick = 0;
+    state.launchRailT = null;
     // Ride the right horseshoe / copper outer. Never dump into the open U at 280,52.
     var targetX = 330;
     var targetY = 40;
@@ -1335,6 +1416,7 @@
     var ball = state.ball;
     if (!ball || !ball.inPlay || !state.exitedLaunchLane) return;
     if (ball.x < 60 || ball.x > 130 || ball.y < 465 || ball.y > 545) return;
+    if (state.saucer && vecLen(ball.x - state.saucer.x, ball.y - state.saucer.y) < state.saucer.radius + 40) return;
     if (ballSpeed(ball) > 90) return;
     var left = state.sideRoutes && state.sideRoutes.leftRamp;
     if (left && pointInRouteEntry(ball, left.entry)) return;
@@ -1556,6 +1638,8 @@
     state.phase = 'ready';
     state.tiltWarnings = 0;
     state.tiltCooldown = 0;
+    state.multiball = false;
+    state.balls = null;
     state.ballSaveArmed = false;
     state.ballSaveUsed = false;
     state.ballSaveTimer = 0;
@@ -1653,12 +1737,17 @@
           inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp))) {
         return;
       }
-      // Launch merge is a raised channel over the right-orbit outer corner.
-      if (!state.exitedLaunchLane && state.launchRailT != null && wall.kind === 'habitrail' && ball.y < 115) {
+      // Raised merge sits over the right-orbit corner in 2D.
+      // Plunge / merge riders must hit the floor; RTL climbers in the right slide must not.
+      if (wall.merge) {
+        // Raised on-ramp only. Orbit climbers / U riders use the copper walls.
+        if (state.activeHabitrail === 'ramp-l') return;
+        var orbiting = state.exitedLaunchLane && state.launchRailT == null && !isBallInLaunchLane(state);
+        if (orbiting && (ball.y > 72 || ball.x > 348)) return;
+      } else if (!state.exitedLaunchLane && state.launchRailT != null && wall.kind === 'habitrail' && ball.y < 115) {
         var minX = Math.min(wall.x1, wall.x2);
         var maxX = Math.max(wall.x1, wall.x2);
         var minY = Math.min(wall.y1, wall.y2);
-        // Tall right-orbit outer + copper diagonal at the mouth.
         if (minX > 328 && maxX < 396 && minY < 90 && minX > 200) return;
       }
       // Soft short deck stubs â€” less bounce so they don't steal lower play
@@ -2134,7 +2223,15 @@
     state.ballSaveArmed = false;
     state.ballSaveUsed = true;
     state.ballSaveTimer = 0;
+    state.multiball = false;
+    state.balls = null;
+    if (state.saucer) {
+      state.saucer.captured = false;
+      state.saucer.heldBall = null;
+      state.saucer.holdT = 0;
+    }
     // Park off-table so nothing can soft-kick the lost ball back into the apron
+    state.ball.inPlay = false;
     state.ball.x = TABLE_W * 0.5;
     state.ball.y = TABLE_H + 80;
     state.ball.vx = 0;
@@ -2569,14 +2666,151 @@
     state.plungerFollowFrames -= 1;
   }
 
-  function stepPhysics(state, dt) {
-    dt = clamp(dt, 0.001, 0.05);
-    updateFlippers(state, dt);
+  function extraLiveBalls(state) {
+    if (!state.balls || !state.balls.length) return [];
+    var out = [];
+    var i;
+    for (i = 0; i < state.balls.length; i++) {
+      var b = state.balls[i];
+      if (b && b !== state.ball && b.inPlay) out.push(b);
+    }
+    return out;
+  }
 
-    if (!state.ball.inPlay) return state;
+  function bindBall(state, ball) {
+    state.ball = ball;
+    if (ball._exited != null) state.exitedLaunchLane = ball._exited;
+    if (Object.prototype.hasOwnProperty.call(ball, '_habitrail')) {
+      state.activeHabitrail = ball._habitrail || null;
+    }
+    if (Object.prototype.hasOwnProperty.call(ball, '_railT')) {
+      state.launchRailT = ball._railT;
+    }
+  }
 
+  function unbindBall(state, ball) {
+    ball._exited = state.exitedLaunchLane;
+    ball._habitrail = state.activeHabitrail;
+    ball._railT = state.launchRailT;
+  }
+
+  function kickSaucer(state, ball) {
+    if (!ball) ball = state.ball;
+    ball.x = state.saucer.x + 10;
+    ball.y = state.saucer.y - 6;
+    ball.vx = 200;
+    ball.vy = -240;
+    ball.inPlay = true;
+    state.saucer.captured = false;
+    state.saucer.holdT = 0;
+    state.saucer.cooldown = 0.55;
+    state.saucer.flash = 0.45;
+  }
+
+  function countLiveBalls(state) {
+    var n = state.ball && state.ball.inPlay ? 1 : 0;
+    return n + extraLiveBalls(state).length;
+  }
+
+  function startMultiball(state, currentBall) {
+    if (state.multiball && countLiveBalls(state) >= 2) {
+      kickSaucer(state, currentBall);
+      return;
+    }
+    state.multiball = true;
+    state.multiballBanner = 'MULTIBALL';
+    state.multiballBannerLife = 2.4;
+    state.lockCount = 0;
+    if (state.saucer) state.saucer.lit = false;
+    kickSaucer(state, currentBall);
+    if (countLiveBalls(state) >= 2) return;
+    var b2 = {
+      x: LAUNCH_LANE_X,
+      y: PLUNGER_REST_Y,
+      vx: 8,
+      vy: -1080,
+      radius: BALL_RADIUS,
+      inPlay: true,
+      _exited: false,
+      _habitrail: null,
+      _railT: null
+    };
+    if (!state.balls) state.balls = [];
+    if (state.balls.indexOf(state.ball) < 0) state.balls.push(state.ball);
+    state.balls.push(b2);
+  }
+
+  function resolveSaucer(state, dt) {
+    var s = state.saucer;
+    if (!s) return;
     var ball = state.ball;
-    ball.vy += GRAVITY * dt; // down-table at TABLE_PITCH_DEG
+    if (s.captured && s.heldBall === ball) {
+      ball.x = s.x;
+      ball.y = s.y;
+      ball.vx = 0;
+      ball.vy = 0;
+      s.holdT -= dt;
+      if (s.holdT <= 0) {
+        s.captured = false;
+        s.heldBall = null;
+        if (s._pendingMB) {
+          s._pendingMB = false;
+          startMultiball(state, ball);
+        } else {
+          kickSaucer(state, ball);
+        }
+      }
+      return;
+    }
+    if (s.captured) return;
+    if (s.cooldown > 0) return;
+    if (!ball || !ball.inPlay || !state.exitedLaunchLane) return;
+    var dist = vecLen(ball.x - s.x, ball.y - s.y);
+    if (dist < s.radius + ball.radius * 0.42) {
+      s.captured = true;
+      s.heldBall = ball;
+      s.holdT = s.holdSec;
+      ball.x = s.x;
+      ball.y = s.y;
+      ball.vx = 0;
+      ball.vy = 0;
+      s.flash = 0.6;
+      awardScore(state, s.score, 'saucer', 'saucer', s.x, s.y);
+      var alreadyLit = !!s.lit;
+      state.lockCount = (state.lockCount || 0) + 1;
+      if (!state.multiball && (state.lockCount >= 2 || alreadyLit)) s._pendingMB = true;
+      if (state.lockCount >= 1) s.lit = true;
+    }
+  }
+
+  function resolveGateSpinner(state) {
+    var g = state.gateSpinner;
+    if (!g) return;
+    var ball = state.ball;
+    if (ball && ball.inPlay) {
+      var inY = ball.y > g.y - g.h * 0.5 && ball.y < g.y + g.h * 0.5;
+      var dx = ball.x - g.x;
+      if (inY && Math.abs(dx) < ball.radius + 7) {
+        if (g.hitCooldown <= 0) {
+          awardScore(state, g.score, 'spinner', 'gate', g.x, g.y);
+          g.hitCooldown = HIT_COOLDOWN_SPINNER;
+          g.spinVel += Math.max(0.45, Math.abs(ball.vx) * 0.009 + Math.abs(ball.vy) * 0.003);
+        }
+      }
+    }
+    g.angle += g.spinVel;
+    if (Math.abs(g.spinVel) < 0.0015) g.spinVel = 0;
+    else g.spinVel *= 0.978;
+  }
+
+  function stepOneBallPhysics(state, dt) {
+    var ball = state.ball;
+    if (state.saucer && state.saucer.captured && state.saucer.heldBall === ball) {
+      resolveSaucer(state, dt);
+      resolveGateSpinner(state);
+      return;
+    }
+    ball.vy += GRAVITY * dt;
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
 
@@ -2600,6 +2834,8 @@
     resolveSideRouteCollisions(state);
     resolveRolloverCollisions(state);
     resolveSpinnerCollision(state);
+    resolveGateSpinner(state);
+    resolveSaucer(state, dt);
 
     if (!isBallInLaunchLane(state)) {
       resolveFlipperCollisions(state);
@@ -2619,6 +2855,37 @@
     }
 
     applyBallDragAndSpeedCeiling(ball);
+  }
+
+  function stepPhysics(state, dt) {
+    dt = clamp(dt, 0.001, 0.05);
+    updateFlippers(state, dt);
+
+    var extras = extraLiveBalls(state);
+    if (!state.ball.inPlay && !extras.length) return state;
+
+    if (!extras.length) {
+      if (!state.ball.inPlay) return state;
+      stepOneBallPhysics(state, dt);
+      return state;
+    }
+
+    var pack = [state.ball].concat(extras);
+    var i;
+    var primary = state.ball;
+    for (i = 0; i < pack.length; i++) {
+      if (!pack[i] || !pack[i].inPlay) continue;
+      bindBall(state, pack[i]);
+      stepOneBallPhysics(state, dt);
+      unbindBall(state, pack[i]);
+    }
+    var keep = primary && primary.inPlay ? primary : null;
+    if (!keep) {
+      for (i = 0; i < pack.length; i++) {
+        if (pack[i] && pack[i].inPlay) { keep = pack[i]; break; }
+      }
+    }
+    if (keep) bindBall(state, keep);
     return state;
   }
 
@@ -2700,34 +2967,89 @@
     return state;
   }
 
-  function checkDrain(state) {
-    if (!state.ball.inPlay) return state;
-    var ball = state.ball;
+  function ballShouldDrain(state, ball) {
+    if (!ball || !ball.inPlay) return false;
+    var zones = getDrainBounds(state);
+    var drainZone = isBallInDrainZone(ball, zones);
+    if (drainZone) {
+      if (ball.y - ball.radius > DRAIN_Y) return true;
+      if (ball.y > TABLE_H - 28) return true;
+    }
+    if (ball.y > TABLE_H + 40) return true;
+    return false;
+  }
 
-    if (!state.exitedLaunchLane && isBallInLaunchLane(state)) {
-      if (ball.y > PLUNGER_REST_Y + 8 && ball.vy > 0) resetBallToPlunger(state);
+  function retireDrainedBall(state, ball) {
+    ball.inPlay = false;
+    ball.vx = 0;
+    ball.vy = 0;
+    ball.y = TABLE_H + 80;
+    if (state.balls) {
+      state.balls = state.balls.filter(function (b) { return b !== ball && b && b.inPlay; });
+      if (!state.balls.length) state.balls = null;
+    }
+  }
+
+  function checkDrain(state) {
+    var extras = extraLiveBalls(state);
+    if (!state.ball.inPlay && !extras.length) return state;
+
+    if (!extras.length) {
+      var ball = state.ball;
+      if (!ball.inPlay) return state;
+      if (!state.exitedLaunchLane && isBallInLaunchLane(state)) {
+        if (ball.y > PLUNGER_REST_Y + 8 && ball.vy > 0) resetBallToPlunger(state);
+        return state;
+      }
+      var zones = getDrainBounds(state);
+      var drainZone = isBallInDrainZone(ball, zones);
+      if (drainZone) {
+        if (ball.y - ball.radius > DRAIN_Y) return performDrain(state);
+        if (ball.y > TABLE_H - 28) return performDrain(state);
+      }
+      if (ball.y > TABLE_H + 40) return performDrain(state);
+      if (ball.y + ball.radius > FLIPPER_ROW_Y && ball.vy > 0 && !drainZone) {
+        var nudge = zones.centerLeft + (zones.centerRight - zones.centerLeft) * 0.5;
+        ball.vx += (nudge - ball.x) * 2.5 * 0.016;
+      }
       return state;
     }
 
-    var zones = getDrainBounds(state);
-    var drainZone = isBallInDrainZone(ball, zones);
-
-    if (drainZone) {
-      if (ball.y - ball.radius > DRAIN_Y) {
-        return performDrain(state);
+    var pack = [state.ball].concat(extras);
+    var i;
+    var lost = [];
+    for (i = 0; i < pack.length; i++) {
+      if (!pack[i] || !pack[i].inPlay) continue;
+      var savedBall = state.ball;
+      var savedEx = state.exitedLaunchLane;
+      bindBall(state, pack[i]);
+      if (!state.exitedLaunchLane && isBallInLaunchLane(state)) {
+        if (pack[i].y > PLUNGER_REST_Y + 8 && pack[i].vy > 0) {
+          pack[i].x = LAUNCH_LANE_X;
+          pack[i].y = PLUNGER_REST_Y;
+          pack[i].vx = 0;
+          pack[i].vy = 0;
+        }
+      } else if (ballShouldDrain(state, pack[i])) {
+        lost.push(pack[i]);
       }
-      if (ball.y > TABLE_H - 28) {
-        return performDrain(state);
-      }
+      unbindBall(state, pack[i]);
+      state.ball = savedBall;
+      state.exitedLaunchLane = savedEx;
     }
-
-    if (ball.y > TABLE_H + 40) {
+    if (lost.length) {
+      for (i = 0; i < lost.length; i++) retireDrainedBall(state, lost[i]);
+      var live = [];
+      if (state.ball && state.ball.inPlay) live.push(state.ball);
+      live = live.concat(extraLiveBalls(state));
+      if (live.length) {
+        state.ball = live[0];
+        bindBall(state, live[0]);
+        state.drainFlash = 0.28;
+        if (live.length < 2) state.multiball = false;
+        return state;
+      }
       return performDrain(state);
-    }
-
-    if (ball.y + ball.radius > FLIPPER_ROW_Y && ball.vy > 0 && !drainZone) {
-      var nudge = zones.centerLeft + (zones.centerRight - zones.centerLeft) * 0.5;
-      ball.vx += (nudge - ball.x) * 2.5 * 0.016;
     }
     return state;
   }

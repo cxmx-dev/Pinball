@@ -239,17 +239,19 @@
     drawLaunchLaneDashes(ctx, state);
     drawGlassSheen(ctx, tw, th);
     drawApron(ctx, state);
+    drawSideRoutes(ctx, state, glowPulse);
     drawWalls(ctx, state);
     drawLaunchLaneRail(ctx, state);
     drawRollovers(ctx, state);
-    drawSideRoutes(ctx, state, glowPulse);
     drawDropTargets(ctx, state);
     drawSlingshots(ctx, state);
     drawTargets(ctx, state);
     drawPosts(ctx, state, glowPulse);
+    drawSaucer(ctx, state, glowPulse);
     drawBumpers(ctx, state, glowPulse);
     drawKickers(ctx, state, glowPulse);
     drawSpinner(ctx, state, glowPulse);
+    drawGateSpinner(ctx, state, glowPulse);
     // Phase 3: multi-frame spark VFX in table space
     if (Assets && Assets.drawSparks) {
       Assets.drawSparks(ctx);
@@ -435,15 +437,14 @@
       state.walls.forEach(function (wall) {
         var kind = wall.kind || 'rail';
         if (kind === 'lane' || kind === 'chute') return;
-        if ((kind === 'habitrail' || kind === 'guide') && wall.x1 > 270 && wall.x2 > 270) return;
-        if ((kind === 'habitrail' || kind === 'guide') && wall.x1 < 160 && wall.x2 < 160) return;
         if (kind === 'rail' && wall.arc) {
           var gmx = (wall.x1 + wall.x2) * 0.5;
           var gmy = (wall.y1 + wall.y2) * 0.5;
           if (gmy < 100 && gmx > 70 && gmx < 420) return;
         }
         if (wall.arc || kind === 'rail' || kind === 'habitrail') {
-          ctx.strokeStyle = kind === 'habitrail' ? 'rgba(255, 170, 60, 0.20)' : 'rgba(100, 200, 255, 0.22)';
+          var glowCyan = kind !== 'habitrail' || (!wall.merge && wall.x1 < 220 && wall.x2 < 220);
+          ctx.strokeStyle = (kind === 'habitrail' && !glowCyan) ? 'rgba(255, 170, 60, 0.20)' : 'rgba(100, 200, 255, 0.22)';
           ctx.lineWidth = 10;
           ctx.shadowColor = kind === 'habitrail' ? 'rgba(255, 160, 40, 0.35)' : 'rgba(0, 220, 255, 0.35)';
           ctx.shadowBlur = 12;
@@ -456,25 +457,47 @@
     }
     state.walls.forEach(function (wall) {
       var kind = wall.kind || 'rail';
-      if (kind === 'lane' || kind === 'chute') return;
-      if ((kind === 'habitrail' || kind === 'guide') && wall.x1 > 270 && wall.x2 > 270) return;
-      if ((kind === 'habitrail' || kind === 'guide') && wall.x1 < 160 && wall.x2 < 160) return;
+      if (kind === 'chute') return;
+      if (kind === 'lane' && !wall.wireform) return;
+      if (wall.wireform) {
+        strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, {
+          core: 'rgba(220, 230, 255, 0.95)',
+          glow: 'rgba(140, 190, 255, 0.42)',
+          hi: 'rgba(255,255,255,0.7)',
+          width: 3.6,
+          dashed: false
+        });
+        return;
+      }
       if (kind === 'rail' && wall.arc) {
         var mx = (wall.x1 + wall.x2) * 0.5;
         var my = (wall.y1 + wall.y2) * 0.5;
         if (my < 100 && mx > 70 && mx < 420) return;
       }
-      if (kind === 'habitrail') {
-        strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, {
-          core: 'rgba(255, 190, 90, 0.92)',
-          glow: 'rgba(255, 150, 40, 0.42)',
-          hi: 'rgba(255, 245, 210, 0.65)',
-          width: 6
-        });
-        return;
-      }
-      if (kind === 'guide') {
-        strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, {
+      if (kind === 'habitrail' || kind === 'guide') {
+        var leftRail = !wall.merge && wall.x1 < 220 && wall.x2 < 220;
+        var cyan = leftRail;
+        if (kind === 'habitrail') {
+          strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, cyan ? {
+            core: 'rgba(80, 230, 255, 0.95)',
+            glow: 'rgba(40, 180, 255, 0.45)',
+            hi: 'rgba(220, 250, 255, 0.7)',
+            width: 6
+          } : {
+            core: 'rgba(255, 190, 90, 0.92)',
+            glow: 'rgba(255, 150, 40, 0.42)',
+            hi: 'rgba(255, 245, 210, 0.65)',
+            width: 6
+          });
+          return;
+        }
+        strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, cyan ? {
+          core: 'rgba(160, 240, 255, 0.6)',
+          glow: 'rgba(40, 180, 255, 0.22)',
+          hi: 'rgba(255,255,255,0.4)',
+          width: 3.5,
+          dashed: true
+        } : {
           core: 'rgba(255, 220, 140, 0.55)',
           glow: 'rgba(255, 180, 60, 0.22)',
           hi: 'rgba(255,255,255,0.4)',
@@ -538,6 +561,15 @@
     return pts;
   }
 
+  function strokeExact(ctx, pts, close) {
+    if (!pts || pts.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    var ei;
+    for (ei = 1; ei < pts.length; ei++) ctx.lineTo(pts[ei].x, pts[ei].y);
+    if (close) ctx.closePath();
+  }
+
   function strokeSmooth(ctx, pts, close) {
     if (!pts || pts.length < 2) return;
     ctx.beginPath();
@@ -566,11 +598,11 @@
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    // Solid underlay so the playfield still cannot show the old scribble through
-    strokeSmooth(ctx, hull, true);
+    // Fill on the physics polylines (same coords as walls) so the glow IS the wall.
+    strokeExact(ctx, hull, true);
     ctx.fillStyle = cyan ? '#061820' : '#2a1206';
     ctx.fill();
-    strokeSmooth(ctx, hull, true);
+    strokeExact(ctx, hull, true);
     var g = cyan
       ? ctx.createLinearGradient(30, 80, 130, 400)
       : ctx.createLinearGradient(300, 80, 390, 400);
@@ -592,7 +624,7 @@
     }
 
     function paintRim(pts, width) {
-      strokeSmooth(ctx, pts, false);
+      strokeExact(ctx, pts, false);
       ctx.strokeStyle = cyan ? 'rgba(80, 220, 255, 0.95)' : 'rgba(255, 168, 64, 0.95)';
       ctx.lineWidth = width;
       ctx.stroke();
@@ -600,12 +632,13 @@
         ctx.shadowBlur = 0;
         ctx.strokeStyle = cyan ? 'rgba(200, 245, 255, 0.55)' : 'rgba(255, 230, 170, 0.55)';
         ctx.lineWidth = Math.max(2, width * 0.28);
-        strokeSmooth(ctx, pts, false);
+        strokeExact(ctx, pts, false);
         ctx.stroke();
       }
     }
-    paintRim(outer, simple ? 11 : 15);
-    paintRim(inner.slice().reverse(), simple ? 10 : 14);
+    // Thin rims on the physics chords — drawWalls paints the glowing rails on top.
+    paintRim(outer, simple ? 5 : 6);
+    paintRim(inner.slice().reverse(), simple ? 4 : 5);
 
     ctx.restore();
   }
@@ -813,6 +846,70 @@
       ctx.fill();
       ctx.restore();
     });
+  }
+
+  function drawSaucer(ctx, state, pulse) {
+    var s = state.saucer;
+    if (!s) return;
+    var simple = q().tubeDetail === 'simple' || q().tier === 'phone';
+    ctx.save();
+    var glow = s.lit || s.captured ? 0.85 : 0.45;
+    if (!simple) applyShadow(ctx, s.lit ? 'rgba(80,220,255,0.7)' : 'rgba(40,80,120,0.45)', 10 + Math.sin(pulse * 3) * 3);
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.radius + 4, 0, Math.PI * 2);
+    ctx.fillStyle = s.lit ? 'rgba(20, 90, 130, 0.95)' : 'rgba(8, 20, 36, 0.95)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+    ctx.fillStyle = s.captured ? '#041018' : '#070e18';
+    ctx.fill();
+    ctx.strokeStyle = s.lit
+      ? 'rgba(80, 230, 255, ' + glow + ')'
+      : 'rgba(120, 180, 220, 0.7)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, Math.max(3, s.radius * 0.38), 0, Math.PI * 2);
+    ctx.fillStyle = s.captured ? 'rgba(80,200,255,0.55)' : 'rgba(10,16,24,0.9)';
+    ctx.fill();
+    ctx.font = 'bold 8px Orbitron, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = s.lit ? 'rgba(180,250,255,0.95)' : 'rgba(140,180,210,0.65)';
+    ctx.shadowBlur = 0;
+    ctx.fillText(s.lit && (state.lockCount || 0) >= 1 ? 'LOCK' : 'HOLE', s.x, s.y + s.radius + 10);
+    ctx.restore();
+  }
+
+  function drawGateSpinner(ctx, state, pulse) {
+    var g = state.gateSpinner;
+    if (!g) return;
+    var simple = q().tubeDetail === 'simple' || q().tier === 'phone';
+    var spinGlow = Math.min(1, Math.abs(g.spinVel) * 1.6);
+    ctx.save();
+    ctx.translate(g.x, g.y);
+    ctx.rotate(g.angle);
+    if (!simple) {
+      applyShadow(ctx, 'rgba(120,230,255,' + (0.35 + spinGlow * 0.45) + ')', 8 + spinGlow * 8);
+    }
+    var half = g.h * 0.5;
+    ctx.strokeStyle = 'rgba(160, 240, 255, ' + (0.75 + spinGlow * 0.2) + ')';
+    ctx.lineWidth = simple ? 3 : 4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, -half);
+    ctx.lineTo(0, half);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, -half, 3.2, 0, Math.PI * 2);
+    ctx.arc(0, half, 3.2, 0, Math.PI * 2);
+    ctx.fillStyle = spinGlow > 0.08 ? '#c8f6ff' : '#7ad0e8';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, 0, 4.2, 0, Math.PI * 2);
+    ctx.fillStyle = '#e8ffff';
+    ctx.fill();
+    ctx.restore();
   }
 
   function drawSpinner(ctx, state, pulse) {
@@ -1106,7 +1203,7 @@
     ctx.lineCap = 'round';
     applyShadow(ctx, 'rgba(255,140,40,0.45)', 10);
     ctx.beginPath();
-    ctx.moveTo(x, 70);
+    ctx.moveTo(x, root.PinballSim.LAUNCH_WIRE_Y1);
     ctx.lineTo(x, state.tableH - 72);
     ctx.stroke();
 
@@ -1136,20 +1233,33 @@
     ctx.restore();
   }
 
+  function paintOneBall(ctx, ball, ox, oy) {
+    if (!ball) return;
+    var bx = ox + ball.x;
+    var by = oy + ball.y;
+    var speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+    trail.push({ x: bx, y: by, life: 0.15 });
+    applyShadow(ctx, 'rgba(200,220,255,0.9)', 14 + Math.min(speed * 0.02, 12));
+    var ballGrad = ctx.createRadialGradient(bx - 4, by - 4, 1, bx, by, ball.radius);
+    ballGrad.addColorStop(0, '#ffffff');
+    ballGrad.addColorStop(0.45, '#c8d8f0');
+    ballGrad.addColorStop(1, '#607090');
+    ctx.beginPath();
+    ctx.arc(bx, by, ball.radius, 0, Math.PI * 2);
+    ctx.fillStyle = ballGrad;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
   function drawBall(ctx, state, offset) {
     if (!state.ball.inPlay && state.phase !== 'ready') return;
 
-    var ball = state.ball;
-    var bx = offset.ox + ball.x;
-    var by = offset.oy + ball.y;
-    var speed = Math.sqrt(state.ball.vx * state.ball.vx + state.ball.vy * state.ball.vy);
-
-    trail.push({ x: bx, y: by, life: 0.15 });
     var tLen = q().trailLen || 16;
-    if (trail.length > tLen) trail.shift();
-
     ctx.save();
-    for (var i = 0; i < trail.length; i++) {
+    var i;
+    for (i = 0; i < trail.length; i++) {
       var t = trail[i];
       t.life -= 0.016;
       var alpha = Math.max(0, t.life / 0.15) * 0.35;
@@ -1158,20 +1268,17 @@
       ctx.fillStyle = 'rgba(220,230,255,' + alpha + ')';
       ctx.fill();
     }
-    trail = trail.filter(function (t) { return t.life > 0; });
+    trail = trail.filter(function (tr) { return tr.life > 0; });
+    while (trail.length > tLen) trail.shift();
 
-    applyShadow(ctx, 'rgba(200,220,255,0.9)', 14 + Math.min(speed * 0.02, 12));
-    var ballGrad = ctx.createRadialGradient(bx - 4, by - 4, 1, bx, by, state.ball.radius);
-    ballGrad.addColorStop(0, '#ffffff');
-    ballGrad.addColorStop(0.45, '#c8d8f0');
-    ballGrad.addColorStop(1, '#607090');
-    ctx.beginPath();
-    ctx.arc(bx, by, state.ball.radius, 0, Math.PI * 2);
-    ctx.fillStyle = ballGrad;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    paintOneBall(ctx, state.ball, offset.ox, offset.oy);
+    if (state.balls && state.balls.length) {
+      for (i = 0; i < state.balls.length; i++) {
+        if (state.balls[i] && state.balls[i] !== state.ball && state.balls[i].inPlay) {
+          paintOneBall(ctx, state.balls[i], offset.ox, offset.oy);
+        }
+      }
+    }
     ctx.restore();
   }
 
@@ -1238,6 +1345,14 @@
       ctx.fillStyle = '#ffcc44';
       applyShadow(ctx, '#ffcc44', 10);
       ctx.fillText('SKILL SHOT!', canvas.width - 24, 64);
+    } else if (state.multiballBannerLife > 0 && state.multiballBanner) {
+      ctx.fillStyle = '#66f0ff';
+      applyShadow(ctx, '#22d0ff', 14);
+      ctx.fillText(state.multiballBanner, canvas.width - 24, 64);
+    } else if (state.saucer && state.saucer.lit && !state.multiball) {
+      ctx.fillStyle = '#88e8ff';
+      applyShadow(ctx, '#44c8ff', 10);
+      ctx.fillText('LOCK LIT', canvas.width - 24, 64);
     } else if (state.rushTimer > 0 && state.rushName) {
       var isEmber = /EMBER/i.test(state.rushName);
       ctx.fillStyle = isEmber ? '#ff8844' : '#44e0ff';
