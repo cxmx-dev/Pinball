@@ -191,7 +191,8 @@
       { side: 'left', x1: 62, y1: 598, x2: 72, y2: 623, score: 150, cooldown: 0 },
       { side: 'left', x1: 72, y1: 623, x2: 75, y2: 651, score: 150, cooldown: 0 },
       { side: 'right', x1: 371, y1: 623, x2: 352, y2: 652, score: 150, cooldown: 0 },
-      { side: 'right', x1: 352, y1: 652, x2: 342, y2: 689, score: 150, cooldown: 0 }
+      { side: 'right', x1: 352, y1: 652, x2: 342, y2: 689, score: 150, cooldown: 0 },
+      { side: 'right', face: 'top', x1: 376, y1: 542, x2: 360, y2: 556, score: 150, cooldown: 0 }
     ];
   }
 
@@ -344,13 +345,16 @@
         id: 'fill-r',
         theme: 'cyan',
         segments: [
+          { x1: 392, y1: 548, x2: 392, y2: 609 },
           { x1: 392, y1: 609, x2: 392, y2: 657 },
           { x1: 392, y1: 657, x2: 392, y2: 699 },
           { x1: 392, y1: 699, x2: 392, y2: 732 },
           { x1: 392, y1: 732, x2: 392, y2: 744 }
         ],
         guides: [
-          { x1: 392, y1: 609, x2: 371, y2: 623 },
+          { x1: 392, y1: 548, x2: 376, y2: 542 },
+          { x1: 376, y1: 542, x2: 360, y2: 556 },
+          { x1: 360, y1: 556, x2: 371, y2: 623 },
           { x1: 371, y1: 623, x2: 352, y2: 652 },
           { x1: 352, y1: 652, x2: 342, y2: 689 },
           { x1: 342, y1: 689, x2: 356, y2: 726 },
@@ -462,9 +466,9 @@
    */
   function createLaunchLaneDashes() {
     var dashes = [];
-    var count = 4;
+    var count = 9;
     var yBot = PLUNGER_REST_Y - 40;
-    var yTop = 690; // plunger berth only; no mid-rail oval lights on either side
+    var yTop = 500; // plunger hall up to ~500; skip draw y<360 so they stay out of the merge/U
     var i;
     for (i = 0; i < count; i++) {
       var t = count === 1 ? 0 : i / (count - 1);

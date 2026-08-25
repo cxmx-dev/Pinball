@@ -290,7 +290,7 @@
     var i;
     for (i = 0; i < dashes.length; i++) {
       var d = dashes[i];
-      if (d.y < 660) continue;
+      if (d.y < 360) continue;
       var intensity = d.intensity != null ? d.intensity : (d.lit ? 1 : 0);
       if (intensity < 0) intensity = 0;
       if (intensity > 1) intensity = 1;
@@ -590,25 +590,8 @@
       ctx.lineTo(wall.x2, wall.y2);
       ctx.stroke();
     });
-    if (state.sideRoutes && state.sideRoutes.rightRamp) {
-      var rr = state.sideRoutes.rightRamp;
-      var copperTube = {
-        core: 'rgba(255, 190, 90, 0.92)',
-        glow: 'rgba(255, 150, 40, 0.42)',
-        hi: 'rgba(255, 245, 210, 0.65)',
-        width: 6,
-        smooth: true
-      };
-      var copperGuide = {
-        core: 'rgba(255, 220, 140, 0.55)',
-        glow: 'rgba(255, 180, 60, 0.22)',
-        hi: 'rgba(255,255,255,0.4)',
-        width: 3.5,
-        smooth: true
-      };
-      strokeTubePath(ctx, segsToPoints(rr.segments), copperTube);
-      strokeTubePath(ctx, segsToPoints(rr.guides), copperGuide);
-    }
+    // Copper habitrail is drawn once via drawPioneerRamp + merge rims. A second
+    // strokeTubePath of the full rightRamp was the brick-line / double-hull seam.
     ctx.restore();
   }
 
@@ -631,12 +614,13 @@
 
   function drawSlingshots(ctx, state) {
     if (!state.slingshots || !state.slingshots.length) return;
-    var bySide = { left: [], right: [] };
+    var bySide = {};
     state.slingshots.forEach(function (sling) {
-      var key = sling.side === 'right' ? 'right' : 'left';
+      var key = (sling.side === 'right' ? 'right' : 'left') + ':' + (sling.face || 'climb');
+      if (!bySide[key]) bySide[key] = [];
       bySide[key].push(sling);
     });
-    ['left', 'right'].forEach(function (side) {
+    Object.keys(bySide).forEach(function (side) {
       var segs = bySide[side];
       if (!segs.length) return;
       ctx.save();
@@ -771,40 +755,37 @@
   }
 
   function drawMergeJoinRims(ctx, outerSegs, innerSegs) {
-    function joinPts(segs) {
+    // Rim-only continuous copper join (no filled splice / sausage over the brown lane).
+    function joinPts(segs, dropUFloor) {
       if (!segs || !segs.length) return [];
       var pts = [{ x: segs[0].x1, y: segs[0].y1 }];
       var i;
       for (i = 0; i < segs.length; i++) {
-        // Drop the last chord that sits on the U hull so the join does not double-stroke it.
-        if (i === segs.length - 1 && segs[i].x2 <= 330) continue;
+        // Keep the U mouth; drop only leftover floor chords that ride the U hull.
+        if (dropUFloor && segs[i].x2 <= 300) continue;
         pts.push({ x: segs[i].x2, y: segs[i].y2 });
       }
       return pts;
     }
-    var outer = joinPts(outerSegs);
-    var inner = joinPts(innerSegs);
+    var outer = joinPts(outerSegs, false);
+    var inner = joinPts(innerSegs, true);
     if (outer.length < 2 && inner.length < 2) return;
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.shadowBlur = 0;
-    function rim(pts, width) {
-      if (!pts || pts.length < 2) return;
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      var i;
-      for (i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-      ctx.strokeStyle = 'rgba(255, 168, 64, 0.92)';
-      ctx.lineWidth = width;
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(255, 230, 170, 0.45)';
-      ctx.lineWidth = Math.max(2, width * 0.28);
-      ctx.stroke();
-    }
-    rim(outer, 6);
-    rim(inner, 5);
-    ctx.restore();
+    var copperTube = {
+      core: 'rgba(255, 190, 90, 0.92)',
+      glow: 'rgba(255, 150, 40, 0.42)',
+      hi: 'rgba(255, 245, 210, 0.65)',
+      width: 6,
+      smooth: true
+    };
+    var copperGuide = {
+      core: 'rgba(255, 220, 140, 0.55)',
+      glow: 'rgba(255, 180, 60, 0.22)',
+      hi: 'rgba(255,255,255,0.4)',
+      width: 3.5,
+      smooth: true
+    };
+    strokeTubePath(ctx, outer, copperTube);
+    strokeTubePath(ctx, inner, copperGuide);
   }
   function drawSideRoutes(ctx, state, pulse) {
     if (!state.sideRoutes) return;
@@ -840,7 +821,19 @@
 
     var ramp = state.sideRoutes.rightRamp;
     if (ramp) {
-      drawPioneerRamp(ctx, ramp, pulse);
+      // Split the copper hull so the vertical shooter wall is not a filled orange blob.
+      var top = {
+        id: 'ramp-r',
+        segments: ramp.segments.filter(function (s) { return Math.max(s.y1, s.y2) < 112; }),
+        guides: ramp.guides.filter(function (s) { return Math.max(s.y1, s.y2) < 112; })
+      };
+      var bot = {
+        id: 'ramp-r',
+        segments: ramp.segments.filter(function (s) { return Math.min(s.y1, s.y2) > 200; }),
+        guides: ramp.guides.filter(function (s) { return Math.min(s.y1, s.y2) > 200; })
+      };
+      if (top.segments.length >= 1 && top.guides.length >= 1) drawPioneerRamp(ctx, top, pulse);
+      if (bot.segments.length >= 1 && bot.guides.length >= 1) drawPioneerRamp(ctx, bot, pulse);
       if (ramp.mergeOuter && ramp.mergeInner) {
         // Join rails only — no filled sausage/oval over the brown lane or through the U.
         drawMergeJoinRims(ctx, ramp.mergeOuter, ramp.mergeInner);
@@ -901,6 +894,8 @@
   function drawRollovers(ctx, state) {
     state.rollovers.forEach(function (lane) {
       if (!lane.lit) return;
+      // Yellow/orange vertical pills on the upper-middle ramp hulls — nonsense, not hall dashes.
+      if (lane.id === "lane-l" || lane.id === "lane-r") return;
       ctx.save();
       ctx.strokeStyle = 'rgba(255,220,80,0.85)';
       ctx.lineWidth = lane.width;
