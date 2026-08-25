@@ -1743,7 +1743,7 @@
         // Raised on-ramp only. Orbit climbers / U riders use the copper walls.
         if (state.activeHabitrail === 'ramp-l') return;
         var orbiting = state.exitedLaunchLane && state.launchRailT == null && !isBallInLaunchLane(state);
-        if (orbiting && (ball.y > 72 || ball.x > 348)) return;
+        if (orbiting) return;
       } else if (!state.exitedLaunchLane && state.launchRailT != null && wall.kind === 'habitrail' && ball.y < 115) {
         var minX = Math.min(wall.x1, wall.x2);
         var maxX = Math.max(wall.x1, wall.x2);
