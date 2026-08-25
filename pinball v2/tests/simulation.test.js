@@ -897,10 +897,12 @@ function slapSpeedAtFraction(frac) {
   var sling = state.slingshots[0];
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
-  state.ball.x = sling.x2;
-  state.ball.y = sling.y2 - 10;
-  state.ball.vx = 0;
-  state.ball.vy = 120;
+  var mx = (sling.x1 + sling.x2) * 0.5;
+  var my = (sling.y1 + sling.y2) * 0.5;
+  state.ball.x = mx + (sling.side === 'left' ? 14 : -14);
+  state.ball.y = my;
+  state.ball.vx = sling.side === 'left' ? -160 : 160;
+  state.ball.vy = 40;
   var before = state.score;
   sim.stepPhysics(state, 0.016);
   assert(state.score > before, 'slingshot hit should award score');
@@ -1623,8 +1625,14 @@ console.log('All tests passed.');
   assert(fillerWalls.length >= 16, 'filler physics walls exist (' + fillerWalls.length + ')');
   assert(fillerWalls.some(function (w) { return w.x1 === 36 && w.y1 === 586; }), 'left filler wall flush on rail');
   assert(fillerWalls.some(function (w) { return w.x1 === 392 && w.y1 === 609; }), 'right filler wall longer');
-  assert(fillerWalls.some(function (w) { return w.x1 === 75 && w.y1 === 651; }), 'left inner wall at bulge');
-  assert(fillerWalls.some(function (w) { return w.x1 === 342 && w.y1 === 689; }), 'right inner wall at bigger bulge');
+  assert(!fillerWalls.some(function (w) { return w.x1 === 72 && w.y1 === 623 && w.x2 === 75 && w.y2 === 651; }), 'left mid rubber is sling not filler');
+  assert(!fillerWalls.some(function (w) { return w.x1 === 75 && w.y1 === 651 && w.x2 === 69 && w.y2 === 675; }), 'left mid rubber is sling not filler');
+  assert(!fillerWalls.some(function (w) { return w.x1 === 352 && w.y1 === 652 && w.x2 === 342 && w.y2 === 689; }), 'right mid rubber is sling not filler');
+  assert(!fillerWalls.some(function (w) { return w.x1 === 342 && w.y1 === 689 && w.x2 === 356 && w.y2 === 726; }), 'right mid rubber is sling not filler');
+  assert(fillerWalls.some(function (w) { return w.x1 === 62 && w.y1 === 598 && w.x2 === 72 && w.y2 === 623; }), 'left top inner stays filler');
+  assert(fillerWalls.some(function (w) { return w.x1 === 69 && w.y1 === 675 && w.x2 === 56 && w.y2 === 687; }), 'left bottom inner stays filler');
+  assert(fillerWalls.some(function (w) { return w.x1 === 371 && w.y1 === 623 && w.x2 === 352 && w.y2 === 652; }), 'right top inner stays filler');
+  assert(fillerWalls.some(function (w) { return w.x1 === 356 && w.y1 === 726 && w.x2 === 366 && w.y2 === 738; }), 'right bottom inner stays filler');
   var midU = fillerWalls.some(function (w) {
     var y = Math.min(w.y1, w.y2);
     return y >= 170 && y <= 330;
@@ -1668,4 +1676,24 @@ console.log('All tests passed.');
   assert(leftMouthY >= 330 && leftMouthY <= 345, 'left mouth ~336');
   assert(rightMouthY >= 330 && rightMouthY <= 345, 'right mouth ~336');
   console.log('PASS: lower hull fillers (copper left / cyan right) just above flippers');
+})();
+
+(function testSausageMidfaceSlingshots() {
+  var state = fresh();
+  var slings = state.slingshots;
+  assert.strictEqual(slings.length, 4, 'two rubber segments per sausage');
+  function hasSeg(side, x1, y1, x2, y2) {
+    return slings.some(function (s) {
+      return s.side === side && s.x1 === x1 && s.y1 === y1 && s.x2 === x2 && s.y2 === y2 && s.score === 150;
+    });
+  }
+  assert(hasSeg('left', 72, 623, 75, 651), 'left rubber 72,623-75,651');
+  assert(hasSeg('left', 75, 651, 69, 675), 'left rubber 75,651-69,675');
+  assert(hasSeg('right', 352, 652, 342, 689), 'right rubber 352,652-342,689');
+  assert(hasSeg('right', 342, 689, 356, 726), 'right rubber 342,689-356,726');
+  var classic = slings.some(function (s) {
+    return s.y1 === sim.FLIPPER_ROW_Y - 4 || s.y2 === sim.FLIPPER_ROW_Y - 42;
+  });
+  assert(!classic, 'classic flipper-row triangle slings must be gone');
+  console.log('PASS: sausage mid-face slings (not classic triangles)');
 })();

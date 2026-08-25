@@ -185,28 +185,26 @@
     ];
   }
 
+  /** Rubber bands on sausage mid-face only — not classic flipper-row triangles. */
   function createSlingshots() {
-    var rightInlaneX = FLIPPER_RIGHT_PIVOT_X + 18;
     return [
-      {
-        side: 'left',
-        x1: FLIPPER_INLANE_X,
-        y1: FLIPPER_ROW_Y - 4,
-        x2: FLIPPER_LEFT_PIVOT_X - 6,
-        y2: FLIPPER_ROW_Y - 42,
-        score: 150,
-        cooldown: 0
-      },
-      {
-        side: 'right',
-        x1: rightInlaneX,
-        y1: FLIPPER_ROW_Y - 4,
-        x2: FLIPPER_RIGHT_PIVOT_X + 6,
-        y2: FLIPPER_ROW_Y - 42,
-        score: 150,
-        cooldown: 0
-      }
+      { side: 'left', x1: 72, y1: 623, x2: 75, y2: 651, score: 150, cooldown: 0 },
+      { side: 'left', x1: 75, y1: 651, x2: 69, y2: 675, score: 150, cooldown: 0 },
+      { side: 'right', x1: 352, y1: 652, x2: 342, y2: 689, score: 150, cooldown: 0 },
+      { side: 'right', x1: 342, y1: 689, x2: 356, y2: 726, score: 150, cooldown: 0 }
     ];
+  }
+
+  function isSlingGuideSeg(seg) {
+    if (!seg) return false;
+    var slings = createSlingshots();
+    var i;
+    for (i = 0; i < slings.length; i++) {
+      if (slings[i].x1 === seg.x1 && slings[i].y1 === seg.y1 && slings[i].x2 === seg.x2 && slings[i].y2 === seg.y2) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function createTargets() {
@@ -430,7 +428,13 @@
     function pushFiller(fill) {
       if (!fill) return;
       pushPath(fill.segments, 'filler');
-      pushPath(fill.guides, 'filler');
+      if (!fill.guides) return;
+      var kept = [];
+      var g;
+      for (g = 0; g < fill.guides.length; g++) {
+        if (!isSlingGuideSeg(fill.guides[g])) kept.push(fill.guides[g]);
+      }
+      pushPath(kept, 'filler');
     }
     pushFiller(routes.leftFiller);
     pushFiller(routes.rightFiller);

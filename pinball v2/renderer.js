@@ -608,25 +608,51 @@
     ctx.restore();
   }
 
+  function drawSteelSlingPost(ctx, x, y) {
+    ctx.save();
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.arc(x, y, 4.2, 0, Math.PI * 2);
+    ctx.fillStyle = '#8a93a0';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(230,235,245,0.85)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x - 1.1, y - 1.2, 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fill();
+    ctx.restore();
+  }
+
   function drawSlingshots(ctx, state) {
+    if (!state.slingshots || !state.slingshots.length) return;
+    var bySide = { left: [], right: [] };
     state.slingshots.forEach(function (sling) {
+      var key = sling.side === 'right' ? 'right' : 'left';
+      bySide[key].push(sling);
+    });
+    ['left', 'right'].forEach(function (side) {
+      var segs = bySide[side];
+      if (!segs.length) return;
       ctx.save();
-      var rubberGrad = ctx.createLinearGradient(sling.x1, sling.y1, sling.x2, sling.y2);
-      rubberGrad.addColorStop(0, 'rgba(220,60,80,0.85)');
-      rubberGrad.addColorStop(1, 'rgba(160,30,50,0.9)');
+      var rubberGrad = ctx.createLinearGradient(segs[0].x1, segs[0].y1, segs[segs.length - 1].x2, segs[segs.length - 1].y2);
+      rubberGrad.addColorStop(0, 'rgba(190,36,58,0.92)');
+      rubberGrad.addColorStop(0.5, 'rgba(230,80,110,0.88)');
+      rubberGrad.addColorStop(1, 'rgba(150,24,44,0.94)');
       ctx.strokeStyle = rubberGrad;
-      ctx.lineWidth = 10;
+      ctx.lineWidth = 8;
       ctx.lineCap = 'round';
-      applyShadow(ctx, 'rgba(255,80,100,0.5)', 10);
+      ctx.lineJoin = 'round';
+      applyShadow(ctx, 'rgba(255,70,90,0.28)', 6);
       ctx.beginPath();
-      ctx.moveTo(sling.x1, sling.y1);
-      ctx.lineTo(sling.x2, sling.y2);
+      ctx.moveTo(segs[0].x1, segs[0].y1);
+      var si;
+      for (si = 0; si < segs.length; si++) ctx.lineTo(segs[si].x2, segs[si].y2);
       ctx.stroke();
-      ctx.fillStyle = 'rgba(255,120,140,0.35)';
-      ctx.beginPath();
-      ctx.arc(sling.x2, sling.y2, 6, 0, Math.PI * 2);
-      ctx.fill();
       ctx.restore();
+      drawSteelSlingPost(ctx, segs[0].x1, segs[0].y1);
+      drawSteelSlingPost(ctx, segs[segs.length - 1].x2, segs[segs.length - 1].y2);
     });
   }
 
@@ -734,6 +760,43 @@
 
     ctx.restore();
   }
+
+  function drawMergeJoinRims(ctx, outerSegs, innerSegs) {
+    function joinPts(segs) {
+      if (!segs || !segs.length) return [];
+      var pts = [{ x: segs[0].x1, y: segs[0].y1 }];
+      var i;
+      for (i = 0; i < segs.length; i++) {
+        // Drop the last chord that sits on the U hull so the join does not double-stroke it.
+        if (i === segs.length - 1 && segs[i].x2 <= 330) continue;
+        pts.push({ x: segs[i].x2, y: segs[i].y2 });
+      }
+      return pts;
+    }
+    var outer = joinPts(outerSegs);
+    var inner = joinPts(innerSegs);
+    if (outer.length < 2 && inner.length < 2) return;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowBlur = 0;
+    function rim(pts, width) {
+      if (!pts || pts.length < 2) return;
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      var i;
+      for (i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.strokeStyle = 'rgba(255, 168, 64, 0.92)';
+      ctx.lineWidth = width;
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255, 230, 170, 0.45)';
+      ctx.lineWidth = Math.max(2, width * 0.28);
+      ctx.stroke();
+    }
+    rim(outer, 6);
+    rim(inner, 5);
+    ctx.restore();
+  }
   function drawSideRoutes(ctx, state, pulse) {
     if (!state.sideRoutes) return;
     var cap = state.sideRoutes.leftCaptive;
@@ -770,7 +833,8 @@
     if (ramp) {
       drawPioneerRamp(ctx, ramp, pulse);
       if (ramp.mergeOuter && ramp.mergeInner) {
-        drawPioneerRamp(ctx, { segments: ramp.mergeOuter, guides: ramp.mergeInner }, pulse);
+        // Join rails only — no filled sausage/oval over the brown lane or through the U.
+        drawMergeJoinRims(ctx, ramp.mergeOuter, ramp.mergeInner);
       }
     }
   }
