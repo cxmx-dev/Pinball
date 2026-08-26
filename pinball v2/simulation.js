@@ -50,7 +50,11 @@
   /** Continuous along-path assist while riding a habitrail (px/s^2). */
   var HABITRAIL_ASSIST = 0;
   /** Slow CCW spin of the pulse triangle (rad/s). Negative = CCW on canvas y-down. */
-  var TRIANGLE_SPIN = -0.28;
+  var TRIANGLE_SPIN = 0;
+  var TRIANGLE_HIT_SPIN_GAIN = 0.016;
+  var TRIANGLE_SPIN_MAX = 2.2;
+  var TRIANGLE_SPIN_FRICTION = 1.65;
+  var TRIANGLE_SPIN_STOP = 0.03;
   var BUMPER_RESTITUTION = 1.15;
   var FLIPPER_RESTITUTION = FLIPPER_RESTITUTION_PASSIVE;
   var SLING_RESTITUTION = 1.08;
@@ -167,6 +171,32 @@
       targetAngle: isLeft ? 0.42 : Math.PI - 0.42,
       length: FLIPPER_LEN,
       width: FLIPPER_W,
+      role: 'main',
+      active: false,
+      omega: 0,
+      pressAge: 0,
+      tapBoost: false,
+      sinceLastPress: 99,
+      chargeLeft: 0,
+      glowPhase: 0
+    };
+  }
+
+  function createUpperRightFlipper() {
+    // Mini right-facing-left bat. Same right input as the main right flipper.
+    var rest = Math.PI - 0.52;
+    var active = Math.PI + 0.34;
+    return {
+      side: 'right',
+      role: 'upper',
+      pivotX: 318,
+      pivotY: 372,
+      restAngle: rest,
+      activeAngle: active,
+      angle: rest,
+      targetAngle: rest,
+      length: 44,
+      width: 11,
       active: false,
       omega: 0,
       pressAge: 0,
@@ -222,6 +252,7 @@
   /** Rubber on sausage climb/upward face only — last-resort save, never downhill or triangle. */
   function createSlingshots() {
     return [
+      { side: 'left', face: 'top', x1: 48, y1: 578, x2: 64, y2: 598, score: 150, cooldown: 0 },
       { side: 'left', x1: 64, y1: 598, x2: 76, y2: 628, score: 150, cooldown: 0 },
       { side: 'left', x1: 76, y1: 628, x2: 80, y2: 652, score: 150, cooldown: 0 },
       { side: 'right', x1: 348, y1: 580, x2: 338, y2: 622, score: 150, cooldown: 0 },
@@ -293,8 +324,13 @@
   function rotatePulseTriangleBody(state, dt) {
     var tri = state && state.pulseTriangle;
     if (!tri || !tri.restVerts) return;
-    var omega = tri.spin != null ? tri.spin : TRIANGLE_SPIN;
+    var omega = tri.spin != null ? tri.spin : 0;
+    if (omega > TRIANGLE_SPIN_MAX) omega = TRIANGLE_SPIN_MAX;
+    if (omega < -TRIANGLE_SPIN_MAX) omega = -TRIANGLE_SPIN_MAX;
     tri.angle = (tri.angle || 0) + omega * dt;
+    var decayed = omega * Math.exp(-TRIANGLE_SPIN_FRICTION * dt);
+    if (Math.abs(decayed) < TRIANGLE_SPIN_STOP) decayed = 0;
+    tri.spin = decayed;
     var c = Math.cos(tri.angle);
     var s = Math.sin(tri.angle);
     var cx = tri.cx;
@@ -341,7 +377,7 @@
       cx: cx,
       cy: cy,
       angle: 0,
-      spin: TRIANGLE_SPIN,
+      spin: 0,
       sides: buildPulseTriangleSides(verts, themes, null),
       radius: 8,
       cycleT: 0,
@@ -387,6 +423,20 @@
     return pointInTriangle(ball.x, ball.y, tri.verts);
   }
 
+  function applyTriangleHitSpin(tri, ball, preVx, preVy) {
+    if (!tri || !ball) return;
+    var rx = ball.x - tri.cx;
+    var ry = ball.y - tri.cy;
+    var rlen = vecLen(rx, ry);
+    if (rlen < 1e-6) return;
+    var tangent = (-ry * preVx + rx * preVy) / rlen;
+    var add = tangent * TRIANGLE_HIT_SPIN_GAIN;
+    var next = (tri.spin || 0) + add;
+    if (next > TRIANGLE_SPIN_MAX) next = TRIANGLE_SPIN_MAX;
+    if (next < -TRIANGLE_SPIN_MAX) next = -TRIANGLE_SPIN_MAX;
+    tri.spin = next;
+  }
+
   function resolvePulseTriangle(state) {
     var tri = state && state.pulseTriangle;
     var ball = state && state.ball;
@@ -401,11 +451,14 @@
       var minD = ball.radius + r;
       if (dist < minD && dist > 1e-6) {
         var n = normalize(dx, dy);
+        var preVxV = ball.vx;
+        var preVyV = ball.vy;
         ball.x = p.x + n.x * minD;
         ball.y = p.y + n.y * minD;
         var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, SLING_RESTITUTION);
         ball.vx = rv.vx;
         ball.vy = rv.vy;
+        applyTriangleHitSpin(tri, ball, preVxV, preVyV);
       }
     }
     if (ballInsideTriangle(ball, tri)) {
@@ -421,6 +474,7 @@
         var kick = clamp(incident * SLING_KICK_GAIN, SLING_KICK_MIN, SLING_KICK_MAX);
         ball.vx += s.nx * kick;
         ball.vy += s.ny * kick - kick * 0.32;
+        applyTriangleHitSpin(tri, ball, preVx, preVy);
         if (s.cooldown <= 0 && !lodgeFarming(state, ball) && !ballInsideTriangle(ball, tri)) {
           awardScore(state, s.score, 'tri-rubber', s.theme, (s.x1 + s.x2) * 0.5, (s.y1 + s.y2) * 0.5);
           s.cooldown = HIT_COOLDOWN_SLING;
@@ -574,7 +628,7 @@
           { x1: 36, y1: 568, x2: 36, y2: 610 },
           { x1: 36, y1: 610, x2: 36, y2: 650 },
           { x1: 36, y1: 650, x2: 36, y2: 680 },
-          { x1: 36, y1: 680, x2: 36, y2: 706 }
+          { x1: 36, y1: 680, x2: 36, y2: 688 }
         ],
         guides: [
           { x1: 36, y1: 568, x2: 48, y2: 578 },
@@ -582,10 +636,9 @@
           { x1: 64, y1: 598, x2: 76, y2: 628 },
           { x1: 76, y1: 628, x2: 80, y2: 652 },
           { x1: 80, y1: 652, x2: 74, y2: 676 },
-          { x1: 74, y1: 676, x2: 60, y2: 692 },
-          { x1: 60, y1: 692, x2: 48, y2: 702 },
-          { x1: 48, y1: 702, x2: 40, y2: 706 },
-          { x1: 40, y1: 706, x2: 36, y2: 706 }
+          { x1: 74, y1: 676, x2: 56, y2: 686 },
+          { x1: 56, y1: 686, x2: 44, y2: 688 },
+          { x1: 44, y1: 688, x2: 36, y2: 688 }
         ]
       },
       rightFiller: {
@@ -756,8 +809,11 @@
   }
 
   function createPosts() {
-    // Circled glowing posts removed (VOID PULSE annotation). Saucer/HOLE at (95,520) stays.
-    return [];
+    // Circled glowing posts stay gone. Small pins at the new left-sausage rubber ends.
+    return [
+      { id: 'pin-ls-top', kind: 'pin', x: 48, y: 578, radius: 4.5, score: 0 },
+      { id: 'pin-ls-bot', kind: 'pin', x: 64, y: 598, radius: 4.5, score: 0 }
+    ];
   }
 
   function createSaucer() {
@@ -1129,7 +1185,7 @@
         radius: BALL_RADIUS,
         inPlay: false
       },
-      flippers: [createFlipper('left'), createFlipper('right')],
+      flippers: [createFlipper('left'), createFlipper('right'), createUpperRightFlipper()],
       bumpers: createBumpers(),
       slingshots: createSlingshots(),
       pulseTriangle: createPulseTriangle(),
@@ -2036,8 +2092,8 @@
     if (ball.x >= 360 && ball.x <= 400 && ball.y >= 520 && ball.y <= 560) return true;
     // orbit1: right sausage tip vs cage / inlane join
     if (ball.x >= 328 && ball.x <= 372 && ball.y >= 698 && ball.y <= 740) return true;
-    // orbit1: left sausage tip vs cage / post
-    if (ball.x >= 36 && ball.x <= 80 && ball.y >= 688 && ball.y <= 740) return true;
+    // need1: left sausage tip vs cage / post (opened tip + old pocket)
+    if (ball.x >= 36 && ball.x <= 88 && ball.y >= 676 && ball.y <= 740) return true;
     return false;
   }
 
@@ -2133,54 +2189,61 @@
   function peelSausageCusp(ball) {
     var r = ball.radius || BALL_RADIUS;
     var leftTip = ball.x < 200;
-    var nx = leftTip ? 0.84 : -0.84;
-    var ny = 0.36;
-    var peel = 8;
+    var nx = leftTip ? 0.94 : -0.84;
+    var ny = leftTip ? 0.18 : 0.36;
+    var peel = leftTip ? 16 : 8;
     ball.x += nx * peel;
     ball.y += ny * peel;
     if (ball.x >= LAUNCH_LANE_LEFT) ball.x = LAUNCH_LANE_LEFT - r - 4;
     if (ball.x <= 36 + r) ball.x = 36 + r + 4;
     var sp = vecLen(ball.vx, ball.vy);
-    var keep = Math.max(sp, 160);
-    ball.vx = ball.vx * 0.18 + nx * keep * 0.82;
-    ball.vy = ball.vy * 0.18 + ny * keep * 0.82;
-    if (vecLen(ball.vx, ball.vy) < 110) {
-      ball.vx += nx * 110;
-      ball.vy += ny * 110;
+    var keep = Math.max(sp, leftTip ? 240 : 160);
+    ball.vx = ball.vx * 0.12 + nx * keep * 0.88;
+    ball.vy = ball.vy * 0.12 + ny * keep * 0.88;
+    var floor = leftTip ? 170 : 110;
+    if (vecLen(ball.vx, ball.vy) < floor) {
+      ball.vx += nx * floor;
+      ball.vy += ny * floor;
     }
   }
 
-  function unstickOneSausageCusp(state, ball) {
+  function unstickOneSausageCusp(state, ball, dt) {
     if (skipBallAssist(state, ball)) return;
     if (!ball || !ball.inPlay) return;
     if (state.launchRailT != null && ball === state.ball) return;
     if (ball.x >= LAUNCH_LANE_LEFT) {
       ball._sausageStuck = 0;
+      ball._sausageStuckT = 0;
       return;
     }
     if (!sausageCuspBox(ball)) {
       ball._sausageStuck = 0;
+      ball._sausageStuckT = 0;
       return;
     }
     var sp = vecLen(ball.vx, ball.vy);
-    var sittingStill = sp < 90;
-    if (ball._sausageNearX != null && Math.abs(ball.x - ball._sausageNearX) < 14 && Math.abs(ball.y - ball._sausageNearY) < 14) {
+    var leftTip = ball.x < 200;
+    var sittingStill = sp < (leftTip ? 120 : 90);
+    if (ball._sausageNearX != null && Math.abs(ball.x - ball._sausageNearX) < 16 && Math.abs(ball.y - ball._sausageNearY) < 16) {
       ball._sausageStuck = (ball._sausageStuck || 0) + 1;
+      ball._sausageStuckT = (ball._sausageStuckT || 0) + (dt || 1 / 60);
     } else {
       ball._sausageStuck = 1;
+      ball._sausageStuckT = dt || 1 / 60;
       ball._sausageNearX = ball.x;
       ball._sausageNearY = ball.y;
     }
-    var stuckLong = (ball._sausageStuck || 0) >= 3;
-    if (sp >= 160 && !stuckLong) return;
-    if (!sittingStill && !stuckLong) return;
+    var stuckLong = (ball._sausageStuck || 0) >= (leftTip ? 2 : 3);
+    var stuckTime = (ball._sausageStuckT || 0) >= (leftTip ? 0.12 : 0.2);
+    if (sp >= (leftTip ? 200 : 160) && !stuckLong && !stuckTime) return;
+    if (!sittingStill && !stuckLong && !stuckTime) return;
     peelSausageCusp(ball);
   }
 
-  function unstickSausageCusp(state) {
+  function unstickSausageCusp(state, dt) {
     var balls = allLiveBalls(state);
     var i;
-    for (i = 0; i < balls.length; i++) unstickOneSausageCusp(state, balls[i]);
+    for (i = 0; i < balls.length; i++) unstickOneSausageCusp(state, balls[i], dt);
   }
 
   function topHorseshoeInnerSegs(leftRamp, rightRamp) {
@@ -3219,7 +3282,7 @@
         if (!post._hitLock) {
           post._hitLock = true;
           post.flash = 0.3;
-          awardScore(state, post.score, 'post', post.id, post.x, post.y);
+          if (post.score) awardScore(state, post.score, 'post', post.id, post.x, post.y);
         }
       } else {
         post._hitLock = false;
@@ -3490,8 +3553,8 @@
     var rightFlip = null;
     var fi;
     for (fi = 0; fi < state.flippers.length; fi++) {
-      if (state.flippers[fi].side === 'left') leftFlip = state.flippers[fi];
-      if (state.flippers[fi].side === 'right') rightFlip = state.flippers[fi];
+      if (state.flippers[fi].side === 'left' && state.flippers[fi].role !== 'upper') leftFlip = state.flippers[fi];
+      if (state.flippers[fi].side === 'right' && state.flippers[fi].role !== 'upper') rightFlip = state.flippers[fi];
     }
     // Between rest tips: do not peel — kill loft so gravity takes the center hole
     if (leftFlip && rightFlip) {
@@ -4034,7 +4097,7 @@
     unstickFromCorners(state);
     unstickWallSlide(state);
     unstickCopperMergePocket(state);
-    unstickSausageCusp(state);
+    unstickSausageCusp(state, dt);
     resolvePostCollisions(state);
     resolveKickerCollisions(state);
     resolveTargetCollisions(state);
@@ -4348,6 +4411,11 @@
     FLIPPER_RESTITUTION_SWEEP: FLIPPER_RESTITUTION_SWEEP,
     HABITRAIL_ASSIST: HABITRAIL_ASSIST,
     TRIANGLE_SPIN: TRIANGLE_SPIN,
+    TRIANGLE_HIT_SPIN_GAIN: TRIANGLE_HIT_SPIN_GAIN,
+    TRIANGLE_SPIN_MAX: TRIANGLE_SPIN_MAX,
+    TRIANGLE_SPIN_FRICTION: TRIANGLE_SPIN_FRICTION,
+    TRIANGLE_SPIN_STOP: TRIANGLE_SPIN_STOP,
+    createUpperRightFlipper: createUpperRightFlipper,
     FLIPPER_IMPULSE_GAIN: FLIPPER_IMPULSE_GAIN,
     FLIPPER_TAP_MULT: FLIPPER_TAP_MULT,
     FLIPPER_DBL_TAP_WINDOW: FLIPPER_DBL_TAP_WINDOW,

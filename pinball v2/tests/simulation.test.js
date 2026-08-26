@@ -1373,7 +1373,9 @@ console.log('=============================');
 
 (function testCircledGlowingPostsRemoved() {
   var state = fresh();
-  assert(!state.posts || state.posts.length === 0, 'circled glowing posts removed');
+  var glowing = (state.posts || []).filter(function (p) { return p.kind !== 'pin'; });
+  assert.strictEqual(glowing.length, 0, 'circled glowing posts removed');
+  assert((state.posts || []).length === 2, 'two small rubber-end pins');
   assert(state.saucer && state.saucer.x === 95 && state.saucer.y === 520, 'saucer/HOLE stays');
   console.log('PASS: circled posts gone, saucer kept');
 })();
@@ -1635,7 +1637,8 @@ console.log('All tests passed.');
   assert(!fillerWalls.some(function (w) { return w.x1 === 348 && w.y1 === 580 && w.x2 === 338 && w.y2 === 622; }), 'right climb rubber is sling not filler');
   assert(!fillerWalls.some(function (w) { return w.x1 === 338 && w.y1 === 622 && w.x2 === 334 && w.y2 === 662; }), 'right peak rubber is sling not filler');
   assert(fillerWalls.some(function (w) { return w.x1 === 334 && w.y1 === 662 && w.x2 === 340 && w.y2 === 698; }), 'right downhill after peak stays filler');
-  assert(fillerWalls.some(function (w) { return w.x1 === 60 && w.y1 === 692 && w.x2 === 48 && w.y2 === 702; }), 'left bottom inner stays filler');
+  assert(fillerWalls.some(function (w) { return w.x1 === 56 && w.y1 === 686 && w.x2 === 44 && w.y2 === 688; }), 'left opened tip stays filler');
+  assert(!fillerWalls.some(function (w) { return w.x1 === 48 && w.y1 === 578 && w.x2 === 64 && w.y2 === 598; }), 'left top rubber is sling not filler');
   assert(fillerWalls.some(function (w) { return w.x1 === 348 && w.y1 === 714 && w.x2 === 362 && w.y2 === 728; }), 'right bottom inner stays filler');
   var midU = fillerWalls.some(function (w) {
     var y = Math.min(w.y1, w.y2);
@@ -1685,12 +1688,13 @@ console.log('All tests passed.');
 (function testSausageMidfaceSlingshots() {
   var state = fresh();
   var slings = state.slingshots;
-  assert.strictEqual(slings.length, 5, 'two climb rubbers per sausage plus right top band');
+  assert.strictEqual(slings.length, 6, 'two climb rubbers per sausage plus both top bands');
   function hasSeg(side, x1, y1, x2, y2) {
     return slings.some(function (s) {
       return s.side === side && s.x1 === x1 && s.y1 === y1 && s.x2 === x2 && s.y2 === y2 && s.score === 150;
     });
   }
+  assert(hasSeg('left', 48, 578, 64, 598), 'left top rubber 48,578-64,598');
   assert(hasSeg('left', 64, 598, 76, 628), 'left climb rubber 64,598-76,628');
   assert(hasSeg('left', 76, 628, 80, 652), 'left climb rubber 76,628-80,652');
   assert(hasSeg('right', 348, 580, 338, 622), 'right climb rubber 348,580-338,622');
@@ -1735,7 +1739,9 @@ console.log('All tests passed.');
   assert.strictEqual(climbR.length, 2, 'right climb slings still two segs');
   assert.strictEqual(topR.length, 1, 'right top rubber is one short band');
   assert(topR[0].x1 === 370 && topR[0].y1 === 558 && topR[0].x2 === 358 && topR[0].y2 === 570);
-  assert(!slings.some(function (s) { return s.side === 'left' && s.face === 'top'; }), 'no invented left top rubber');
+  var topL = slings.filter(function (s) { return s.side === 'left' && s.face === 'top'; });
+  assert.strictEqual(topL.length, 1, 'left top rubber is one short band');
+  assert(topL[0].x1 === 48 && topL[0].y1 === 578 && topL[0].x2 === 64 && topL[0].y2 === 598);
   var right = state.sideRoutes.rightFiller;
   assert(right.segments[0].y1 === 538, 'right filler starts higher');
   assert(right.guides.some(function (s) { return s.x1 === 370 && s.y1 === 558 && s.x2 === 358 && s.y2 === 570; }), 'top cap is on the hull');
@@ -2817,19 +2823,13 @@ console.log('All tests passed.');
   var w = Math.max(tri.verts[0].x, tri.verts[1].x, tri.verts[2].x) - Math.min(tri.verts[0].x, tri.verts[1].x, tri.verts[2].x);
   var h = Math.max(tri.verts[0].y, tri.verts[1].y, tri.verts[2].y) - Math.min(tri.verts[0].y, tri.verts[1].y, tri.verts[2].y);
   assert(Math.abs(w - 52) < 4 && Math.abs(h - 44) < 6, 'triangle size stays ~52x44 (w=' + w.toFixed(1) + ' h=' + h.toFixed(1) + ')');
-  assert(sim.TRIANGLE_SPIN === -0.28, 'TRIANGLE_SPIN is -0.28 rad/s (CCW on y-down)');
-  var top0 = tri.verts[0];
-  var vi;
-  for (vi = 1; vi < tri.verts.length; vi++) if (tri.verts[vi].y < top0.y) top0 = tri.verts[vi];
-  var top0x = top0.x;
+  assert(sim.TRIANGLE_SPIN === 0, 'TRIANGLE_SPIN drive is off (hit-spin only)');
+  assert(Math.abs(tri.spin || 0) < 0.05, 'triangle omega ~0 at rest');
   var angle0 = tri.angle || 0;
   var i;
   for (i = 0; i < 60; i++) sim.tick(state, 1 / 60);
   var dAngle = (state.pulseTriangle.angle || 0) - angle0;
-  assert(dAngle < 0 && Math.abs(dAngle) >= 0.2, 'rotated >=0.2 rad CCW in 1s (dAngle=' + dAngle.toFixed(3) + ')');
-  var top1 = state.pulseTriangle.verts[0];
-  for (vi = 1; vi < state.pulseTriangle.verts.length; vi++) if (state.pulseTriangle.verts[vi].y < top1.y) top1 = state.pulseTriangle.verts[vi];
-  assert(top1.x < top0x - 1, 'top vertex moved left (CCW on screen) ' + top0x.toFixed(1) + ' -> ' + top1.x.toFixed(1));
+  assert(Math.abs(dAngle) < 0.08, 'no auto-rotate at rest (dAngle=' + dAngle.toFixed(3) + ')');
 
   var st = fresh();
   st.ball.inPlay = true;
@@ -2979,4 +2979,141 @@ console.log('All tests passed.');
   assert(left.entry.x === 80 && left.entry.y === 337 && left.entry.w === 44, 'wide1 entry kept');
   console.log('PASS: top2 sausage join + moved gate (gate=' + g.x + ',' + g.y + ' crownC=' + cyanTop + ' crownCu=' + copperTop + ' 800y=' + p800.y.toFixed(1) + ')');
 })();
+(function testNeed1UpperFlipperRubberTriangleLodge() {
+  var state = fresh();
+  assert.strictEqual(sim.TABLE_W, 480, 'TABLE_W stays 480');
+  assert.strictEqual(sim.BALL_RADIUS, 12, 'BALL_RADIUS stays 12');
+  assert.strictEqual(sim.HABITRAIL_ASSIST, 0, 'HABITRAIL_ASSIST stays 0');
+  assert.strictEqual(sim.GRAVITY, 1400, 'GRAVITY stays 1400');
+  var mains = state.flippers.filter(function (f) { return f.role !== 'upper'; });
+  assert.strictEqual(mains.length, 2, 'two main flippers');
+  assert.strictEqual(mains[0].length, 66, 'main flipper length unchanged');
+  assert.strictEqual(mains[1].length, 66, 'main right flipper length unchanged');
+  var upper = state.flippers.filter(function (f) { return f.role === 'upper'; });
+  assert.strictEqual(upper.length, 1, 'one upper flipper');
+  var u = upper[0];
+  assert.strictEqual(u.side, 'right', 'upper shares right side');
+  assert(Math.abs(u.pivotX - 318) <= 12, 'upper pivot x ~318 (got ' + u.pivotX + ')');
+  assert(Math.abs(u.pivotY - 372) <= 12, 'upper pivot y ~372 (got ' + u.pivotY + ')');
+  assert(u.length >= 40 && u.length <= 48, 'upper is mini 40-48 (len=' + u.length + ')');
+  assert(u.restAngle > Math.PI / 2 && u.restAngle < Math.PI, 'rest points left-down');
+  sim.activateFlipper(state, 'right', true);
+  var mainR = state.flippers.find(function (f) { return f.side === 'right' && f.role !== 'upper'; });
+  assert(u.active && mainR.active, 'R FLIP drives both right flippers');
+  sim.activateFlipper(state, 'right', false);
 
+  var kick = fresh();
+  var uf = kick.flippers.find(function (f) { return f.role === 'upper'; });
+  kick.ball.inPlay = true;
+  kick.exitedLaunchLane = true;
+  kick.phase = 'playing';
+  var tip = sim.flipperTip(uf);
+  var mx = (uf.pivotX + tip.x) * 0.5;
+  var my = (uf.pivotY + tip.y) * 0.5;
+  var nx = -(tip.y - uf.pivotY);
+  var ny = tip.x - uf.pivotX;
+  var nlen = Math.hypot(nx, ny) || 1;
+  nx /= nlen; ny /= nlen;
+  if (ny > 0) { nx = -nx; ny = -ny; }
+  kick.ball.x = mx + nx * (kick.ball.radius + uf.width * 0.5 + 1);
+  kick.ball.y = my + ny * (kick.ball.radius + uf.width * 0.5 + 1);
+  kick.ball.vx = -nx * 40;
+  kick.ball.vy = -ny * 40;
+  sim.activateFlipper(kick, 'right', true);
+  var i;
+  for (i = 0; i < 18; i++) sim.stepPhysics(kick, 1 / 60);
+  var ksp = Math.hypot(kick.ball.vx, kick.ball.vy);
+  assert(ksp > 90, 'ball on upper face is kicked (sp=' + ksp.toFixed(1) + ')');
+
+  var triSt = fresh();
+  assert(Math.abs(triSt.pulseTriangle.spin || 0) < 0.05, 'triangle omega ~0 at rest');
+  triSt.ball.inPlay = true;
+  triSt.exitedLaunchLane = true;
+  triSt.phase = 'playing';
+  triSt.ball.x = 186;
+  triSt.ball.y = 590;
+  triSt.ball.vx = 20;
+  triSt.ball.vy = -420;
+  for (i = 0; i < 12; i++) sim.stepPhysics(triSt, 1 / 60);
+  var hitOm = Math.abs(triSt.pulseTriangle.spin || 0);
+  assert(hitOm > 0.18, 'a hit raises |omega| (got ' + hitOm.toFixed(3) + ')');
+  var coast = hitOm;
+  triSt.ball.x = 418;
+  triSt.ball.y = 780;
+  triSt.ball.vx = 0;
+  triSt.ball.vy = 0;
+  triSt.ball.inPlay = false;
+  for (i = 0; i < 120; i++) sim.stepPulseTriangle(triSt, 1 / 60);
+  var decayed = Math.abs(triSt.pulseTriangle.spin || 0);
+  assert(decayed < coast * 0.55, 'after 2s no hit, spin decayed (' + coast.toFixed(3) + ' -> ' + decayed.toFixed(3) + ')');
+
+  var lodge = fresh();
+  lodge.ball.inPlay = true;
+  lodge.exitedLaunchLane = true;
+  lodge.phase = 'playing';
+  lodge.ball.x = 52;
+  lodge.ball.y = 708;
+  lodge.ball.vx = 0;
+  lodge.ball.vy = 0;
+  var score0 = lodge.score;
+  var freeAt = null;
+  for (i = 0; i < 12; i++) {
+    sim.stepPhysics(lodge, 1 / 60);
+    var b = lodge.ball;
+    var sp = Math.hypot(b.vx, b.vy);
+    if (Math.hypot(b.x - 52, b.y - 708) > 16 && sp > 40 && freeAt == null) freeAt = i;
+  }
+  assert(freeAt != null, 'left-tip lodge frees in 0.2s (xy=' + lodge.ball.x.toFixed(1) + ',' + lodge.ball.y.toFixed(1) + ')');
+  assert(lodge.score - score0 < 200, 'left-tip peel is not a score farm');
+
+  var rub = fresh();
+  var topRubber = rub.slingshots.find(function (s) { return s.side === 'left' && s.face === 'top'; });
+  assert(topRubber, 'new left-sausage top rubber exists');
+  rub.ball.inPlay = true;
+  rub.exitedLaunchLane = true;
+  rub.phase = 'playing';
+  rub.score = 0;
+  rub.ball.x = 58;
+  rub.ball.y = 572;
+  rub.ball.vx = -30;
+  rub.ball.vy = 220;
+  var fired = false;
+  var maxSp = 0;
+  for (i = 0; i < 18; i++) {
+    sim.stepPhysics(rub, 1 / 60);
+    var rsp = Math.hypot(rub.ball.vx, rub.ball.vy);
+    if (rsp > maxSp) maxSp = rsp;
+    if (topRubber.cooldown > 0 || rub.score >= 150) fired = true;
+  }
+  assert(fired || maxSp > 200, 'left sausage top rubber fires (score=' + rub.score + ' sp=' + maxSp.toFixed(1) + ')');
+
+  function runPlunge(power) {
+    var st = fresh();
+    sim.launchBall(st, power);
+    var inU = false, dropped = false;
+    var n;
+    for (n = 0; n < 180; n++) {
+      sim.tick(st, 1 / 60);
+      var bb = st.ball;
+      if (bb.y < 95 && bb.x > 140 && bb.x < 360) inU = true;
+      if (!inU && bb.x > 350 && bb.x < 410 && bb.y > 140 && bb.y < 280) dropped = true;
+      if (!bb.inPlay && n > 12) break;
+    }
+    return { inU: inU, dropped: dropped, x: st.ball.x, y: st.ball.y };
+  }
+  var p800 = runPlunge(800);
+  var p1400 = runPlunge(1400);
+  assert(!p800.dropped && p800.inU, '800 still rides merge floor into U');
+  assert(!p1400.dropped && p1400.inU, '1400 still rides merge floor into U');
+  var oneWay = fresh();
+  oneWay.ball.inPlay = true;
+  oneWay.exitedLaunchLane = true;
+  oneWay.phase = 'playing';
+  oneWay.ball.x = 380;
+  oneWay.ball.y = 800;
+  oneWay.ball.vx = 180;
+  oneWay.ball.vy = 20;
+  for (i = 0; i < 24; i++) sim.stepPhysics(oneWay, 1 / 60);
+  assert(oneWay.ball.x < sim.LAUNCH_LANE_LEFT, 'one-way shooter still holds');
+  console.log('PASS: need1 upper flipper + triangle hit-spin + left rubber + lodge + plunge/orbit');
+})();

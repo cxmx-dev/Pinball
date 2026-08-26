@@ -971,6 +971,89 @@
     ctx.restore();
   }
 
+  function horseshoeOuterPoints(left, right) {
+    var pts = segsToPoints(left && left.segments);
+    var copper = segsToPoints(right && right.mergeOuter);
+    if (!pts.length || copper.length < 2) return pts;
+    var i;
+    for (i = copper.length - 2; i >= 0; i--) pts.push(copper[i]);
+    return pts;
+  }
+
+  function horseshoeInnerPoints(left, right) {
+    var cyan = clipPtsAtJoinX(segsToPoints(left && left.guides), 240, true);
+    var copper = segsToPoints(right && right.mergeInner);
+    var pts = cyan.slice();
+    if (copper.length < 2) return pts;
+    var i;
+    for (i = copper.length - 2; i >= 0; i--) pts.push(copper[i]);
+    return pts;
+  }
+
+  /** One horseshoe tube: shared crown + shared floor, cyan fades into copper. */
+  function drawHorseshoeOrbit(ctx, left, right, pulse) {
+    if (!left || !right || !right.mergeOuter || !right.mergeInner) return;
+    var outer = horseshoeOuterPoints(left, right);
+    var inner = horseshoeInnerPoints(left, right);
+    if (outer.length < 4 || inner.length < 4) return;
+    var closer = [{ x: 392, y: 103 }, { x: 392, y: 94 }, { x: 390, y: 88 }];
+    var hull = outer.concat(closer).concat(inner.slice().reverse());
+    var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
+    var strokeHull = simple ? strokeExact : strokeSmooth;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    strokeHull(ctx, hull, true);
+    ctx.fillStyle = '#081218';
+    ctx.fill();
+    var g = ctx.createLinearGradient(36, 8, 444, 8);
+    g.addColorStop(0, 'rgba(120, 230, 255, 1)');
+    g.addColorStop(0.36, 'rgba(24, 150, 200, 1)');
+    g.addColorStop(0.46, 'rgba(70, 170, 170, 1)');
+    g.addColorStop(0.50, 'rgba(190, 150, 90, 1)');
+    g.addColorStop(0.54, 'rgba(214, 110, 36, 1)');
+    g.addColorStop(0.64, 'rgba(255, 184, 72, 1)');
+    g.addColorStop(1, 'rgba(110, 40, 10, 1)');
+    ctx.fillStyle = g;
+    strokeHull(ctx, hull, true);
+    ctx.fill();
+    if (!simple) applyShadow(ctx, 'rgba(80, 200, 220, 0.22)', 10);
+    var cyanTube = {
+      core: 'rgba(80, 230, 255, 0.95)',
+      glow: 'rgba(40, 180, 255, 0.45)',
+      hi: 'rgba(220, 250, 255, 0.7)',
+      width: 6,
+      smooth: !simple
+    };
+    var copperTube = {
+      core: 'rgba(255, 190, 90, 0.92)',
+      glow: 'rgba(255, 150, 40, 0.42)',
+      hi: 'rgba(255, 245, 210, 0.65)',
+      width: 6,
+      smooth: !simple
+    };
+    var cyanGuide = {
+      core: 'rgba(160, 240, 255, 0.6)',
+      glow: 'rgba(40, 180, 255, 0.22)',
+      hi: 'rgba(255,255,255,0.4)',
+      width: 3.5,
+      smooth: !simple
+    };
+    var copperGuide = {
+      core: 'rgba(255, 220, 140, 0.55)',
+      glow: 'rgba(255, 180, 60, 0.22)',
+      hi: 'rgba(255, 230, 170, 0.45)',
+      width: 3.5,
+      smooth: !simple
+    };
+    var blend = 26;
+    strokeTubePath(ctx, clipPtsAtJoinX(outer, 240 + blend, true), cyanTube);
+    strokeTubePath(ctx, clipPtsAtJoinX(outer, 240 - blend, false), copperTube);
+    strokeTubePath(ctx, clipPtsAtJoinX(inner, 240 + blend, true), cyanGuide);
+    strokeTubePath(ctx, clipPtsAtJoinX(inner, 240 - blend, false), copperGuide);
+    ctx.restore();
+  }
+
   function drawCopperMergeShoulder(ctx, ramp, pulse) {
     // top2: copper sausage is a real lobe (mergeOuter + mergeInner), not a triangular funnel.
     if (!ramp || !ramp.mergeOuter || !ramp.mergeInner) return;
@@ -1050,62 +1133,19 @@
     }
 
     var left = state.sideRoutes.leftRamp;
-    if (left) {
-      var cyanGuides = left.guides ? clipPtsAtJoinX(segsToPoints(left.guides), 240, true) : [];
-      drawPioneerRamp(ctx, {
-        segments: left.segments,
-        guides: (function () {
-          if (!left.guides) return left.guides;
-          var clipped = [];
-          var gi;
-          for (gi = 0; gi < left.guides.length; gi++) {
-            var gs = left.guides[gi];
-            if (gs.x1 <= 240.51 && gs.x2 <= 240.51) { clipped.push(gs); continue; }
-            if (gs.x1 <= 240.51 && gs.x2 > 240.51) {
-              var tg = (240 - gs.x1) / ((gs.x2 - gs.x1) || 1e-6);
-              clipped.push({ x1: gs.x1, y1: gs.y1, x2: 240, y2: gs.y1 + tg * (gs.y2 - gs.y1) });
-            }
-            break;
-          }
-          return clipped;
-        })()
-      }, pulse, 'cyan');
-      var cyanTube = {
-        core: 'rgba(80, 230, 255, 0.95)',
-        glow: 'rgba(40, 180, 255, 0.45)',
-        hi: 'rgba(220, 250, 255, 0.7)',
-        width: 6,
-        smooth: true
-      };
-      strokeTubePath(ctx, segsToPoints(left.segments), cyanTube);
-      if (cyanGuides.length >= 2) {
-        strokeTubePath(ctx, cyanGuides, {
-          core: 'rgba(160, 240, 255, 0.6)',
-          glow: 'rgba(40, 180, 255, 0.22)',
-          hi: 'rgba(255,255,255,0.4)',
-          width: 3.5,
-          smooth: true
-        });
-      }
-    }
-
     var ramp = state.sideRoutes.rightRamp;
+    if (left && ramp) {
+      // need1: one horseshoe hull (shared crown + floor). No vertical seam, no overlapping fills.
+      drawHorseshoeOrbit(ctx, left, ramp, pulse);
+    } else if (left) {
+      drawPioneerRamp(ctx, { segments: left.segments, guides: left.guides }, pulse, 'cyan');
+    }
     if (ramp) {
-      // Copper slide hull is the vertical arm only (y>=88). The top-right lobe is mergeOuter.
+      // Copper slide hull is the vertical arm only (y>=88). Top lobe is the horseshoe.
       drawPioneerRamp(ctx, {
         segments: (ramp.segments || []).filter(function (s) { return Math.min(s.y1, s.y2) >= 87; }),
         guides: ramp.guides
       }, pulse);
-      drawCopperMergeShoulder(ctx, ramp, pulse);
-      if (ramp.mergeOuter) {
-        strokeTubePath(ctx, segsToPoints(ramp.mergeOuter), {
-          core: 'rgba(255, 190, 90, 0.92)',
-          glow: 'rgba(255, 150, 40, 0.42)',
-          hi: 'rgba(255, 245, 210, 0.65)',
-          width: 6,
-          smooth: true
-        });
-      }
     }
   }
 
@@ -1180,6 +1220,7 @@
   function drawPosts(ctx, state, pulse) {
     if (!state.posts) return;
     state.posts.forEach(function (post, idx) {
+      if (post.kind === 'pin') return;
       var hot = post.flash > 0;
       var glow = 0.5 + 0.5 * Math.sin(pulse * 3 + idx);
       ctx.save();
@@ -1463,10 +1504,13 @@
     state.flippers.forEach(function (flipper) {
       var tip = root.PinballSim.flipperTip(flipper);
       ctx.save();
+      var mini = flipper.role === 'upper' || (flipper.length && flipper.length < 56);
+      var pivotOuter = mini ? 9 : 14;
+      var pivotInner = mini ? 6 : 9;
 
       ctx.fillStyle = '#2a3540';
       ctx.beginPath();
-      ctx.arc(flipper.pivotX, flipper.pivotY, 14, 0, Math.PI * 2);
+      ctx.arc(flipper.pivotX, flipper.pivotY, pivotOuter, 0, Math.PI * 2);
       ctx.fill();
 
       var grad = ctx.createLinearGradient(flipper.pivotX, flipper.pivotY, tip.x, tip.y);
@@ -1507,7 +1551,7 @@
 
       ctx.fillStyle = glow ? glow.pivot : (flipper.active ? '#88bbee' : '#556677');
       ctx.beginPath();
-      ctx.arc(flipper.pivotX, flipper.pivotY, 9, 0, Math.PI * 2);
+      ctx.arc(flipper.pivotX, flipper.pivotY, pivotInner, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     });
