@@ -119,8 +119,8 @@
   var SIDE_ROUTE_COOLDOWN = 0.35;
   var BOINGER_X = 318;
   var BOINGER_Y = 686;
-  var BOINGER_B_X = 258;
-  var BOINGER_B_Y = 690;
+  var BOINGER_B_X = 282;
+  var BOINGER_B_Y = 718;
   var BOINGER_R = 12;
   var BOINGER_UP_SEC = 3;
   var BOINGER_DOWN_SEC = 1.5;
