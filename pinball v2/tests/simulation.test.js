@@ -2248,3 +2248,48 @@ console.log('All tests passed.');
   assert(rubber && rubber.x === 300 && rubber.y === 452, '500 rubber stays at 300,452');
   console.log('PASS: cyan sausage solid + cusp free (cusp x=' + cusp.x.toFixed(1) + ' y=' + cusp.y.toFixed(1) + ')');
 })();
+(function testOneWayShooterAndSausageEject() {
+  function run(x, y, vx, vy, exited, frames) {
+    var state = fresh();
+    state.ball.inPlay = true;
+    state.exitedLaunchLane = !!exited;
+    state.phase = 'playing';
+    state.ball.x = x;
+    state.ball.y = y;
+    state.ball.vx = vx;
+    state.ball.vy = vy;
+    var k;
+    var shooterLow = false;
+    for (k = 0; k < frames; k++) {
+      sim.stepPhysics(state, 1 / 60);
+      if (state.ball.x > sim.LAUNCH_LANE_LEFT && state.ball.y > 200) shooterLow = true;
+    }
+    return { state: state, x: state.ball.x, y: state.ball.y, shooterLow: shooterLow };
+  }
+  var merge = run(380, 90, 220, 20, true, 90);
+  assert(!merge.shooterLow, 'merge ball heading into the lane must not fall down the shooter (x=' + merge.x.toFixed(1) + ' y=' + merge.y.toFixed(1) + ')');
+  assert(!(merge.x > sim.LAUNCH_LANE_LEFT && merge.y > 200), 'merge ball must not end at y>200 in the shooter');
+  var fallen = run(410, 200, 0, 80, true, 24);
+  assert(fallen.x < sim.LAUNCH_LANE_LEFT, 'lane ball at 410,200 with exitedLaunchLane must peel to playfield (x=' + fallen.x.toFixed(1) + ')');
+  assert(!(fallen.x > sim.LAUNCH_LANE_LEFT && fallen.y >= 538), 'peeled ball must not drop to the sausage in the lane');
+  var inside = run(370, 620, 0, 0, true, 8);
+  assert(inside.x < 360, 'right interior 370,620 still ejects (x=' + inside.x.toFixed(1) + ')');
+  var nearRail = run(388, 620, 0, 0, true, 8);
+  assert(nearRail.x < sim.LAUNCH_LANE_LEFT - 4, 'sausage near x=392 still ejects (x=' + nearRail.x.toFixed(1) + ')');
+  var plunge = fresh();
+  sim.launchBall(plunge, 800);
+  var inU = false;
+  var p;
+  for (p = 0; p < 120; p++) {
+    sim.tick(plunge, 1 / 60);
+    if (plunge.exitedLaunchLane && plunge.ball.y < 90 && plunge.ball.x < 360 && plunge.ball.x > 140) inU = true;
+  }
+  assert(plunge.exitedLaunchLane, 'fresh plunge 800 still leaves the lane');
+  assert(inU || (plunge.ball.y < 130 && plunge.ball.x < 360), 'fresh plunge 800 still enters the U');
+  assert(sim.GRAVITY === 1400, 'GRAVITY stays 1400');
+  assert(sim.HABITRAIL_ASSIST === 0, 'HABITRAIL_ASSIST stays 0');
+  var rubber = fresh().bumpers.find(function (b) { return b.id === 'rubber-mid'; });
+  assert(rubber && rubber.x === 300 && rubber.y === 452, '500 rubber stays at 300,452');
+  console.log('PASS: one-way shooter + sausage eject (merge x=' + merge.x.toFixed(1) + ' y=' + merge.y.toFixed(1) + ')');
+})();
+

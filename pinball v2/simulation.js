@@ -1881,7 +1881,13 @@
     for (i = 0; i < balls.length; i++) {
       var ball = balls[i];
       if (!ball || !ball.inPlay) continue;
-      if (ball.x >= LAUNCH_LANE_LEFT) continue;
+      // Always eject if inside fill-l / fill-r. Do not skip x>=392:
+      // that is the rail/sausage join and is exactly where a fallen
+      // shooter ball gets stuck. Only skip the open plunger well.
+      var wellR = ball.radius || BALL_RADIUS;
+      var inRight = ballInsideFiller(ball, routes.rightFiller);
+      var inLeft = ballInsideFiller(ball, routes.leftFiller);
+      if (ball.x > LAUNCH_LANE_LEFT + wellR && !inRight && !inLeft) continue;
       ejectOneFromFiller(ball, routes.rightFiller);
       ejectOneFromFiller(ball, routes.leftFiller);
     }
@@ -2343,23 +2349,84 @@
     return false;
   }
 
+  function isFreshShooterTravel(state) {
+    // Only a plunged ball that has not yet exited may travel the lane
+    // (up into the merge, or back down a failed plunge to the berth).
+    return !!(state && state.ball && state.ball.inPlay && !state.exitedLaunchLane);
+  }
+
+  function peelOutOfShooterLane(ball, intoU) {
+    var r = ball.radius || BALL_RADIUS;
+    ball.x = LAUNCH_LANE_LEFT - r - 6;
+    if (ball.vx > -40) ball.vx = -Math.max(Math.abs(ball.vx), 200);
+    if (intoU) ball.vy = Math.min(ball.vy, -140);
+    else if (ball.vy < -40) ball.vy *= 0.35;
+  }
+
+  function sealSausageRailJoin(state, ball) {
+    if (!ball || !ball.inPlay) return;
+    var r = ball.radius || BALL_RADIUS;
+    if (ball.y < 528 || ball.y > 752) return;
+    var routes = state.sideRoutes;
+    if (routes && ballInsideFiller(ball, routes.rightFiller)) return;
+    // Shooter-well side of the cyan outer: keep a plunge in the well.
+    if (ball.x >= LAUNCH_LANE_LEFT - 2 && ball.x < LAUNCH_LANE_LEFT + r + 2) {
+      ball.x = LAUNCH_LANE_LEFT + r + 2;
+      if (ball.vx < 0) ball.vx = Math.abs(ball.vx) * 0.25;
+    }
+  }
+
   function blockShooterLaneIntrusion(state) {
-    if (!state.ball.inPlay || !state.exitedLaunchLane) return;
+    if (!state.ball || !state.ball.inPlay) return;
     var ball = state.ball;
     var r = ball.radius;
-    // Keep playfield balls out of the plunger lane near the apron.
-    // Always allow a horizontal eject; never loft when draining / below bats.
-    if (ball.x + r >= LAUNCH_LANE_LEFT - 1 && ball.y > FLIPPER_ROW_Y - 44) {
-      ball.x = LAUNCH_LANE_LEFT - r - 2;
-      if (ball.vx > -40) {
-        ball.vx = -Math.max(Math.abs(ball.vx), 200) * WALL_RESTITUTION;
+    var fresh = isFreshShooterTravel(state);
+
+    // Apron: keep playfield balls out of the plunger berth.
+    if (state.exitedLaunchLane) {
+      if (ball.x + r >= LAUNCH_LANE_LEFT - 1 && ball.y > FLIPPER_ROW_Y - 44) {
+        ball.x = LAUNCH_LANE_LEFT - r - 2;
+        if (ball.vx > -40) {
+          ball.vx = -Math.max(Math.abs(ball.vx), 200) * WALL_RESTITUTION;
+        }
+        if (ball.y >= FLIPPER_ROW_Y - 8 || apronAssistsBlocked(state)) {
+          // Drain/apron: kill upward kick only
+          if (ball.vy < 0) ball.vy = Math.abs(ball.vy) * 0.25;
+        } else if (ball.vy > -80) {
+          ball.vy = -Math.max(Math.abs(ball.vy), 140);
+        }
       }
-      if (ball.y >= FLIPPER_ROW_Y - 8 || apronAssistsBlocked(state)) {
-        // Drain/apron: kill upward kick only
-        if (ball.vy < 0) ball.vy = Math.abs(ball.vy) * 0.25;
-      } else if (ball.vy > -80) {
-        ball.vy = -Math.max(Math.abs(ball.vy), 140);
+    }
+
+    if (fresh) {
+      // Plunge may travel the lane UP into the merge. Seal the sausage/
+      // rail join so a shooter ball cannot slip sideways into the cyan hull.
+      sealSausageRailJoin(state, ball);
+      return;
+    }
+
+    var inLaneX = ball.x + r >= LAUNCH_LANE_LEFT - 1;
+    var belowJoin = ball.y > LAUNCH_WIRE_Y1;
+
+    // Already falling down the lane from the merge: peel to playfield
+    // before the sausage (do not drop to y=538+ inside the lane).
+    if (ball.x > LAUNCH_LANE_LEFT && belowJoin) {
+      if (ball.y >= 528 && ball.y <= 744 && ball.y < FLIPPER_ROW_Y - 80) {
+        ball.y = 520;
       }
+      peelOutOfShooterLane(ball, false);
+      return;
+    }
+
+    // One-way at the merge mouth: playfield / merge balls cannot enter
+    // the lane (rightward / downward re-entry). Plunge UP is not blocked.
+    if (inLaneX && ball.y <= LAUNCH_WIRE_Y1 + 16) {
+      peelOutOfShooterLane(ball, ball.y <= LAUNCH_WIRE_Y1 + 6);
+      return;
+    }
+
+    if (inLaneX && belowJoin) {
+      peelOutOfShooterLane(ball, false);
     }
   }
 
