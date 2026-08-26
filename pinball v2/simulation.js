@@ -121,6 +121,8 @@
   var BOINGER_Y = 686;
   var BOINGER_B_X = 282;
   var BOINGER_B_Y = 718;
+  var BOINGER_C_X = 102;
+  var BOINGER_C_Y = 708;
   var BOINGER_R = 12;
   var BOINGER_UP_SEC = 3;
   var BOINGER_DOWN_SEC = 1.5;
@@ -589,7 +591,8 @@
   function createBoingers() {
     return [
       createBoinger({ x: BOINGER_X, y: BOINGER_Y, phase: 'a', theme: 'copper' }),
-      createBoinger({ x: BOINGER_B_X, y: BOINGER_B_Y, phase: 'b', theme: 'cyan' })
+      createBoinger({ x: BOINGER_B_X, y: BOINGER_B_Y, phase: 'b', theme: 'cyan' }),
+      createBoinger({ x: BOINGER_C_X, y: BOINGER_C_Y, phase: 'b', theme: 'cyan' })
     ];
   }
 
@@ -3542,6 +3545,8 @@
     BOINGER_Y: BOINGER_Y,
     BOINGER_B_X: BOINGER_B_X,
     BOINGER_B_Y: BOINGER_B_Y,
+    BOINGER_C_X: BOINGER_C_X,
+    BOINGER_C_Y: BOINGER_C_Y,
     BOINGER_R: BOINGER_R,
     BOINGER_UP_SEC: BOINGER_UP_SEC,
     BOINGER_DOWN_SEC: BOINGER_DOWN_SEC,
