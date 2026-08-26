@@ -1850,3 +1850,27 @@ console.log('All tests passed.');
   assert(state.score === score0, 'no score from down B');
   console.log('PASS: two boingers, inverted phase, collide only when that one is up');
 })();
+(function testCopperMergePocketUnsticks() {
+  var state = fresh();
+  var right = state.sideRoutes.rightRamp;
+
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.activeHabitrail = 'ramp-r';
+  state.ball.x = 324;
+  state.ball.y = 79;
+  state.ball.vx = 6;
+  state.ball.vy = 3;
+  var k, freed = false, lastSp = 0, moved = 0;
+  for (k = 0; k < 90; k++) {
+    sim.stepPhysics(state, 1 / 60);
+    lastSp = Math.hypot(state.ball.vx, state.ball.vy);
+    moved = Math.hypot(state.ball.x - 324, state.ball.y - 79);
+    if (lastSp > 40 && moved > 12) { freed = true; break; }
+  }
+  assert(freed, 'copper merge pocket must get free (x=' + state.ball.x.toFixed(1) + ' y=' + state.ball.y.toFixed(1) + ' sp=' + lastSp.toFixed(1) + ')');
+  assert(lastSp > 25, 'must be moving, not dead in the corner');
+  assert(sim.HABITRAIL_ASSIST === 0, 'HABITRAIL_ASSIST stays 0');
+  assert(sim.BOINGER_B_X === 282 && sim.BOINGER_B_Y === 718, 'B stays 282,718');
+  console.log('PASS: copper merge pocket unsticks (x=' + state.ball.x.toFixed(1) + ' y=' + state.ball.y.toFixed(1) + ' sp=' + lastSp.toFixed(1) + ')');
+})();

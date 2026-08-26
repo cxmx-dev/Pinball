@@ -2153,6 +2153,59 @@
    * Free ball wedged in upper rail corners / wireform entry pocket.
    * User-reported hang: top-right under arch (wireform Ã— top rail Ã— lane wall).
    */
+  /**
+   * Copper U / merge pocket: ball lodges in the inner V where mergeInner
+   * meets the right habitrail guide (around 322,74). Peel along the ramp
+   * tangent into the channel — nudge, no teleport, no rail snap.
+   */
+  function unstickCopperMergePocket(state) {
+    var ball = state.ball;
+    if (!ball || !ball.inPlay) return;
+    if (!state.exitedLaunchLane) return;
+    if (state.launchRailT != null) return;
+    if (ball.x < 300 || ball.x > 370) return;
+    if (ball.y < 72 || ball.y > 110) return;
+    var right = state.sideRoutes && state.sideRoutes.rightRamp;
+    if (!right) return;
+    var nearMerge = nearestPointOnSegments(ball.x, ball.y, right.mergeInner || []);
+    var nearGuide = nearestPointOnSegments(ball.x, ball.y, right.guides || []);
+    if (!nearMerge) return;
+    if (ball.y < nearMerge.y + 2) return;
+    var slot = nearGuide ? vecLen(nearMerge.x - nearGuide.x, nearMerge.y - nearGuide.y) : 999;
+    var inSlot = slot < 26 && nearMerge.dist < ball.radius + 8 && nearGuide && nearGuide.dist < ball.radius + 8;
+    var atT = vecLen(ball.x - 322, ball.y - 74) < ball.radius + 14;
+    var sp = vecLen(ball.vx, ball.vy);
+    if (sp > 40) return;
+    if (!inSlot && !atT) return;
+    // Channel sits above the inner floor (smaller y). Peel off the vertex.
+    var nx = 0.15;
+    var ny = -0.99;
+    if (nearMerge.dist > 1e-6) {
+      nx = (ball.x - nearMerge.x) / nearMerge.dist;
+      ny = (ball.y - nearMerge.y) / nearMerge.dist;
+      if (ny > 0) { nx = -nx; ny = -ny; }
+    }
+    if (ny > -0.2) { nx = 0.2; ny = -0.98; }
+    var nlen = vecLen(nx, ny) || 1;
+    nx /= nlen;
+    ny /= nlen;
+    ball.x += nx * 3.2;
+    ball.y += ny * 3.2;
+    var tx = -ny;
+    var ty = nx;
+    var along = ball.vx * tx + ball.vy * ty;
+    if (Math.abs(along) < 10) {
+      if (ball.x >= 322) { tx = 0.9; ty = -0.44; }
+      else { tx = -0.9; ty = -0.44; }
+    } else if (along < 0) {
+      tx = -tx;
+      ty = -ty;
+    }
+    var keep = Math.max(sp, 110);
+    ball.vx = ball.vx * 0.32 + tx * keep * 0.68;
+    ball.vy = ball.vy * 0.32 + ty * keep * 0.68;
+  }
+
   function unstickFromCorners(state) {
     var ball = state.ball;
     if (!ball.inPlay || !state.exitedLaunchLane) return;
@@ -3122,6 +3175,7 @@
     unstickFromBumpers(state);
     unstickFromCorners(state);
     unstickWallSlide(state);
+    unstickCopperMergePocket(state);
     resolvePostCollisions(state);
     resolveKickerCollisions(state);
     resolveTargetCollisions(state);
