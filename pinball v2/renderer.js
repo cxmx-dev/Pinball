@@ -845,6 +845,38 @@
     return pts;
   }
 
+  /** Keep polyline points on one side of the top-center sausage join. */
+  function clipPtsAtJoinX(pts, joinX, keepLeft) {
+    if (!pts || pts.length < 2) return pts || [];
+    var out = [];
+    var i;
+    for (i = 0; i < pts.length; i++) {
+      var p = pts[i];
+      var prev = i > 0 ? pts[i - 1] : null;
+      var onSide = keepLeft ? p.x <= joinX + 0.51 : p.x >= joinX - 0.51;
+      if (onSide) {
+        if (prev) {
+          var prevOn = keepLeft ? prev.x <= joinX + 0.51 : prev.x >= joinX - 0.51;
+          if (!prevOn) {
+            var dx0 = p.x - prev.x;
+            var t0 = Math.abs(dx0) < 1e-6 ? 0 : (joinX - prev.x) / dx0;
+            out.push({ x: joinX, y: prev.y + t0 * (p.y - prev.y) });
+          }
+        }
+        out.push(p);
+      } else if (prev) {
+        var prevKeep = keepLeft ? prev.x <= joinX + 0.51 : prev.x >= joinX - 0.51;
+        if (prevKeep) {
+          var dx1 = p.x - prev.x;
+          var t1 = Math.abs(dx1) < 1e-6 ? 0 : (joinX - prev.x) / dx1;
+          out.push({ x: joinX, y: prev.y + t1 * (p.y - prev.y) });
+        }
+        break;
+      }
+    }
+    return out;
+  }
+
   function strokeExact(ctx, pts, close) {
     if (!pts || pts.length < 2) return;
     ctx.beginPath();
@@ -939,46 +971,10 @@
     ctx.restore();
   }
 
-  function drawCopperMergeShoulder(ctx, ramp) {
-    if (!ramp || !ramp.mergeInner || !ramp.segments) return;
-    var outer = [];
-    var i;
-    for (i = 0; i < ramp.segments.length; i++) {
-      var s = ramp.segments[i];
-      if (Math.min(s.y1, s.y2) > 110 || Math.max(s.x1, s.x2) < 320) continue;
-      if (Math.max(s.y1, s.y2) > 120) break;
-      if (!outer.length) outer.push({ x: s.x1, y: s.y1 });
-      outer.push({ x: s.x2, y: s.y2 });
-    }
-    if (outer.length < 2) return;
-    // merge3: follow the rounded closer into the open inner floor.
-    outer.push({ x: 392, y: 103 });
-    outer.push({ x: 392, y: 94 });
-    outer.push({ x: 390, y: 88 });
-    var inner = [];
-    for (i = 0; i < ramp.mergeInner.length; i++) {
-      var m = ramp.mergeInner[i];
-      if (!inner.length) inner.push({ x: m.x1, y: m.y1 });
-      inner.push({ x: m.x2, y: m.y2 });
-      if (m.x2 <= 280) break;
-    }
-    if (inner.length < 2) return;
-    var hull = outer.concat(inner.slice().reverse());
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    strokeSmooth(ctx, hull, true);
-    var g = ctx.createLinearGradient(330, 14, 392, 103);
-    g.addColorStop(0, 'rgba(255, 184, 72, 1)');
-    g.addColorStop(0.45, 'rgba(214, 96, 24, 1)');
-    g.addColorStop(1, 'rgba(110, 40, 10, 1)');
-    ctx.fillStyle = g;
-    ctx.fill();
-    strokeSmooth(ctx, hull, false);
-    ctx.strokeStyle = 'rgba(255, 168, 64, 0.92)';
-    ctx.lineWidth = 5;
-    ctx.stroke();
-    ctx.restore();
+  function drawCopperMergeShoulder(ctx, ramp, pulse) {
+    // top2: copper sausage is a real lobe (mergeOuter + mergeInner), not a triangular funnel.
+    if (!ramp || !ramp.mergeOuter || !ramp.mergeInner) return;
+    drawPioneerRamp(ctx, { segments: ramp.mergeOuter, guides: ramp.mergeInner }, pulse);
   }
 
   function drawMergeJoinRims(ctx, outerSegs, innerSegs) {
@@ -1055,7 +1051,25 @@
 
     var left = state.sideRoutes.leftRamp;
     if (left) {
-      drawPioneerRamp(ctx, left, pulse, 'cyan');
+      var cyanGuides = left.guides ? clipPtsAtJoinX(segsToPoints(left.guides), 240, true) : [];
+      drawPioneerRamp(ctx, {
+        segments: left.segments,
+        guides: (function () {
+          if (!left.guides) return left.guides;
+          var clipped = [];
+          var gi;
+          for (gi = 0; gi < left.guides.length; gi++) {
+            var gs = left.guides[gi];
+            if (gs.x1 <= 240.51 && gs.x2 <= 240.51) { clipped.push(gs); continue; }
+            if (gs.x1 <= 240.51 && gs.x2 > 240.51) {
+              var tg = (240 - gs.x1) / ((gs.x2 - gs.x1) || 1e-6);
+              clipped.push({ x1: gs.x1, y1: gs.y1, x2: 240, y2: gs.y1 + tg * (gs.y2 - gs.y1) });
+            }
+            break;
+          }
+          return clipped;
+        })()
+      }, pulse, 'cyan');
       var cyanTube = {
         core: 'rgba(80, 230, 255, 0.95)',
         glow: 'rgba(40, 180, 255, 0.45)',
@@ -1064,8 +1078,8 @@
         smooth: true
       };
       strokeTubePath(ctx, segsToPoints(left.segments), cyanTube);
-      if (left.guides) {
-        strokeTubePath(ctx, segsToPoints(left.guides), {
+      if (cyanGuides.length >= 2) {
+        strokeTubePath(ctx, cyanGuides, {
           core: 'rgba(160, 240, 255, 0.6)',
           glow: 'rgba(40, 180, 255, 0.22)',
           hi: 'rgba(255,255,255,0.4)',
@@ -1077,12 +1091,20 @@
 
     var ramp = state.sideRoutes.rightRamp;
     if (ramp) {
-      // One copper hull from the cyan handoff down the right slide. Merge is rims only
-      // (no second filled tube over the brown alley).
-      drawPioneerRamp(ctx, ramp, pulse);
-      drawCopperMergeShoulder(ctx, ramp);
-      if (ramp.mergeOuter && ramp.mergeInner) {
-        drawMergeJoinRims(ctx, ramp.mergeOuter, ramp.mergeInner);
+      // Copper slide hull is the vertical arm only (y>=88). The top-right lobe is mergeOuter.
+      drawPioneerRamp(ctx, {
+        segments: (ramp.segments || []).filter(function (s) { return Math.min(s.y1, s.y2) >= 87; }),
+        guides: ramp.guides
+      }, pulse);
+      drawCopperMergeShoulder(ctx, ramp, pulse);
+      if (ramp.mergeOuter) {
+        strokeTubePath(ctx, segsToPoints(ramp.mergeOuter), {
+          core: 'rgba(255, 190, 90, 0.92)',
+          glow: 'rgba(255, 150, 40, 0.42)',
+          hi: 'rgba(255, 245, 210, 0.65)',
+          width: 6,
+          smooth: true
+        });
       }
     }
   }

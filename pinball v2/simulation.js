@@ -461,7 +461,7 @@
   function createSideRoutes() {
     // Horseshoe orbit: left slide + top channel + right slide meet under the arch.
     // Outer / inner polylines are also the draw hulls (cyan left, copper right).
-    // Top channel >=44px (outer y~10, inner y~68 at x=240). Cyan climb min width 44.
+    // top2: matching sausages join at (240,8). Crown y~8, channel >=44. Cyan climb min width 44.
     return {
       leftCaptive: {
         id: 'captive-l',
@@ -486,12 +486,12 @@
           { x1: 36, y1: 118, x2: 48, y2: 94 },
           { x1: 48, y1: 94, x2: 70, y2: 80 },
           { x1: 70, y1: 80, x2: 88, y2: 76 },
-          { x1: 88, y1: 76, x2: 150, y2: 16 },
-          { x1: 150, y1: 16, x2: 190, y2: 12 },
-          { x1: 190, y1: 12, x2: 240, y2: 10 },
-          { x1: 240, y1: 10, x2: 280, y2: 11 },
-          { x1: 280, y1: 11, x2: 310, y2: 13 },
-          { x1: 310, y1: 13, x2: 328, y2: 14 }
+          { x1: 88, y1: 76, x2: 108, y2: 52 },
+          { x1: 108, y1: 52, x2: 132, y2: 28 },
+          { x1: 132, y1: 28, x2: 160, y2: 14 },
+          { x1: 160, y1: 14, x2: 190, y2: 8 },
+          { x1: 190, y1: 8, x2: 216, y2: 7 },
+          { x1: 216, y1: 7, x2: 240, y2: 8 }
         ],
         guides: [
           { x1: 116, y1: 340, x2: 92, y2: 276 },
@@ -539,14 +539,17 @@
         ],
         // orbit1: smooth outer, no 1-seg V. Channel >=44 vs merge3 inner.
         mergeOuter: [
-          { x1: 444, y1: 103, x2: 444, y2: 88 },
-          { x1: 444, y1: 88, x2: 444, y2: 56 },
-          { x1: 444, y1: 56, x2: 440, y2: 36 },
-          { x1: 440, y1: 36, x2: 430, y2: 20 },
-          { x1: 430, y1: 20, x2: 414, y2: 12 },
-          { x1: 414, y1: 12, x2: 392, y2: 10 },
-          { x1: 392, y1: 10, x2: 364, y2: 11 },
-          { x1: 364, y1: 11, x2: 330, y2: 14 }
+          { x1: 444, y1: 103, x2: 444, y2: 78 },
+          { x1: 444, y1: 78, x2: 444, y2: 48 },
+          { x1: 444, y1: 48, x2: 438, y2: 24 },
+          { x1: 438, y1: 24, x2: 424, y2: 12 },
+          { x1: 424, y1: 12, x2: 404, y2: 8 },
+          { x1: 404, y1: 8, x2: 376, y2: 7 },
+          { x1: 376, y1: 7, x2: 344, y2: 7 },
+          { x1: 344, y1: 7, x2: 308, y2: 7 },
+          { x1: 308, y1: 7, x2: 276, y2: 8 },
+          { x1: 276, y1: 8, x2: 256, y2: 8 },
+          { x1: 256, y1: 8, x2: 240, y2: 8 }
         ],
         // merge3: rounded inner floor. No left-pointing beak. Channel >= 36px.
         mergeInner: [
@@ -555,7 +558,9 @@
           { x1: 362, y1: 76, x2: 344, y2: 73 },
           { x1: 344, y1: 73, x2: 324, y2: 70 },
           { x1: 324, y1: 70, x2: 300, y2: 70 },
-          { x1: 300, y1: 70, x2: 280, y2: 72 }
+          { x1: 300, y1: 70, x2: 280, y2: 72 },
+          { x1: 280, y1: 72, x2: 260, y2: 70 },
+          { x1: 260, y1: 70, x2: 240, y2: 68 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 345,
@@ -935,8 +940,8 @@
   function createGateSpinner() {
     // Vertical spinner above the lower-left HOLE / left of the 120 saver, under the cyan mouth.
     return {
-      x: 132,
-      y: 388,
+      x: 98,
+      y: 458,
       h: 42,
       angle: 0,
       spinVel: 0,
@@ -1768,10 +1773,11 @@
       var i;
       for (i = 0; i < leftRamp.segments.length; i++) segs.push(leftRamp.segments[i]);
     }
-    if (rightRamp && rightRamp.segments) {
+    function addUnique(list) {
+      if (!list) return;
       var j;
-      for (j = 0; j < rightRamp.segments.length; j++) {
-        var s = rightRamp.segments[j];
+      for (j = 0; j < list.length; j++) {
+        var s = list[j];
         var dup = false;
         var k;
         for (k = 0; k < segs.length; k++) {
@@ -1784,6 +1790,8 @@
         if (!dup) segs.push(s);
       }
     }
+    addUnique(rightRamp && rightRamp.segments);
+    addUnique(rightRamp && rightRamp.mergeOuter);
     return segs;
   }
 
@@ -2187,6 +2195,7 @@
     }
     add(leftRamp && leftRamp.guides);
     add(rightRamp && rightRamp.guides);
+    add(rightRamp && rightRamp.mergeInner);
     return segs;
   }
 
@@ -2203,6 +2212,10 @@
     if (rightRamp && rightRamp.segments) {
       var oj;
       for (oj = 0; oj < rightRamp.segments.length; oj++) outers.push(rightRamp.segments[oj]);
+    }
+    if (rightRamp && rightRamp.mergeOuter) {
+      var om;
+      for (om = 0; om < rightRamp.mergeOuter.length; om++) outers.push(rightRamp.mergeOuter[om]);
     }
     return outers;
   }

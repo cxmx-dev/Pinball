@@ -1382,8 +1382,8 @@ console.log('=============================');
   var state = fresh();
   var g = state.gateSpinner;
   assert(g, 'vertical gate spinner exists');
-  assert(g.x >= 118 && g.x <= 148 && g.y >= 370 && g.y <= 406, 'gate sits left, above the lower-left HOLE');
-  assert(Math.abs(g.x - 132) < 8, 'gate is at the annotated X');
+  assert(g.x >= 88 && g.x <= 110 && g.y >= 440 && g.y <= 476, 'gate sits left, above the lower-left HOLE');
+  assert(Math.abs(g.x - 98) < 8 && Math.abs(g.y - 458) < 8, 'gate is at the annotated X');
   assert(state.spinner.x >= 185 && state.spinner.y >= 195, 'flat spinner stays in the open field');
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
@@ -1526,8 +1526,8 @@ console.log('All tests passed.');
   assert(leftX >= 78 && leftX <= 92, 'left inner opened for 44px channel (got ' + leftX.toFixed(1) + ')');
   assert(rightX >= 360, 'right filler inner sits toward the launch wall (got ' + rightX.toFixed(1) + ')');
   var leftOuter = state.sideRoutes.leftRamp.segments;
-  assert(leftOuter[leftOuter.length - 1].x2 >= 318, 'cyan U wraps past center toward the right');
-  assert(leftOuter[leftOuter.length - 1].y2 <= 36, 'cyan U outer sits on the green arc');
+  assert(leftOuter[leftOuter.length - 1].x2 >= 230 && leftOuter[leftOuter.length - 1].x2 <= 250, 'cyan U meets copper at top-center');
+  assert(leftOuter[leftOuter.length - 1].y2 <= 12, 'cyan U outer sits on the raised crown');
   var topOuterY = Math.min.apply(null, leftOuter.map(function (s) { return Math.min(s.y1, s.y2); }));
   assert(topOuterY <= 28, 'cyan U lifted to the green arc (top y=' + topOuterY + ')');
   assert(lg[lg.length - 1].x2 >= 300, 'cyan inner wraps toward the right');
@@ -1674,7 +1674,7 @@ console.log('All tests passed.');
   assert(state.saucer.x === 95 && state.saucer.y === 520, 'saucer 95,520');
   assert(state.saucer2.x === 330 && state.saucer2.y === 148, 'saucer2 330,148');
   assert(state.saucer3.x === 138 && state.saucer3.y === 168, 'saucer3 138,168');
-  assert(state.gateSpinner.x === 132 && state.gateSpinner.y === 388, 'gate 132,388');
+  assert(state.gateSpinner.x === 98 && state.gateSpinner.y === 458, 'gate 98,458');
   var leftMouthY = state.sideRoutes.leftRamp.entry.y;
   var rightMouthY = state.sideRoutes.rightRamp.entry.y;
   assert(leftMouthY >= 330 && leftMouthY <= 345, 'left mouth ~336');
@@ -2808,7 +2808,7 @@ console.log('All tests passed.');
   assert(state.saucer3.radius === 15, 'saucer3 r=15');
   assert(state.saucer.x === 95 && state.saucer.y === 520, 'lower-left hole stays');
   assert(state.saucer2.x === 330 && state.saucer2.y === 148, 'UR hole stays');
-  assert(Math.abs(state.gateSpinner.x - 132) < 10 && Math.abs(state.gateSpinner.y - 388) < 12, 'gate near (132,388)');
+  assert(Math.abs(state.gateSpinner.x - 98) < 10 && Math.abs(state.gateSpinner.y - 458) < 12, 'gate near (98,458)');
   assert(state.gateSpinner.h === 42, 'gate height stays 42');
   var tri = state.pulseTriangle;
   var cx = (tri.verts[0].x + tri.verts[1].x + tri.verts[2].x) / 3;
@@ -2845,9 +2845,9 @@ console.log('All tests passed.');
 
   var outer = state.sideRoutes.rightRamp.mergeOuter || [];
   var topY = Math.min.apply(null, outer.map(function (s) { return Math.min(s.y1, s.y2); }));
-  assert(topY >= 8 && topY <= 16, 'raised horseshoe ceiling y=' + topY);
+  assert(topY >= 6 && topY <= 12, 'raised horseshoe ceiling y=' + topY);
   var leftTop = Math.min.apply(null, state.sideRoutes.leftRamp.segments.map(function (s) { return Math.min(s.y1, s.y2); }));
-  assert(leftTop >= 8 && leftTop <= 16, 'cyan U crown y=' + leftTop);
+  assert(leftTop >= 6 && leftTop <= 12, 'cyan U crown y=' + leftTop);
   assert(state.sideRoutes.leftRamp.segments[0].x1 === 36 || state.sideRoutes.leftRamp.segments.some(function (s) { return s.x1 === 36 || s.x2 === 36; }), 'cabinet left wall stays x=36');
   assert(state.sideRoutes.rightRamp.mergeInner.some(function (s) { return s.x1 === 390 && s.y1 === 88 && s.x2 === 378 && s.y2 === 80; }), 'merge3 plunge floor kept');
   assert(sim.GRAVITY === 1400 && sim.TABLE_PITCH_DEG === 7.0 && sim.HABITRAIL_ASSIST === 0, 'physics constants stay');
@@ -2864,3 +2864,119 @@ console.log('All tests passed.');
   assert(st.saucer3.captured, 'saucer3 at new spot still captures');
   console.log('PASS: lay1 saucer/gate/triangle spin + raised U (saucer3=' + state.saucer3.x + ',' + state.saucer3.y + ' gate=' + state.gateSpinner.x + ',' + state.gateSpinner.y + ' ceilY=' + topY + ')');
 })();
+
+(function testTop2SausageJoinAndGate() {
+  var state = fresh();
+  var left = state.sideRoutes.leftRamp;
+  var right = state.sideRoutes.rightRamp;
+  var outer = right.mergeOuter || [];
+  var inner = right.mergeInner || [];
+  var g = state.gateSpinner;
+  assert(Math.abs(g.x - 98) < 6 && Math.abs(g.y - 458) < 6, 'gate near (98,458)');
+  assert(g.h === 42, 'gate height stays 42');
+  var hole = state.saucer;
+  assert(Math.hypot(g.x - hole.x, (g.y + g.h * 0.5) - (hole.y - hole.radius)) > 18, 'gate does not overlap lower-left HOLE');
+  assert(Math.abs(g.x - 210) > 80, 'gate not on the 180 saver');
+  assert(Math.hypot(g.x - 186, g.y - 558) > 80, 'gate not on the triangle');
+
+  var cyanTop = Math.min.apply(null, left.segments.map(function (s) { return Math.min(s.y1, s.y2); }));
+  var copperTop = Math.min.apply(null, outer.map(function (s) { return Math.min(s.y1, s.y2); }));
+  assert(cyanTop <= 12 && cyanTop >= 6, 'cyan crown y <= 12 (y=' + cyanTop + ')');
+  assert(copperTop <= 12 && copperTop >= 6, 'copper crown y <= 12 (y=' + copperTop + ')');
+
+  var cyanEnd = left.segments[left.segments.length - 1];
+  assert(Math.abs(cyanEnd.x2 - 240) < 2 && Math.abs(cyanEnd.y2 - 8) < 3, 'cyan outer ends at the join (240,8)');
+  var copperJoin = outer[outer.length - 1];
+  assert(Math.abs(copperJoin.x2 - 240) < 2 && Math.abs(copperJoin.y2 - 8) < 3, 'copper outer ends at the join (240,8)');
+  assert(Math.abs(cyanEnd.x2 - copperJoin.x2) < 2 && Math.abs(cyanEnd.y2 - copperJoin.y2) < 2, 'cyan/copper join is one continuous path');
+  assert(!left.segments.some(function (s) { return s.x2 === 328 && s.y2 === 14; }), 'no leftover cyan cap on the copper corner');
+  assert(right.segments.some(function (s) { return s.x2 === 390 && s.y2 === 88; }), 'RTL corner still meets merge3 at 390,88');
+  assert(inner.some(function (s) { return s.x1 === 390 && s.y1 === 88 && s.x2 === 378 && s.y2 === 80; }), 'merge3 plunge floor kept');
+
+  function yOn(segs, atX) {
+    var k, y = null;
+    for (k = 0; k < segs.length; k++) {
+      var s = segs[k];
+      var lo = Math.min(s.x1, s.x2), hi = Math.max(s.x1, s.x2);
+      if (atX < lo - 0.01 || atX > hi + 0.01) continue;
+      var dx = s.x2 - s.x1;
+      var t = Math.abs(dx) < 1e-6 ? 0 : (atX - s.x1) / dx;
+      y = s.y1 + t * (s.y2 - s.y1);
+    }
+    return y;
+  }
+  function channelAt(x) {
+    var yo = yOn(outer, x);
+    var yi = yOn(inner, x);
+    if (yo == null || yi == null) return 999;
+    return Math.abs(yi - yo);
+  }
+  assert(channelAt(378) >= 44, 'top channel x=378 >= 44');
+  assert(channelAt(344) >= 44, 'top channel x=344 >= 44');
+  assert(channelAt(256) >= 44, 'top channel at join approach >= 44');
+
+  function runPlunge(power) {
+    var st = fresh();
+    sim.launchBall(st, power);
+    var inU = false, dropped = false, lodged = false;
+    var n;
+    for (n = 0; n < 200; n++) {
+      sim.tick(st, 1 / 60);
+      var b = st.ball;
+      if (b.y < 95 && b.x > 140 && b.x < 360) inU = true;
+      if (!inU && b.x > 350 && b.x < 410 && b.y > 140 && b.y < 280) dropped = true;
+      if (n > 24 && Math.hypot(b.vx, b.vy) < 25 && b.y < 160) lodged = true;
+      if (!b.inPlay && n > 12) break;
+    }
+    return { inU: inU, dropped: dropped, lodged: lodged, x: st.ball.x, y: st.ball.y };
+  }
+  var p800 = runPlunge(800);
+  assert(!p800.dropped && p800.inU, '800 still rides merge floor into U');
+  var p1400 = runPlunge(1400);
+  assert(!p1400.dropped && p1400.inU, '1400 still rides merge floor into U');
+
+  var climb = fresh();
+  climb.ball.inPlay = true;
+  climb.exitedLaunchLane = true;
+  climb.phase = 'playing';
+  climb.ball.x = 80;
+  climb.ball.y = 330;
+  climb.ball.vx = -30;
+  climb.ball.vy = -1000;
+  climb.activeHabitrail = 'ramp-l';
+  var cn, reached = false, reversed = false, minY = climb.ball.y;
+  for (cn = 0; cn < 120; cn++) {
+    var yb = climb.ball.y;
+    sim.stepPhysics(climb, 1 / 60);
+    if (climb.ball.y < minY) minY = climb.ball.y;
+    if (climb.ball.x > 240 && climb.ball.y < 110) reached = true;
+    if (yb < 140 && yb > 100 && climb.ball.vy > 40 && climb.ball.y > yb + 1) reversed = true;
+    if (reached) break;
+  }
+  assert(reached, '1000 left-ramp climb still clears to x>240 (x=' + climb.ball.x.toFixed(1) + ' y=' + climb.ball.y.toFixed(1) + ')');
+  assert(!reversed, '1000 must not reverse at the old pinch');
+
+  function orbitLodge(place, dirLabel) {
+    var st = fresh();
+    place(st, 1000);
+    var n, stuck = 0, last = { x: st.ball.x, y: st.ball.y };
+    for (n = 0; n < 90; n++) {
+      sim.stepPhysics(st, 1 / 60);
+      var b = st.ball;
+      var nearJoin = b.x > 210 && b.x < 280 && b.y > 4 && b.y < 90;
+      if (nearJoin) {
+        if (Math.hypot(b.x - last.x, b.y - last.y) < 3 && Math.hypot(b.vx, b.vy) < 40) stuck++;
+        else stuck = 0;
+      } else stuck = 0;
+      last = { x: b.x, y: b.y };
+    }
+    assert(stuck < 12, dirLabel + ' orbit must not lodge at the join (xy=' + st.ball.x.toFixed(1) + ',' + st.ball.y.toFixed(1) + ')');
+  }
+  orbitLodge(placeInLeftMouth, 'LTR');
+  orbitLodge(placeInRightMouth, 'RTL');
+
+  assert(sim.GRAVITY === 1400 && sim.TABLE_PITCH_DEG === 7.0 && sim.HABITRAIL_ASSIST === 0, 'physics constants stay');
+  assert(left.entry.x === 80 && left.entry.y === 337 && left.entry.w === 44, 'wide1 entry kept');
+  console.log('PASS: top2 sausage join + moved gate (gate=' + g.x + ',' + g.y + ' crownC=' + cyanTop + ' crownCu=' + copperTop + ' 800y=' + p800.y.toFixed(1) + ')');
+})();
+
