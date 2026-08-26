@@ -5,8 +5,8 @@
 (function (root) {
   'use strict';
 
-  var TABLE_PITCH_DEG = 6.5;
-  var GRAVITY = 1380;
+  var TABLE_PITCH_DEG = 7.0;
+  var GRAVITY = 1400;
   var BALL_RADIUS = 12;
   var TABLE_W = 480;
   var TABLE_H = 860;
@@ -56,8 +56,8 @@
   /** Soft ball speed ceiling (px/s). */
   var MAX_BALL_SPEED = 1600;
   /** Base linear damp per physics step (~16ms); rises with speed. */
-  var BALL_DRAG_BASE = 0.00085;
-  var BALL_DRAG_SPEED = 0.00155;
+  var BALL_DRAG_BASE = 0.00070;
+  var BALL_DRAG_SPEED = 0.00128;
   var MAX_LAUNCH_POWER = 1400;
   var MIN_LAUNCH_POWER = 200;
   var LAUNCH_CHARGE_RATE = 1.1;
@@ -200,7 +200,7 @@
         hitCooldown: 0
       },
       {
-        // Powerful rubber-ring bumper in the orange/copper dump mouth
+        // Powerful rubber-ring bumper on the right-slide dump / mouth exit
         x: 346,
         y: 358,
         radius: 18,
@@ -227,6 +227,155 @@
       { side: 'right', face: 'top', x1: 378, y1: 534, x2: 362, y2: 548, score: 150, cooldown: 0 }
     ];
   }
+
+  function createPulseTriangle() {
+    // Mid-field decision: left of the 500, below the 300s, above the saver, right of the gate.
+    var verts = [
+      { x: 300, y: 374 },
+      { x: 326, y: 416 },
+      { x: 274, y: 418 }
+    ];
+    var themes = [
+      { id: 'copper', core: '#e8a04a', glow: 'rgba(255,160,50,0.55)', hi: '#ffe2b0' },
+      { id: 'cyan', core: '#3ad4ff', glow: 'rgba(50,220,255,0.55)', hi: '#c4f4ff' },
+      { id: 'violet', core: '#b46cff', glow: 'rgba(180,100,255,0.55)', hi: '#ead4ff' }
+    ];
+    var sides = [];
+    var i;
+    for (i = 0; i < 3; i++) {
+      var a = verts[i];
+      var b = verts[(i + 1) % 3];
+      var mx = (a.x + b.x) * 0.5;
+      var my = (a.y + b.y) * 0.5;
+      var cx = (verts[0].x + verts[1].x + verts[2].x) / 3;
+      var cy = (verts[0].y + verts[1].y + verts[2].y) / 3;
+      var ex = b.x - a.x;
+      var ey = b.y - a.y;
+      var n1x = ey;
+      var n1y = -ex;
+      var toMidX = mx - cx;
+      var toMidY = my - cy;
+      if (n1x * toMidX + n1y * toMidY < 0) {
+        n1x = -n1x;
+        n1y = -n1y;
+      }
+      var nlen = Math.sqrt(n1x * n1x + n1y * n1y) || 1;
+      sides.push({
+        i: i,
+        x1: a.x,
+        y1: a.y,
+        x2: b.x,
+        y2: b.y,
+        nx: n1x / nlen,
+        ny: n1y / nlen,
+        theme: themes[i].id,
+        color: themes[i],
+        phaseOffset: (i * Math.PI * 2) / 3,
+        flash: 0,
+        cooldown: 0,
+        lit: 0.5,
+        score: 175
+      });
+    }
+    return {
+      id: 'pulse-tri',
+      verts: verts,
+      sides: sides,
+      radius: 8,
+      cycleT: 0,
+      sweepSec: 15
+    };
+  }
+
+  function triangleSidePulse(side, cycleT) {
+    var sweep = 15;
+    var age = cycleT % sweep;
+    if (age < 0) age += sweep;
+    var u = age / sweep;
+    var hz = 4.6 * (1 - u) + 0.52 * u;
+    return 0.38 + 0.62 * (0.5 + 0.5 * Math.sin(2 * Math.PI * hz * age + (side.phaseOffset || 0)));
+  }
+
+  function stepPulseTriangle(state, dt) {
+    var tri = state && state.pulseTriangle;
+    if (!tri) return;
+    tri.cycleT = (tri.cycleT || 0) + dt;
+    var i;
+    for (i = 0; i < tri.sides.length; i++) {
+      var s = tri.sides[i];
+      if (s.cooldown > 0) s.cooldown = Math.max(0, s.cooldown - dt);
+      if (s.flash > 0) s.flash = Math.max(0, s.flash - dt);
+      s.lit = triangleSidePulse(s, tri.cycleT);
+    }
+  }
+
+  function pointInTriangle(px, py, v) {
+    function sign(ax, ay, bx, by, cx, cy) {
+      return (ax - cx) * (by - cy) - (bx - cx) * (ay - cy);
+    }
+    var b1 = sign(px, py, v[0].x, v[0].y, v[1].x, v[1].y) < 0;
+    var b2 = sign(px, py, v[1].x, v[1].y, v[2].x, v[2].y) < 0;
+    var b3 = sign(px, py, v[2].x, v[2].y, v[0].x, v[0].y) < 0;
+    return (b1 === b2) && (b2 === b3);
+  }
+
+  function resolvePulseTriangle(state) {
+    var tri = state && state.pulseTriangle;
+    var ball = state && state.ball;
+    if (!tri || !ball || !ball.inPlay) return;
+    var i;
+    var r = tri.radius || 8;
+    for (i = 0; i < tri.verts.length; i++) {
+      var p = tri.verts[i];
+      var dx = ball.x - p.x;
+      var dy = ball.y - p.y;
+      var dist = vecLen(dx, dy);
+      var minD = ball.radius + r;
+      if (dist < minD && dist > 1e-6) {
+        var n = normalize(dx, dy);
+        ball.x = p.x + n.x * minD;
+        ball.y = p.y + n.y * minD;
+        var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, SLING_RESTITUTION);
+        ball.vx = rv.vx;
+        ball.vy = rv.vy;
+      }
+    }
+    for (i = 0; i < tri.sides.length; i++) {
+      var s = tri.sides[i];
+      var preVx = ball.vx;
+      var preVy = ball.vy;
+      segmentCollision(ball, s.x1, s.y1, s.x2, s.y2, SLING_RESTITUTION, function () {
+        var incident = Math.max(0, -dot(preVx, preVy, s.nx, s.ny));
+        var kick = clamp(incident * SLING_KICK_GAIN, SLING_KICK_MIN, SLING_KICK_MAX);
+        ball.vx += s.nx * kick;
+        ball.vy += s.ny * kick - kick * 0.32;
+        if (s.cooldown <= 0) {
+          awardScore(state, s.score, 'tri-rubber', s.theme, (s.x1 + s.x2) * 0.5, (s.y1 + s.y2) * 0.5);
+          s.cooldown = HIT_COOLDOWN_SLING;
+          s.flash = 0.38;
+        }
+      });
+    }
+    if (pointInTriangle(ball.x, ball.y, tri.verts)) {
+      var best = null;
+      for (i = 0; i < tri.sides.length; i++) {
+        var side = tri.sides[i];
+        var near = nearestPointOnSegments(ball.x, ball.y, [side]);
+        if (near && (!best || near.dist < best.dist)) {
+          best = { dist: near.dist, side: side, x: near.x, y: near.y };
+        }
+      }
+      if (best) {
+        ball.x = best.x + best.side.nx * (ball.radius + 2);
+        ball.y = best.y + best.side.ny * (ball.radius + 2);
+        if (dot(ball.vx, ball.vy, best.side.nx, best.side.ny) < 0) {
+          ball.vx += best.side.nx * 160;
+          ball.vy += best.side.ny * 160;
+        }
+      }
+    }
+  }
+
 
   function isSlingGuideSeg(seg) {
     if (!seg) return false;
@@ -891,6 +1040,7 @@
       flippers: [createFlipper('left'), createFlipper('right')],
       bumpers: createBumpers(),
       slingshots: createSlingshots(),
+      pulseTriangle: createPulseTriangle(),
       targets: createTargets(),
       dropTargets: createDropTargets(),
       sideRoutes: createSideRoutes(),
@@ -1244,7 +1394,7 @@
   }
 
   function canChargePlunger(state) {
-    return !state.ball.inPlay && state.ballsRemaining > 0 && state.phase !== 'game_over';
+    return countLiveBalls(state) === 0 && !state.ball.inPlay && state.ballsRemaining > 0 && state.phase !== 'game_over' && state.phase !== 'eob_bonus';
   }
 
   function wireformTangent() {
@@ -1557,8 +1707,82 @@
     if (state.sideRoutes && state.sideRoutes.rightRamp) {
       state.sideRoutes.rightRamp.cooldown = Math.max(state.sideRoutes.rightRamp.cooldown || 0, SIDE_ROUTE_COOLDOWN);
     }
+    if (other && other.id === 'ramp-r') {
+      ball._dumpAtRubber = 12;
+      aimBallAtRubberMid(ball, state, 0.6);
+    }
     return true;
   }
+
+  function rubberMidOf(state) {
+    var i;
+    if (!state || !state.bumpers) return null;
+    for (i = 0; i < state.bumpers.length; i++) {
+      if (state.bumpers[i] && state.bumpers[i].id === 'rubber-mid') return state.bumpers[i];
+    }
+    return null;
+  }
+
+  function aimBallAtRubberMid(ball, state, blend) {
+    var rub = rubberMidOf(state);
+    if (!rub || !ball) return;
+    var tx = rub.x - ball.x;
+    var ty = rub.y - ball.y;
+    var dist = vecLen(tx, ty);
+    if (dist < 1e-6) return;
+    var ax = tx / dist;
+    var ay = ty / dist;
+    var cur = vecLen(ball.vx, ball.vy);
+    var sp = Math.max(cur, 280);
+    var k = blend != null ? blend : 0.55;
+    ball.vx = ball.vx * (1 - k) + ax * sp * k;
+    ball.vy = ball.vy * (1 - k) + ay * sp * k;
+  }
+
+  function markRightRampMouthOrigin(state) {
+    var ball = state.ball;
+    var right = state.sideRoutes && state.sideRoutes.rightRamp;
+    if (!ball || !right || state.activeHabitrail !== 'ramp-r') return;
+    if (pointInRouteEntry(ball, right.entry) || (ball.x > 318 && ball.y > 300 && ball.y < 368)) {
+      ball._rightFromMouth = true;
+    }
+  }
+
+  function dumpRightRampTowardRubber(state) {
+    var ball = state.ball;
+    if (!ball || state.activeHabitrail !== 'ramp-r') return false;
+    var right = state.sideRoutes && state.sideRoutes.rightRamp;
+    if (!right) return false;
+    if (pointInRouteEntry(ball, right.entry) && ball.y >= 300 && ball.vy > 18) {
+      state.activeHabitrail = null;
+      ball._rightFromMouth = false;
+      ball._dumpAtRubber = 12;
+      aimBallAtRubberMid(ball, state, 0.62);
+      return true;
+    }
+    if (ball._rightFromMouth && ball.y < 292 && ball.x > 300) {
+      state.activeHabitrail = null;
+      ball._rightFromMouth = false;
+      ball._dumpAtRubber = 14;
+      aimBallAtRubberMid(ball, state, 0.58);
+      return true;
+    }
+    return false;
+  }
+
+  function allLiveBalls(state) {
+    var seen = [];
+    function add(b) {
+      if (b && b.inPlay && seen.indexOf(b) < 0) seen.push(b);
+    }
+    add(state && state.ball);
+    if (state && state.balls) {
+      var i;
+      for (i = 0; i < state.balls.length; i++) add(state.balls[i]);
+    }
+    return seen;
+  }
+
 
   function nearestPointOnSegments(px, py, segs) {
     if (!segs || !segs.length) return null;
@@ -1639,6 +1863,7 @@
   function containHorseshoeInner(state) {
     var ball = state.ball;
     if (!ball || !state.activeHabitrail) return;
+    if (ball._dumpAtRubber) return;
     if (ball.y < 24 || ball.y > 140) return;
     if (ball.x < 88 || ball.x > 368) return;
     if (ball.vy < 20) return;
@@ -1665,6 +1890,8 @@
     var left = state.sideRoutes.leftRamp;
     var right = state.sideRoutes.rightRamp;
     rejectPlayfieldTunnelIn(state);
+    markRightRampMouthOrigin(state);
+    dumpRightRampTowardRubber(state);
     containHorseshoeInner(state);
     var travel = horseshoeTravelSegs(left, right);
     var nearTravel = nearestPointOnSegments(ball.x, ball.y, travel);
@@ -1694,10 +1921,11 @@
     if (state.activeHabitrail && !inChannel && nearTravel && nearTravel.dist > ball.radius + 40) {
       state.activeHabitrail = null;
     }
+    if (ball._dumpAtRubber) ball._dumpAtRubber = Math.max(0, ball._dumpAtRubber - 1);
   }
 
-  function peelLeftInlaneWedge(state) {
-    // Leftover invisible inlane-wedge kick -- dash corridors stay open.
+  function peelLeftInlaneWedge(/* state */) {
+    // Ghost leftover (invisible inlane-wedge kick) removed. Dash corridors stay open.
     return;
     var ball = state.ball;
     if (!ball || !ball.inPlay || !state.exitedLaunchLane) return;
@@ -1739,6 +1967,7 @@
   }
 
   function beginEndOfBallBonus(state) {
+    if (countLiveBalls(state) > 1) return state;
     var multPts = state.multiplier * 500;
     var dashPts = state.launchDashRewarded ? 1000 : 0;
     var jackPts = state.jackpotLit ? 2500 : 0;
@@ -1923,6 +2152,13 @@
   }
 
   function resetBallToPlunger(state) {
+    var others = extraLiveBalls(state);
+    if (others.length) {
+      retireDrainedBall(state, state.ball);
+      bindBall(state, others[0]);
+      if (countLiveBalls(state) < 2) state.multiball = false;
+      return;
+    }
     state.ball.inPlay = false;
     state.ball.x = LAUNCH_LANE_X;
     state.ball.y = PLUNGER_REST_Y;
@@ -2030,6 +2266,7 @@
     var r = ball.radius;
 
     state.walls.forEach(function (wall) {
+      if (ball._dumpAtRubber && wall.kind === 'guide' && wall.x1 > 300 && wall.x2 > 300) return;
       if (!state.exitedLaunchLane && (wall.wireform || wall.kind === 'lane')) return;
       if (wall.kind === 'filler' && (state.activeHabitrail ||
           inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp) ||
@@ -2549,6 +2786,14 @@
   }
 
   function performDrain(state) {
+    var others = extraLiveBalls(state);
+    if (others.length) {
+      retireDrainedBall(state, state.ball);
+      bindBall(state, others[0]);
+      state.drainFlash = 0.28;
+      if (countLiveBalls(state) < 2) state.multiball = false;
+      return state;
+    }
     // One save only when explicitly armed (center skill shot) and not yet used/expired
     if (state.ballSaveArmed && !state.ballSaveUsed && state.ball.inPlay) {
       state.ballSaveUsed = true;
@@ -3032,19 +3277,13 @@
   }
 
   function extraLiveBalls(state) {
-    if (!state.balls || !state.balls.length) return [];
-    var out = [];
-    var i;
-    for (i = 0; i < state.balls.length; i++) {
-      var b = state.balls[i];
-      if (b && b !== state.ball && b.inPlay) out.push(b);
-    }
-    return out;
+    var ball = state && state.ball;
+    return allLiveBalls(state).filter(function (b) { return b !== ball; });
   }
 
   function bindBall(state, ball) {
     state.ball = ball;
-    if (ball._exited != null) state.exitedLaunchLane = ball._exited;
+    if (typeof ball._exited === 'boolean') state.exitedLaunchLane = ball._exited;
     if (Object.prototype.hasOwnProperty.call(ball, '_habitrail')) {
       state.activeHabitrail = ball._habitrail || null;
     }
@@ -3054,7 +3293,7 @@
   }
 
   function unbindBall(state, ball) {
-    ball._exited = state.exitedLaunchLane;
+    ball._exited = !!state.exitedLaunchLane;
     ball._habitrail = state.activeHabitrail;
     ball._railT = state.launchRailT;
   }
@@ -3092,8 +3331,7 @@
   }
 
   function countLiveBalls(state) {
-    var n = state.ball && state.ball.inPlay ? 1 : 0;
-    return n + extraLiveBalls(state).length;
+    return allLiveBalls(state).length;
   }
 
   function startMultiball(state, currentBall, opts) {
@@ -3108,6 +3346,8 @@
     state.lockCount = 0;
     lightLockSaucers(state, false);
     if (!(opts && opts.keepBall)) kickSaucer(state, currentBall);
+    if (state.ball) state.ball._exited = true;
+    state.exitedLaunchLane = true;
     if (countLiveBalls(state) >= 2) return;
     var b2 = {
       x: LAUNCH_LANE_X,
@@ -3214,6 +3454,7 @@
     guardLeftOutlaneShelf(state);
     guardRightOutlaneShelf(state);
     resolveSlingshotCollisions(state);
+    resolvePulseTriangle(state);
     resolveBumperCollisions(state);
     collideBoinger(state);
     unstickFromBumpers(state);
@@ -3266,6 +3507,7 @@
     var pack = [state.ball].concat(extras);
     var i;
     var primary = state.ball;
+    unbindBall(state, primary);
     for (i = 0; i < pack.length; i++) {
       if (!pack[i] || !pack[i].inPlay) continue;
       bindBall(state, pack[i]);
@@ -3331,7 +3573,7 @@
   }
 
   function launchBall(state, power) {
-    if (state.ball.inPlay || state.ballsRemaining <= 0) return state;
+    if (state.ball.inPlay || countLiveBalls(state) > 0 || state.ballsRemaining <= 0) return state;
     var p;
     var chargeU;
     if (power != null && power > 1) {
@@ -3342,6 +3584,7 @@
       p = MIN_LAUNCH_POWER + chargeU * (MAX_LAUNCH_POWER - MIN_LAUNCH_POWER);
     }
     state.ball.inPlay = true;
+    state.ball._exited = false;
     state.ball.x = LAUNCH_LANE_X;
     state.ball.y = PLUNGER_REST_Y;
     // Tiny lateral English from charge â€” aim skill without shoving into flippers.
@@ -3480,6 +3723,7 @@
     decayCombo(state, dt);
     chargeLaunch(state, dt);
     stepBoinger(state, dt);
+    stepPulseTriangle(state, dt);
     stepPhysics(state, dt);
     updateLaunchLaneDashes(state, dt);
     checkDrain(state);
@@ -3585,6 +3829,13 @@
     boingersOf: boingersOf,
     stepBoinger: stepBoinger,
     collideBoinger: collideBoinger,
+    createPulseTriangle: createPulseTriangle,
+    stepPulseTriangle: stepPulseTriangle,
+    resolvePulseTriangle: resolvePulseTriangle,
+    triangleSidePulse: triangleSidePulse,
+    countLiveBalls: countLiveBalls,
+    extraLiveBalls: extraLiveBalls,
+    allLiveBalls: allLiveBalls,
     BOINGER_X: BOINGER_X,
     BOINGER_Y: BOINGER_Y,
     BOINGER_B_X: BOINGER_B_X,

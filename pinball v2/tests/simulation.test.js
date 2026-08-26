@@ -1946,3 +1946,128 @@ console.log('All tests passed.');
   assert(right.x2 < 392, 'right cage does not pinch the shooter');
   console.log('PASS: cage1 rubber-mid at dump, cyan boingers lower/outer, two chrome cage bars');
 })();
+
+(function testMultiballSurvivorStaysLive() {
+  var state = fresh();
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.ball.x = 200;
+  state.ball.y = 360;
+  state.ball.vx = 40;
+  state.ball.vy = -20;
+  state.ball._exited = true;
+  var extra = {
+    x: 240,
+    y: 400,
+    vx: -30,
+    vy: -10,
+    radius: sim.BALL_RADIUS,
+    inPlay: true,
+    _exited: true,
+    _habitrail: null,
+    _railT: null
+  };
+  state.balls = [state.ball, extra];
+  state.multiball = true;
+  state.ballsRemaining = 3;
+  extra.y = sim.TABLE_H + 60;
+  extra.vy = 80;
+  var i;
+  for (i = 0; i < 8; i++) sim.tick(state, 1 / 60);
+  var live = 0;
+  if (state.ball && state.ball.inPlay) live += 1;
+  if (state.balls) {
+    for (i = 0; i < state.balls.length; i++) {
+      if (state.balls[i] && state.balls[i].inPlay && state.balls[i] !== state.ball) live += 1;
+    }
+  }
+  assert(live >= 1, 'survivor must stay live after one MB drain, live=' + live);
+  assert(state.phase !== 'eob_bonus', 'must not start EOB while a ball is still in play');
+  assert(state.phase !== 'ready', 'must not reset to plunger while a ball is still in play');
+  assert(state.ball.inPlay, 'primary should be the surviving live ball');
+  assert(state.ball.y < sim.TABLE_H, 'survivor must remain on the table (y=' + state.ball.y + ')');
+  console.log('PASS: MB survivor stays live after one drain (live=' + live + ' phase=' + state.phase + ')');
+})();
+
+(function testRightRampDumpHitsRubberMid() {
+  var state = fresh();
+  var rubber = state.bumpers.find(function (b) { return b.id === 'rubber-mid' && b.rubber; });
+  assert(rubber, 'rubber-mid exists');
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.activeHabitrail = 'ramp-r';
+  state.ball.x = 350;
+  state.ball.y = 328;
+  state.ball.vx = 20;
+  state.ball.vy = -360;
+  state.ball._exited = true;
+  state.ball._rightFromMouth = true;
+  var hit = false;
+  var redirected = false;
+  var i;
+  var minDist = 9999;
+  for (i = 0; i < 90; i++) {
+    sim.stepPhysics(state, 1 / 60);
+    var d = Math.hypot(state.ball.x - rubber.x, state.ball.y - rubber.y);
+    minDist = Math.min(minDist, d);
+    if (rubber.hitCooldown > 0 || rubber.hit) hit = true;
+    if (state.ball.x < 330 && state.ball.vy > 40) redirected = true;
+    if (hit) break;
+  }
+  assert(hit || minDist < rubber.radius + state.ball.radius + 10,
+    'right-ramp dump must contact rubber-mid (hit=' + hit + ' minD=' + minDist.toFixed(1) +
+    ' x=' + state.ball.x.toFixed(1) + ' y=' + state.ball.y.toFixed(1) + ')');
+  assert(state.ball.x > 160 || hit, 'must not free-orbit to the top-left hole');
+  console.log('PASS: right-ramp dump hits/redirects on rubber-mid (hit=' + hit + ' minD=' + minDist.toFixed(1) + ')');
+})();
+
+(function testPulseTriangleThreeRubbers() {
+  var state = fresh();
+  var tri = state.pulseTriangle;
+  assert(tri, 'pulse triangle exists');
+  assert(tri.verts && tri.verts.length === 3, 'rounded triangle has 3 verts');
+  assert(tri.sides && tri.sides.length === 3, 'triangle has 3 rubber sides');
+  var themes = tri.sides.map(function (s) { return s.theme; }).sort();
+  assert.deepStrictEqual(themes, ['copper', 'cyan', 'violet'].sort(), 'three different side colors');
+  assert(tri.sweepSec === 15, '15s pulse sweep');
+  var left = Math.min(tri.verts[0].x, tri.verts[1].x, tri.verts[2].x);
+  var right = Math.max(tri.verts[0].x, tri.verts[1].x, tri.verts[2].x);
+  var top = Math.min(tri.verts[0].y, tri.verts[1].y, tri.verts[2].y);
+  var bot = Math.max(tri.verts[0].y, tri.verts[1].y, tri.verts[2].y);
+  assert(right < 346, 'triangle stays left of the 500');
+  assert(top > 330, 'triangle sits below the bumper cluster');
+  assert(bot < 455, 'triangle stays above the saver');
+  assert(left > 200, 'triangle is not on the left outlane / saucers');
+  var rubber = state.bumpers.find(function (b) { return b.id === 'rubber-mid'; });
+  var i;
+  for (i = 0; i < 3; i++) {
+    var s = tri.sides[i];
+    var d500 = Math.hypot((s.x1 + s.x2) * 0.5 - rubber.x, (s.y1 + s.y2) * 0.5 - rubber.y);
+    assert(d500 > 28, 'triangle rubber does not swallow the 500');
+  }
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  var side0 = tri.sides[0];
+  var mx = (side0.x1 + side0.x2) * 0.5;
+  var my = (side0.y1 + side0.y2) * 0.5;
+  state.ball.x = mx + side0.nx * (state.ball.radius + 2);
+  state.ball.y = my + side0.ny * (state.ball.radius + 2);
+  state.ball.vx = -side0.nx * 220;
+  state.ball.vy = -side0.ny * 220;
+  sim.stepPhysics(state, 1 / 60);
+  assert(side0.flash > 0 || side0.cooldown > 0, 'hitting a rubber flashes that side');
+  var out = state.ball.vx * side0.nx + state.ball.vy * side0.ny;
+  assert(out > 0, 'ball boings off the face along the outward normal');
+  assert(Math.abs(tri.sides[0].phaseOffset - tri.sides[1].phaseOffset) > 1, 'side phase offsets differ');
+  var i;
+  for (i = 0; i < 24; i++) sim.tick(state, 1 / 60);
+  var litA = tri.sides[0].lit;
+  var litB = tri.sides[1].lit;
+  var litC = tri.sides[2].lit;
+  assert(Math.abs(litA - litB) > 0.02 || Math.abs(litB - litC) > 0.02 || Math.abs(litA - litC) > 0.02, 'sides are out of phase after the sweep starts');
+  console.log('PASS: pulse triangle at ~300,396 with 3 colored rubbers');
+})();
+
+

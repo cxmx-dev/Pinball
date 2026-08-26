@@ -245,6 +245,7 @@
     drawRollovers(ctx, state);
     drawDropTargets(ctx, state);
     drawSlingshots(ctx, state);
+    drawPulseTriangle(ctx, state);
     drawBoinger(ctx, state);
     drawTargets(ctx, state);
     drawPosts(ctx, state, glowPulse);
@@ -722,6 +723,79 @@
     ctx.fill();
     ctx.restore();
   }
+
+  function roundedTriPath(ctx, verts, radius) {
+    var r = radius || 8;
+    var i;
+    var n = verts.length;
+    ctx.beginPath();
+    for (i = 0; i < n; i++) {
+      var prev = verts[(i + n - 1) % n];
+      var cur = verts[i];
+      var next = verts[(i + 1) % n];
+      var vx0 = cur.x - prev.x;
+      var vy0 = cur.y - prev.y;
+      var vx1 = next.x - cur.x;
+      var vy1 = next.y - cur.y;
+      var l0 = Math.sqrt(vx0 * vx0 + vy0 * vy0) || 1;
+      var l1 = Math.sqrt(vx1 * vx1 + vy1 * vy1) || 1;
+      var rr = Math.min(r, l0 * 0.42, l1 * 0.42);
+      var sx = cur.x - (vx0 / l0) * rr;
+      var sy = cur.y - (vy0 / l0) * rr;
+      var ex = cur.x + (vx1 / l1) * rr;
+      var ey = cur.y + (vy1 / l1) * rr;
+      if (i === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+      ctx.quadraticCurveTo(cur.x, cur.y, ex, ey);
+    }
+    ctx.closePath();
+  }
+
+  function drawPulseTriangle(ctx, state) {
+    var tri = state && state.pulseTriangle;
+    if (!tri || !tri.verts || !tri.sides) return;
+    var v = tri.verts;
+    var r = tri.radius || 8;
+    ctx.save();
+    roundedTriPath(ctx, v, r);
+    var body = ctx.createLinearGradient(v[0].x, v[0].y, v[2].x, v[2].y);
+    body.addColorStop(0, '#243044');
+    body.addColorStop(1, '#141c28');
+    ctx.fillStyle = body;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(20,24,32,0.85)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    var i;
+    for (i = 0; i < tri.sides.length; i++) {
+      var s = tri.sides[i];
+      var lit = s.lit != null ? s.lit : 0.5;
+      if (s.flash > 0) lit = Math.min(1, lit + s.flash * 2.2);
+      var col = s.color || { core: '#ccc', glow: 'rgba(255,255,255,0.4)', hi: '#fff' };
+      ctx.save();
+      ctx.shadowColor = col.glow;
+      ctx.shadowBlur = 6 + lit * 14;
+      ctx.strokeStyle = col.core;
+      ctx.globalAlpha = 0.45 + lit * 0.55;
+      ctx.lineWidth = 5.2;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(s.x1, s.y1);
+      ctx.lineTo(s.x2, s.y2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = col.hi;
+      ctx.globalAlpha = 0.25 + lit * 0.5;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(s.x1, s.y1);
+      ctx.lineTo(s.x2, s.y2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
 
   function drawSlingshots(ctx, state) {
     if (!state.slingshots || !state.slingshots.length) return;
