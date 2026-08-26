@@ -1859,29 +1859,159 @@ console.log('All tests passed.');
   assert(state.score === score0, 'no score from down B');
   console.log('PASS: three boingers, inverted phase, collide only when that one is up');
 })();
-(function testCopperMergePocketUnsticks() {
+(function testCopperInnerChannelFitsBall() {
   var state = fresh();
   var right = state.sideRoutes.rightRamp;
-
-  state.ball.inPlay = true;
-  state.exitedLaunchLane = true;
-  state.activeHabitrail = 'ramp-r';
-  state.ball.x = 324;
-  state.ball.y = 79;
-  state.ball.vx = 6;
-  state.ball.vy = 3;
-  var k, freed = false, lastSp = 0, moved = 0;
-  for (k = 0; k < 90; k++) {
-    sim.stepPhysics(state, 1 / 60);
-    lastSp = Math.hypot(state.ball.vx, state.ball.vy);
-    moved = Math.hypot(state.ball.x - 324, state.ball.y - 79);
-    if (lastSp > 40 && moved > 12) { freed = true; break; }
+  var inner = right.mergeInner || [];
+  var guides = right.guides || [];
+  var minGap = 999;
+  var i, j, t, u;
+  function distPointSeg(px, py, s) {
+    var dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+    var lenSq = dx * dx + dy * dy;
+    if (lenSq < 1e-6) return Math.hypot(px - s.x1, py - s.y1);
+    var tt = Math.max(0, Math.min(1, ((px - s.x1) * dx + (py - s.y1) * dy) / lenSq));
+    return Math.hypot(px - (s.x1 + dx * tt), py - (s.y1 + dy * tt));
   }
-  assert(freed, 'copper merge pocket must get free (x=' + state.ball.x.toFixed(1) + ' y=' + state.ball.y.toFixed(1) + ' sp=' + lastSp.toFixed(1) + ')');
-  assert(lastSp > 25, 'must be moving, not dead in the corner');
+  for (i = 0; i < inner.length; i++) {
+    for (t = 0; t <= 4; t++) {
+      var px = inner[i].x1 + (inner[i].x2 - inner[i].x1) * (t / 4);
+      var py = inner[i].y1 + (inner[i].y2 - inner[i].y1) * (t / 4);
+      if (px < 290 || px > 400 || py < 28 || py > 130) continue;
+      for (j = 0; j < guides.length; j++) {
+        minGap = Math.min(minGap, distPointSeg(px, py, guides[j]));
+      }
+    }
+  }
+  for (j = 0; j < guides.length; j++) {
+    for (u = 0; u <= 4; u++) {
+      var gx = guides[j].x1 + (guides[j].x2 - guides[j].x1) * (u / 4);
+      var gy = guides[j].y1 + (guides[j].y2 - guides[j].y1) * (u / 4);
+      if (gx < 290 || gx > 400 || gy < 28 || gy > 130) continue;
+      for (i = 0; i < inner.length; i++) minGap = Math.min(minGap, distPointSeg(gx, gy, inner[i]));
+    }
+  }
+  // Shared T-junction vertex is a corner, not a slot. Flag only a parallel pinch.
+  var pinch = 999;
+  function segLen(s) { return Math.hypot(s.x2 - s.x1, s.y2 - s.y1); }
+  function unit(s) {
+    var L = segLen(s) || 1;
+    return { x: (s.x2 - s.x1) / L, y: (s.y2 - s.y1) / L };
+  }
+  function sharesEnd(a, b) {
+    var pts = [[a.x1,a.y1],[a.x2,a.y2]];
+    var i;
+    for (i = 0; i < 2; i++) {
+      if (Math.hypot(pts[i][0] - b.x1, pts[i][1] - b.y1) < 4) return true;
+      if (Math.hypot(pts[i][0] - b.x2, pts[i][1] - b.y2) < 4) return true;
+    }
+    return false;
+  }
+  for (i = 0; i < inner.length; i++) {
+    for (j = 0; j < guides.length; j++) {
+      if (sharesEnd(inner[i], guides[j])) continue;
+      var ua = unit(inner[i]), ub = unit(guides[j]);
+      var para = Math.abs(ua.x * ub.x + ua.y * ub.y) > 0.72;
+      if (!para) continue;
+      var mx = (inner[i].x1 + inner[i].x2) * 0.5;
+      var my = (inner[i].y1 + inner[i].y2) * 0.5;
+      if (mx < 290 || mx > 400 || my < 28 || my > 130) continue;
+      pinch = Math.min(pinch, distPointSeg(mx, my, guides[j]));
+    }
+  }
+  // A lodge is a long parallel slot, not a T-corner. Require overlap along both segs.
+  var slot = 999;
+  for (i = 0; i < inner.length; i++) {
+    for (j = 0; j < guides.length; j++) {
+      if (sharesEnd(inner[i], guides[j])) continue;
+      var ua = unit(inner[i]), ub = unit(guides[j]);
+      if (Math.abs(ua.x * ub.x + ua.y * ub.y) < 0.82) continue;
+      if (segLen(inner[i]) < 16 || segLen(guides[j]) < 16) continue;
+      var mx = (inner[i].x1 + inner[i].x2) * 0.5;
+      var my = (inner[i].y1 + inner[i].y2) * 0.5;
+      if (mx < 290 || mx > 400 || my < 28 || my > 130) continue;
+      var d = distPointSeg(mx, my, guides[j]);
+      if (d < slot) slot = d;
+    }
+  }
+  // Old lodge was a 1-13px parallel run at 322,74. A T-corner ~23px is not a slot.
+  assert(slot >= 20, 'old 1-13px parallel lodge must be gone (slot=' + slot.toFixed(1) + ' pinch=' + pinch.toFixed(1) + ')');
+  var oldV = false;
+  function hasPt(segs, x, y) {
+    var k;
+    for (k = 0; k < segs.length; k++) {
+      if ((Math.abs(segs[k].x1 - x) < 2 && Math.abs(segs[k].y1 - y) < 2) ||
+          (Math.abs(segs[k].x2 - x) < 2 && Math.abs(segs[k].y2 - y) < 2)) return true;
+    }
+    return false;
+  }
+  if (hasPt(guides, 322, 74) && hasPt(inner, 324, 74)) oldV = true;
+  assert(!oldV, 'old 322,74 / 324,74 inner V vertices must be gone');
+  var leftGuides = state.sideRoutes.leftRamp.guides || [];
+  var poked = false;
+  for (i = 0; i < leftGuides.length; i++) {
+    if (Math.max(leftGuides[i].x1, leftGuides[i].x2) > 300) poked = true;
+  }
+  assert(!poked, 'cyan inner must not poke into the copper V past x=300');
+  console.log('PASS: copper inner channel gap=' + minGap.toFixed(1));
+})();
+(function testCopperMergePocketUnsticks() {
+  function runAt(x, y, extra) {
+    var state = fresh();
+    state.ball.inPlay = true;
+    state.exitedLaunchLane = true;
+    state.activeHabitrail = extra ? null : 'ramp-r';
+    state.ball.x = x;
+    state.ball.y = y;
+    state.ball.vx = 0;
+    state.ball.vy = 0;
+    if (extra) {
+      state.ball.x = 200;
+      state.ball.y = 360;
+      state.ball.vx = 40;
+      state.ball.vy = -10;
+      var stuck = {
+        x: x, y: y, vx: 0, vy: 0, radius: sim.BALL_RADIUS, inPlay: true, _exited: true
+      };
+      state.balls = [state.ball, stuck];
+      state.multiball = true;
+    }
+    var k, lastSp = 0, maxSp = 0, target = extra ? state.balls[1] : state.ball;
+    for (k = 0; k < 24; k++) {
+      sim.stepPhysics(state, 1 / 60);
+      if (extra) {
+        var live = sim.allLiveBalls(state);
+        var i;
+        target = null;
+        for (i = 0; i < live.length; i++) {
+          if (live[i] !== state.ball || live.length === 1) target = live[i];
+        }
+        if (state.balls) {
+          for (i = 0; i < state.balls.length; i++) {
+            if (state.balls[i] && state.balls[i] !== state.ball) target = state.balls[i];
+          }
+        }
+        if (!target) target = state.ball;
+      } else {
+        target = state.ball;
+      }
+      lastSp = Math.hypot(target.vx, target.vy);
+      if (lastSp > maxSp) maxSp = lastSp;
+    }
+    var inV = target.x > 312 && target.x < 336 && target.y > 68 && target.y < 92 && maxSp < 50;
+    return { x: target.x, y: target.y, sp: maxSp, lastSp: lastSp, inV: inV, state: state };
+  }
+  var a = runAt(324, 79, false);
+  assert(a.sp > 50, 'V rest at 324,79 must be moving after 0.4s (sp=' + a.sp.toFixed(1) + ' x=' + a.x.toFixed(1) + ' y=' + a.y.toFixed(1) + ')');
+  assert(!a.inV, 'must not still sit in the V');
+  var b = runAt(340, 72, false);
+  assert(b.sp > 50, 'mid-orange rail ~340,72 must be moving after 0.4s (sp=' + b.sp.toFixed(1) + ' x=' + b.x.toFixed(1) + ' y=' + b.y.toFixed(1) + ')');
+  var c = runAt(324, 79, true);
+  assert(c.sp > 50, 'stuck secondary ball must be freed (sp=' + c.sp.toFixed(1) + ')');
+  assert(!c.inV, 'secondary must leave the V');
   assert(sim.HABITRAIL_ASSIST === 0, 'HABITRAIL_ASSIST stays 0');
   assert(sim.BOINGER_B_X === 318 && sim.BOINGER_B_Y === 740, 'B at 318,740 (down-right outlane)');
-  console.log('PASS: copper merge pocket unsticks (x=' + state.ball.x.toFixed(1) + ' y=' + state.ball.y.toFixed(1) + ' sp=' + lastSp.toFixed(1) + ')');
+  console.log('PASS: copper lodge unsticks V/rail/secondary (sp=' + a.sp.toFixed(1) + '/' + b.sp.toFixed(1) + '/' + c.sp.toFixed(1) + ')');
 })();
 (function testRubberMidBumperPowerful() {
   var state = fresh();

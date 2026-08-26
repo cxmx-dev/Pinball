@@ -449,8 +449,7 @@
           { x1: 168, y1: 76, x2: 200, y2: 72 },
           { x1: 200, y1: 72, x2: 240, y2: 72 },
           { x1: 240, y1: 72, x2: 280, y2: 72 },
-          { x1: 280, y1: 72, x2: 306, y2: 74 },
-          { x1: 306, y1: 74, x2: 322, y2: 74 }
+          { x1: 280, y1: 72, x2: 300, y2: 70 }
         ]
       },
       rightRamp: {
@@ -475,10 +474,9 @@
           { x1: 388, y1: 286, x2: 364, y2: 345 }
         ],
         guides: [
-          { x1: 322, y1: 74, x2: 336, y2: 83 },
-          { x1: 336, y1: 83, x2: 350, y2: 93 },
-          { x1: 350, y1: 93, x2: 356, y2: 110 },
-          { x1: 356, y1: 110, x2: 364, y2: 159 },
+          { x1: 340, y1: 66, x2: 352, y2: 100 },
+          { x1: 352, y1: 100, x2: 358, y2: 124 },
+          { x1: 358, y1: 124, x2: 364, y2: 159 },
           { x1: 364, y1: 159, x2: 364, y2: 216 },
           { x1: 364, y1: 216, x2: 362, y2: 286 },
           { x1: 362, y1: 286, x2: 328, y2: 342 }
@@ -492,12 +490,12 @@
           { x1: 360, y1: 38, x2: 330, y2: 36 }
         ],
         mergeInner: [
-          { x1: 392, y1: 103, x2: 378, y2: 92 },
-          { x1: 378, y1: 92, x2: 362, y2: 84 },
-          { x1: 362, y1: 84, x2: 344, y2: 78 },
-          { x1: 344, y1: 78, x2: 324, y2: 74 },
-          { x1: 324, y1: 74, x2: 300, y2: 72 },
-          { x1: 300, y1: 72, x2: 280, y2: 72 }
+          { x1: 392, y1: 103, x2: 378, y2: 86 },
+          { x1: 378, y1: 86, x2: 360, y2: 70 },
+          { x1: 360, y1: 70, x2: 340, y2: 66 },
+          { x1: 340, y1: 66, x2: 316, y2: 66 },
+          { x1: 316, y1: 66, x2: 300, y2: 70 },
+          { x1: 300, y1: 70, x2: 280, y2: 72 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 345,
@@ -1866,6 +1864,8 @@
     if (ball._dumpAtRubber) return;
     if (ball.y < 24 || ball.y > 140) return;
     if (ball.x < 88 || ball.x > 368) return;
+    // Copper lodge box: do not snap the ball into the orange inner V.
+    if (ball.x >= 288 && ball.x <= 400) return;
     if (ball.vy < 20) return;
     if (nearHorseshoeSpinner(state, ball)) return;
     var left = state.sideRoutes.leftRamp;
@@ -2439,54 +2439,140 @@
    * meets the right habitrail guide (around 322,74). Peel along the ramp
    * tangent into the channel — nudge, no teleport, no rail snap.
    */
-  function unstickCopperMergePocket(state) {
-    var ball = state.ball;
-    if (!ball || !ball.inPlay) return;
-    if (!state.exitedLaunchLane) return;
-    if (state.launchRailT != null) return;
-    if (ball.x < 300 || ball.x > 370) return;
-    if (ball.y < 72 || ball.y > 110) return;
-    var right = state.sideRoutes && state.sideRoutes.rightRamp;
-    if (!right) return;
-    var nearMerge = nearestPointOnSegments(ball.x, ball.y, right.mergeInner || []);
-    var nearGuide = nearestPointOnSegments(ball.x, ball.y, right.guides || []);
-    if (!nearMerge) return;
-    if (ball.y < nearMerge.y + 2) return;
-    var slot = nearGuide ? vecLen(nearMerge.x - nearGuide.x, nearMerge.y - nearGuide.y) : 999;
-    var inSlot = slot < 26 && nearMerge.dist < ball.radius + 8 && nearGuide && nearGuide.dist < ball.radius + 8;
-    var atT = vecLen(ball.x - 322, ball.y - 74) < ball.radius + 14;
-    var sp = vecLen(ball.vx, ball.vy);
-    if (sp > 40) return;
-    if (!inSlot && !atT) return;
-    // Channel sits above the inner floor (smaller y). Peel off the vertex.
-    var nx = 0.15;
-    var ny = -0.99;
-    if (nearMerge.dist > 1e-6) {
-      nx = (ball.x - nearMerge.x) / nearMerge.dist;
-      ny = (ball.y - nearMerge.y) / nearMerge.dist;
-      if (ny > 0) { nx = -nx; ny = -ny; }
+  function copperLodgeBox(ball) {
+    return !!(ball && ball.x >= 290 && ball.x <= 400 && ball.y >= 28 && ball.y <= 130);
+  }
+
+  function copperDumpMouthBox(ball) {
+    return !!(ball && ball.x >= 320 && ball.x <= 380 && ball.y >= 320 && ball.y <= 390);
+  }
+
+  function copperRubberMid(state) {
+    var list = state && state.bumpers;
+    if (!list) return null;
+    var i;
+    for (i = 0; i < list.length; i++) {
+      if (list[i] && list[i].id === 'rubber-mid') return list[i];
     }
-    if (ny > -0.2) { nx = 0.2; ny = -0.98; }
+    return null;
+  }
+
+  function peelCopperBall(ball, nx, ny, px) {
     var nlen = vecLen(nx, ny) || 1;
     nx /= nlen;
     ny /= nlen;
-    ball.x += nx * 3.2;
-    ball.y += ny * 3.2;
+    var peel = 7;
+    ball.x += nx * peel;
+    ball.y += ny * peel;
     var tx = -ny;
     var ty = nx;
     var along = ball.vx * tx + ball.vy * ty;
-    if (Math.abs(along) < 10) {
-      if (ball.x >= 322) { tx = 0.9; ty = -0.44; }
-      else { tx = -0.9; ty = -0.44; }
+    if (Math.abs(along) < 12) {
+      tx = px || 0.86;
+      ty = px ? 0 : -0.5;
+      var tlen = vecLen(tx, ty) || 1;
+      tx /= tlen;
+      ty /= tlen;
     } else if (along < 0) {
       tx = -tx;
       ty = -ty;
     }
-    var keep = Math.max(sp, 110);
-    ball.vx = ball.vx * 0.32 + tx * keep * 0.68;
-    ball.vy = ball.vy * 0.32 + ty * keep * 0.68;
+    var sp = vecLen(ball.vx, ball.vy);
+    var keep = Math.max(sp, 140);
+    ball.vx = ball.vx * 0.22 + tx * keep * 0.78;
+    ball.vy = ball.vy * 0.22 + ty * keep * 0.78;
+    if (vecLen(ball.vx, ball.vy) < 90) {
+      ball.vx += tx * 90;
+      ball.vy += ty * 90;
+    }
   }
 
+  function unstickOneCopper(state, ball) {
+    if (!ball || !ball.inPlay) return;
+    if (state.launchRailT != null && ball === state.ball) return;
+    var top = copperLodgeBox(ball);
+    var dump = copperDumpMouthBox(ball);
+    if (!top && !dump) {
+      ball._copperStuck = 0;
+      return;
+    }
+    var right = state.sideRoutes && state.sideRoutes.rightRamp;
+    if (!right) return;
+    var r = ball.radius || BALL_RADIUS;
+    var nearMerge = nearestPointOnSegments(ball.x, ball.y, right.mergeInner || []);
+    var nearGuide = nearestPointOnSegments(ball.x, ball.y, right.guides || []);
+    var nearSeg = nearestPointOnSegments(ball.x, ball.y, right.segments || []);
+    var rubber = copperRubberMid(state);
+    var nearWall = null;
+    var wallDist = 999;
+    function consider(hit) {
+      if (hit && hit.dist < wallDist) {
+        wallDist = hit.dist;
+        nearWall = hit;
+      }
+    }
+    if (top) {
+      consider(nearMerge);
+      consider(nearGuide);
+      consider(nearSeg);
+    }
+    var wedgedDump = false;
+    if (dump && rubber && nearGuide) {
+      var dRub = vecLen(ball.x - rubber.x, ball.y - rubber.y);
+      wedgedDump = dRub < rubber.radius + r + 8 && nearGuide.dist < r + 12;
+      if (wedgedDump && nearGuide.dist < wallDist) {
+        nearWall = nearGuide;
+        wallDist = nearGuide.dist;
+      }
+    }
+    var slot = 999;
+    if (nearMerge && nearGuide) {
+      slot = vecLen(nearMerge.x - nearGuide.x, nearMerge.y - nearGuide.y);
+    }
+    var inSlot = slot < 26 && slot > 2 && nearMerge && nearGuide && nearMerge.dist < r + 8 && nearGuide.dist < r + 8;
+    var atVertex = wallDist < r + 8;
+    var sittingStill = atVertex && vecLen(ball.vx, ball.vy) < 55;
+    var sitting = sittingStill || wedgedDump || inSlot;
+    if (!sitting) {
+      ball._copperStuck = 0;
+      return;
+    }
+    if (ball._copperNearX != null && Math.abs(ball.x - ball._copperNearX) < 12 && Math.abs(ball.y - ball._copperNearY) < 12) {
+      ball._copperStuck = (ball._copperStuck || 0) + 1;
+    } else {
+      ball._copperStuck = 1;
+      ball._copperNearX = ball.x;
+      ball._copperNearY = ball.y;
+    }
+    var sp = vecLen(ball.vx, ball.vy);
+    var stuckLong = (ball._copperStuck || 0) >= 8;
+    if (sp >= 120 && !stuckLong) return;
+    var nx = 0.2;
+    var ny = -0.98;
+    if (nearWall && wallDist > 1e-6) {
+      nx = (ball.x - nearWall.x) / wallDist;
+      ny = (ball.y - nearWall.y) / wallDist;
+    }
+    if (top) {
+      if (ny > -0.15) { nx = nx * 0.35 + 0.18; ny = -0.96; }
+    }
+    if (wedgedDump) {
+      nx = -0.72;
+      ny = 0.7;
+    }
+    var preferX = top && ball.x >= 330 ? 0.88 : (top ? -0.88 : -0.72);
+    peelCopperBall(ball, nx, ny, preferX);
+  }
+
+  /**
+   * Copper U / merge pocket: peel every live ball out of the orange V and
+   * the 500 dump-mouth pinch. Nudge only - no teleport, no rail snap.
+   */
+  function unstickCopperMergePocket(state) {
+    var balls = allLiveBalls(state);
+    var i;
+    for (i = 0; i < balls.length; i++) unstickOneCopper(state, balls[i]);
+  }
   function unstickFromCorners(state) {
     var ball = state.ball;
     if (!ball.inPlay || !state.exitedLaunchLane) return;
