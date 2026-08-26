@@ -543,7 +543,8 @@
           var gmy = (wall.y1 + wall.y2) * 0.5;
           if (gmy < 100 && gmx > 70 && gmx < 420) return;
         }
-        if (wall.arc || kind === 'rail' || kind === 'habitrail') {
+        if (kind === 'habitrail') return; // smooth tube in drawSideRoutes — no brick glow seams
+        if (wall.arc || kind === 'rail') {
           var glowCyan = !!(wall.cyan || kind !== 'habitrail' || (!wall.merge && wall.x1 < 220 && wall.x2 < 220));
           if (kind === 'habitrail' && !glowCyan) return;
           ctx.strokeStyle = (kind === 'habitrail' && !glowCyan) ? 'rgba(255, 170, 60, 0.20)' : 'rgba(100, 200, 255, 0.22)';
@@ -589,6 +590,9 @@
         return;
       }
       if (kind === 'habitrail' || kind === 'guide') {
+        // Continuous tubes are drawn in drawSideRoutes (smooth strokeTubePath).
+        // Per-segment stroke was the cyan brick-seam / leftover orange strip.
+        return;
         var cyan = !!(wall.cyan || (!wall.merge && wall.x1 < 220 && wall.x2 < 220));
         if (!cyan) return;
         if (kind === 'habitrail') {
@@ -880,9 +884,9 @@
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    // Copper: one smooth hull (no chord ticks). Cyan/fillers/phone stay exact.
-    // Phone/simple: no ellipse/scale — strokeExact only.
-    var strokeHull = (cyan || simple || filler) ? strokeExact : strokeSmooth;
+    // Copper + cyan habitrail: one smooth hull (no chord / brick ticks).
+    // Fillers and phone/simple stay exact. Phone/simple: no ellipse/scale.
+    var strokeHull = (simple || filler) ? strokeExact : strokeSmooth;
     strokeHull(ctx, hull, true);
     ctx.fillStyle = cyan ? (filler ? '#0a3040' : '#061820') : (filler ? '#4a1c08' : '#2a1206');
     ctx.fill();
@@ -964,7 +968,7 @@
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     strokeSmooth(ctx, hull, true);
-    var g = ctx.createLinearGradient(330, 34, 392, 103);
+    var g = ctx.createLinearGradient(330, 14, 392, 103);
     g.addColorStop(0, 'rgba(255, 184, 72, 1)');
     g.addColorStop(0.45, 'rgba(214, 96, 24, 1)');
     g.addColorStop(1, 'rgba(110, 40, 10, 1)');
@@ -1052,6 +1056,23 @@
     var left = state.sideRoutes.leftRamp;
     if (left) {
       drawPioneerRamp(ctx, left, pulse, 'cyan');
+      var cyanTube = {
+        core: 'rgba(80, 230, 255, 0.95)',
+        glow: 'rgba(40, 180, 255, 0.45)',
+        hi: 'rgba(220, 250, 255, 0.7)',
+        width: 6,
+        smooth: true
+      };
+      strokeTubePath(ctx, segsToPoints(left.segments), cyanTube);
+      if (left.guides) {
+        strokeTubePath(ctx, segsToPoints(left.guides), {
+          core: 'rgba(160, 240, 255, 0.6)',
+          glow: 'rgba(40, 180, 255, 0.22)',
+          hi: 'rgba(255,255,255,0.4)',
+          width: 3.5,
+          smooth: true
+        });
+      }
     }
 
     var ramp = state.sideRoutes.rightRamp;

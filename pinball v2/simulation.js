@@ -49,6 +49,8 @@
   var HABITRAIL_MIN_SPEED = 0;
   /** Continuous along-path assist while riding a habitrail (px/s^2). */
   var HABITRAIL_ASSIST = 0;
+  /** Slow CCW spin of the pulse triangle (rad/s). Negative = CCW on canvas y-down. */
+  var TRIANGLE_SPIN = -0.28;
   var BUMPER_RESTITUTION = 1.15;
   var FLIPPER_RESTITUTION = FLIPPER_RESTITUTION_PASSIVE;
   var SLING_RESTITUTION = 1.08;
@@ -228,27 +230,16 @@
     ];
   }
 
-  function createPulseTriangle() {
-    // Mid-field decision: above the 500, below the 300s, above the saver, right of the gate.
-    var verts = [
-      { x: 300, y: 374 },
-      { x: 326, y: 416 },
-      { x: 274, y: 418 }
-    ];
-    var themes = [
-      { id: 'copper', core: '#e8a04a', glow: 'rgba(255,160,50,0.55)', hi: '#ffe2b0' },
-      { id: 'cyan', core: '#3ad4ff', glow: 'rgba(50,220,255,0.55)', hi: '#c4f4ff' },
-      { id: 'violet', core: '#b46cff', glow: 'rgba(180,100,255,0.55)', hi: '#ead4ff' }
-    ];
+  function buildPulseTriangleSides(verts, themes, prev) {
     var sides = [];
     var i;
+    var cx = (verts[0].x + verts[1].x + verts[2].x) / 3;
+    var cy = (verts[0].y + verts[1].y + verts[2].y) / 3;
     for (i = 0; i < 3; i++) {
       var a = verts[i];
       var b = verts[(i + 1) % 3];
       var mx = (a.x + b.x) * 0.5;
       var my = (a.y + b.y) * 0.5;
-      var cx = (verts[0].x + verts[1].x + verts[2].x) / 3;
-      var cy = (verts[0].y + verts[1].y + verts[2].y) / 3;
       var ex = b.x - a.x;
       var ey = b.y - a.y;
       var n1x = ey;
@@ -260,6 +251,7 @@
         n1y = -n1y;
       }
       var nlen = Math.sqrt(n1x * n1x + n1y * n1y) || 1;
+      var old = prev && prev[i];
       sides.push({
         i: i,
         x1: a.x,
@@ -270,17 +262,87 @@
         ny: n1y / nlen,
         theme: themes[i].id,
         color: themes[i],
-        phaseOffset: (i * Math.PI * 2) / 3,
-        flash: 0,
-        cooldown: 0,
-        lit: 0.5,
-        score: 175
+        phaseOffset: old && old.phaseOffset != null ? old.phaseOffset : (i * Math.PI * 2) / 3,
+        flash: old ? old.flash : 0,
+        cooldown: old ? old.cooldown : 0,
+        lit: old && old.lit != null ? old.lit : 0.5,
+        score: old && old.score != null ? old.score : 175
       });
     }
+    return sides;
+  }
+
+  function syncTriangleSolidWalls(state) {
+    var tri = state && state.pulseTriangle;
+    if (!tri || !state.walls || !tri.sides) return;
+    var wi = 0;
+    var i;
+    for (i = 0; i < state.walls.length; i++) {
+      if (state.walls[i].kind !== 'tri-solid') continue;
+      var s = tri.sides[wi++];
+      if (!s) continue;
+      state.walls[i].x1 = s.x1;
+      state.walls[i].y1 = s.y1;
+      state.walls[i].x2 = s.x2;
+      state.walls[i].y2 = s.y2;
+      state.walls[i].nx = s.nx;
+      state.walls[i].ny = s.ny;
+    }
+  }
+
+  function rotatePulseTriangleBody(state, dt) {
+    var tri = state && state.pulseTriangle;
+    if (!tri || !tri.restVerts) return;
+    var omega = tri.spin != null ? tri.spin : TRIANGLE_SPIN;
+    tri.angle = (tri.angle || 0) + omega * dt;
+    var c = Math.cos(tri.angle);
+    var s = Math.sin(tri.angle);
+    var cx = tri.cx;
+    var cy = tri.cy;
+    var i;
+    for (i = 0; i < tri.restVerts.length; i++) {
+      var p = tri.restVerts[i];
+      var dx = p.x - cx;
+      var dy = p.y - cy;
+      if (!tri.verts[i]) tri.verts[i] = { x: 0, y: 0 };
+      // y-down rotation: +angle is CW on screen. Negative omega = CCW (top vertex moves left).
+      tri.verts[i].x = cx + dx * c - dy * s;
+      tri.verts[i].y = cy + dx * s + dy * c;
+    }
+    var themes = [];
+    for (i = 0; i < tri.sides.length; i++) themes.push(tri.sides[i].color);
+    tri.sides = buildPulseTriangleSides(tri.verts, themes, tri.sides);
+    syncTriangleSolidWalls(state);
+  }
+
+  function createPulseTriangle() {
+    // Lower-middle-left above the left flipper. Same ~52x44 size as the old mid-field tri.
+    var verts = [
+      { x: 186, y: 529 },
+      { x: 212, y: 572 },
+      { x: 160, y: 573 }
+    ];
+    var themes = [
+      { id: 'copper', core: '#e8a04a', glow: 'rgba(255,160,50,0.55)', hi: '#ffe2b0' },
+      { id: 'cyan', core: '#3ad4ff', glow: 'rgba(50,220,255,0.55)', hi: '#c4f4ff' },
+      { id: 'violet', core: '#b46cff', glow: 'rgba(180,100,255,0.55)', hi: '#ead4ff' }
+    ];
+    var cx = (verts[0].x + verts[1].x + verts[2].x) / 3;
+    var cy = (verts[0].y + verts[1].y + verts[2].y) / 3;
+    var restVerts = [
+      { x: verts[0].x, y: verts[0].y },
+      { x: verts[1].x, y: verts[1].y },
+      { x: verts[2].x, y: verts[2].y }
+    ];
     return {
       id: 'pulse-tri',
       verts: verts,
-      sides: sides,
+      restVerts: restVerts,
+      cx: cx,
+      cy: cy,
+      angle: 0,
+      spin: TRIANGLE_SPIN,
+      sides: buildPulseTriangleSides(verts, themes, null),
       radius: 8,
       cycleT: 0,
       sweepSec: 15
@@ -299,6 +361,7 @@
   function stepPulseTriangle(state, dt) {
     var tri = state && state.pulseTriangle;
     if (!tri) return;
+    rotatePulseTriangleBody(state, dt);
     tri.cycleT = (tri.cycleT || 0) + dt;
     var i;
     for (i = 0; i < tri.sides.length; i++) {
@@ -398,7 +461,7 @@
   function createSideRoutes() {
     // Horseshoe orbit: left slide + top channel + right slide meet under the arch.
     // Outer / inner polylines are also the draw hulls (cyan left, copper right).
-    // Top channel ~50px (outer y=26, inner y=76 at x=240). Cyan climb min width 44.
+    // Top channel >=44px (outer y~10, inner y~68 at x=240). Cyan climb min width 44.
     return {
       leftCaptive: {
         id: 'captive-l',
@@ -423,12 +486,12 @@
           { x1: 36, y1: 118, x2: 48, y2: 94 },
           { x1: 48, y1: 94, x2: 70, y2: 80 },
           { x1: 70, y1: 80, x2: 88, y2: 76 },
-          { x1: 88, y1: 76, x2: 150, y2: 32 },
-          { x1: 150, y1: 32, x2: 190, y2: 28 },
-          { x1: 190, y1: 28, x2: 240, y2: 26 },
-          { x1: 240, y1: 26, x2: 280, y2: 28 },
-          { x1: 280, y1: 28, x2: 310, y2: 31 },
-          { x1: 310, y1: 31, x2: 328, y2: 34 }
+          { x1: 88, y1: 76, x2: 150, y2: 16 },
+          { x1: 150, y1: 16, x2: 190, y2: 12 },
+          { x1: 190, y1: 12, x2: 240, y2: 10 },
+          { x1: 240, y1: 10, x2: 280, y2: 11 },
+          { x1: 280, y1: 11, x2: 310, y2: 13 },
+          { x1: 310, y1: 13, x2: 328, y2: 14 }
         ],
         guides: [
           { x1: 116, y1: 340, x2: 92, y2: 276 },
@@ -439,10 +502,10 @@
           { x1: 142, y1: 116, x2: 160, y2: 102 },
           { x1: 160, y1: 102, x2: 180, y2: 90 },
           { x1: 180, y1: 90, x2: 200, y2: 82 },
-          { x1: 200, y1: 82, x2: 220, y2: 76 },
-          { x1: 220, y1: 76, x2: 240, y2: 76 },
-          { x1: 240, y1: 76, x2: 280, y2: 72 },
-          { x1: 280, y1: 72, x2: 300, y2: 70 }
+          { x1: 200, y1: 82, x2: 220, y2: 70 },
+          { x1: 220, y1: 70, x2: 240, y2: 68 },
+          { x1: 240, y1: 68, x2: 280, y2: 70 },
+          { x1: 280, y1: 70, x2: 300, y2: 70 }
         ]
       },
       rightRamp: {
@@ -453,12 +516,12 @@
         exit: { x: 350, y: 335 },
         boost: 0,
         segments: [
-          { x1: 328, y1: 34, x2: 330, y2: 36 },
-          { x1: 330, y1: 36, x2: 342, y2: 37 },
-          { x1: 342, y1: 37, x2: 354, y2: 41 },
-          { x1: 354, y1: 41, x2: 365, y2: 47 },
-          { x1: 365, y1: 47, x2: 375, y2: 56 },
-          { x1: 375, y1: 56, x2: 382, y2: 66 },
+          { x1: 328, y1: 14, x2: 330, y2: 16 },
+          { x1: 330, y1: 16, x2: 342, y2: 22 },
+          { x1: 342, y1: 22, x2: 354, y2: 30 },
+          { x1: 354, y1: 30, x2: 365, y2: 42 },
+          { x1: 365, y1: 42, x2: 375, y2: 54 },
+          { x1: 375, y1: 54, x2: 382, y2: 66 },
           { x1: 382, y1: 66, x2: 387, y2: 77 },
           { x1: 387, y1: 77, x2: 390, y2: 88 },
           { x1: 390, y1: 88, x2: 390, y2: 159 },
@@ -477,12 +540,13 @@
         // orbit1: smooth outer, no 1-seg V. Channel >=44 vs merge3 inner.
         mergeOuter: [
           { x1: 444, y1: 103, x2: 444, y2: 88 },
-          { x1: 444, y1: 88, x2: 440, y2: 72 },
-          { x1: 440, y1: 72, x2: 428, y2: 56 },
-          { x1: 428, y1: 56, x2: 410, y2: 44 },
-          { x1: 410, y1: 44, x2: 388, y2: 36 },
-          { x1: 388, y1: 36, x2: 360, y2: 30 },
-          { x1: 360, y1: 30, x2: 330, y2: 28 }
+          { x1: 444, y1: 88, x2: 444, y2: 56 },
+          { x1: 444, y1: 56, x2: 440, y2: 36 },
+          { x1: 440, y1: 36, x2: 430, y2: 20 },
+          { x1: 430, y1: 20, x2: 414, y2: 12 },
+          { x1: 414, y1: 12, x2: 392, y2: 10 },
+          { x1: 392, y1: 10, x2: 364, y2: 11 },
+          { x1: 364, y1: 11, x2: 330, y2: 14 }
         ],
         // merge3: rounded inner floor. No left-pointing beak. Channel >= 36px.
         mergeInner: [
@@ -723,10 +787,10 @@
   }
 
   function createSaucer3() {
-    // Top-left open pocket beside the cyan inner curve (third lock / MB hole).
+    // Open pocket inside the cyan inner curve, above-right of the old (100,208) hole.
     return {
-      x: 100,
-      y: 208,
+      x: 138,
+      y: 168,
       radius: 15,
       score: 1500,
       holdSec: 1.2,
@@ -869,10 +933,10 @@
   }
 
   function createGateSpinner() {
-    // Vertical gate at board center, just above the saver bumper (210,455).
+    // Vertical spinner above the lower-left HOLE / left of the 120 saver, under the cyan mouth.
     return {
-      x: 240,
-      y: 422,
+      x: 132,
+      y: 388,
       h: 42,
       angle: 0,
       spinVel: 0,
@@ -2641,6 +2705,7 @@
         var playfieldSide = ball.x + r < LAUNCH_LANE_LEFT + 1 && ball.y > LAUNCH_WIRE_Y1 + 8;
         if (!(wall.kind === 'lane' && playfieldSide)) return;
       }
+      if (wall.kind === 'tri-solid') return; // rubber + solid live in resolvePulseTriangle
       if (wall.kind === 'filler' && ball.y < 500 && (state.activeHabitrail ||
           inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp) ||
           inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp))) {
@@ -4269,6 +4334,7 @@
     FLIPPER_RESTITUTION_PASSIVE: FLIPPER_RESTITUTION_PASSIVE,
     FLIPPER_RESTITUTION_SWEEP: FLIPPER_RESTITUTION_SWEEP,
     HABITRAIL_ASSIST: HABITRAIL_ASSIST,
+    TRIANGLE_SPIN: TRIANGLE_SPIN,
     FLIPPER_IMPULSE_GAIN: FLIPPER_IMPULSE_GAIN,
     FLIPPER_TAP_MULT: FLIPPER_TAP_MULT,
     FLIPPER_DBL_TAP_WINDOW: FLIPPER_DBL_TAP_WINDOW,

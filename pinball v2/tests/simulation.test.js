@@ -1382,8 +1382,8 @@ console.log('=============================');
   var state = fresh();
   var g = state.gateSpinner;
   assert(g, 'vertical gate spinner exists');
-  assert(g.x >= 220 && g.x <= 260 && g.y >= 400 && g.y <= 430, 'gate sits at board center above the saver');
-  assert(Math.abs(g.x - 240) < 8, 'gate is centered on the board');
+  assert(g.x >= 118 && g.x <= 148 && g.y >= 370 && g.y <= 406, 'gate sits left, above the lower-left HOLE');
+  assert(Math.abs(g.x - 132) < 8, 'gate is at the annotated X');
   assert(state.spinner.x >= 185 && state.spinner.y >= 195, 'flat spinner stays in the open field');
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
@@ -1571,8 +1571,8 @@ console.log('All tests passed.');
 (function testTopLeftSaucerLocks() {
   var state = fresh();
   assert(state.saucer3, 'top-left saucer exists');
-  assert(state.saucer3.x >= 90 && state.saucer3.x <= 110, 'TL saucer in the open pocket');
-  assert(state.saucer3.y >= 190 && state.saucer3.y <= 230, 'TL saucer under/beside the cyan curve');
+  assert(state.saucer3.x >= 120 && state.saucer3.x <= 156, 'TL saucer in the open pocket');
+  assert(state.saucer3.y >= 150 && state.saucer3.y <= 186, 'TL saucer above-right of the old hole');
   assert(state.saucer3.x !== 95 || state.saucer3.y !== 520, 'TL saucer is not the lower-left lock');
   assert(!(state.saucer3.x === 330 && state.saucer3.y === 148), 'TL saucer is not the UR lock');
   state.ball.inPlay = true;
@@ -1673,8 +1673,8 @@ console.log('All tests passed.');
   assert(sim.HABITRAIL_ASSIST === 0, 'HABITRAIL_ASSIST stays 0');
   assert(state.saucer.x === 95 && state.saucer.y === 520, 'saucer 95,520');
   assert(state.saucer2.x === 330 && state.saucer2.y === 148, 'saucer2 330,148');
-  assert(state.saucer3.x === 100 && state.saucer3.y === 208, 'saucer3 100,208');
-  assert(state.gateSpinner.x === 240 && state.gateSpinner.y === 422, 'gate 240,422');
+  assert(state.saucer3.x === 138 && state.saucer3.y === 168, 'saucer3 138,168');
+  assert(state.gateSpinner.x === 132 && state.gateSpinner.y === 388, 'gate 132,388');
   var leftMouthY = state.sideRoutes.leftRamp.entry.y;
   var rightMouthY = state.sideRoutes.rightRamp.entry.y;
   assert(leftMouthY >= 330 && leftMouthY <= 345, 'left mouth ~336');
@@ -2157,11 +2157,11 @@ console.log('All tests passed.');
   var top = Math.min(tri.verts[0].y, tri.verts[1].y, tri.verts[2].y);
   var bot = Math.max(tri.verts[0].y, tri.verts[1].y, tri.verts[2].y);
   var rubber = state.bumpers.find(function (b) { return b.id === 'rubber-mid'; });
-  assert(rubber && rubber.y > bot, '500 sits below triangle bottom, rubber.y=' + (rubber && rubber.y) + ' bot=' + bot);
-  assert(bot < rubber.y - 8, 'triangle bottom clears the 500');
-  assert(top > 330, 'triangle sits below the bumper cluster');
-  assert(bot < 455, 'triangle stays above the saver');
-  assert(left > 200, 'triangle is not on the left outlane / saucers');
+  assert(rubber && rubber.x === 300 && rubber.y === 478, '500 stays unmoved');
+  assert(Math.hypot(((tri.verts[0].x + tri.verts[1].x + tri.verts[2].x) / 3) - rubber.x, ((tri.verts[0].y + tri.verts[1].y + tri.verts[2].y) / 3) - rubber.y) > 40, 'triangle centroid clear of 500');
+  assert(top > 500, 'triangle sits in the lower-middle band');
+  assert(bot < sim.FLIPPER_ROW_Y - 80, 'triangle stays above the flipper row');
+  assert(left > 140 && left < 200, 'triangle is lower-middle-left, not on saucer/sausage');
   var i;
   for (i = 0; i < 3; i++) {
     var s = tri.sides[i];
@@ -2188,7 +2188,7 @@ console.log('All tests passed.');
   var litB = tri.sides[1].lit;
   var litC = tri.sides[2].lit;
   assert(Math.abs(litA - litB) > 0.02 || Math.abs(litB - litC) > 0.02 || Math.abs(litA - litC) > 0.02, 'sides are out of phase after the sweep starts');
-  console.log('PASS: pulse triangle at ~300,396 with 3 colored rubbers');
+  console.log('PASS: pulse triangle at ~186,558 with 3 colored rubbers');
 })();
 ﻿(function testCyanSausageSolidAndCuspFree() {
   function runAt(x, y, frames) {
@@ -2322,27 +2322,23 @@ console.log('All tests passed.');
   var state = fresh();
   var rubber = state.bumpers.find(function (x) { return x.id === 'rubber-mid'; });
   var tri = state.pulseTriangle;
-  var bot = Math.max(tri.verts[0].y, tri.verts[1].y, tri.verts[2].y);
-  var gap = (rubber.y - rubber.radius) - bot;
-  assert(gap >= 28, 'triangle-to-500 gap must be >= 28 (gap=' + gap.toFixed(1) + ')');
-  state.ball.inPlay = true;
-  state.exitedLaunchLane = true;
-  state.phase = 'playing';
-  state.ball.x = 300;
-  state.ball.y = (bot + (rubber.y - rubber.radius)) * 0.5;
-  state.ball.vx = 0;
-  state.ball.vy = 0;
-  var k, sandwiched = true;
-  for (k = 0; k < 24; k++) {
-    sim.stepPhysics(state, 1 / 60);
-    var still = state.ball.y > bot - 2 && state.ball.y < rubber.y - rubber.radius + 4 && Math.abs(state.ball.x - 300) < 28;
-    if (!still) { sandwiched = false; break; }
+  function distPointSeg(px, py, s) {
+    var dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+    var lenSq = dx * dx + dy * dy;
+    var tt = lenSq < 1e-6 ? 0 : Math.max(0, Math.min(1, ((px - s.x1) * dx + (py - s.y1) * dy) / lenSq));
+    return Math.hypot(px - (s.x1 + dx * tt), py - (s.y1 + dy * tt));
   }
-  assert(!sandwiched, 'ball between triangle and 500 must be free within 0.4s (x=' + state.ball.x.toFixed(1) + ' y=' + state.ball.y.toFixed(1) + ')');
+  var minD = 999;
+  var si;
+  for (si = 0; si < tri.sides.length; si++) minD = Math.min(minD, distPointSeg(rubber.x, rubber.y, tri.sides[si]));
+  var gap = minD - rubber.radius;
+  assert(gap >= 28, 'triangle-to-500 gap must be >= 28 (gap=' + gap.toFixed(1) + ')');
+  assert(rubber.x === 300 && rubber.y === 478, '500 stays unmoved');
 
   function notTopLeft(ball) {
     return !(ball.x < 120 && ball.y < 160);
   }
+  var k;
   var dead = fresh();
   dead.ball.inPlay = false;
   dead.exitedLaunchLane = true;
@@ -2558,8 +2554,8 @@ console.log('All tests passed.');
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
   state.phase = 'playing';
-  state.ball.x = 300;
-  state.ball.y = 396;
+  state.ball.x = 186;
+  state.ball.y = 558;
   state.ball.vx = 12;
   state.ball.vy = -8;
   var score0 = state.score;
@@ -2569,12 +2565,12 @@ console.log('All tests passed.');
   for (k = 0; k < 15; k++) {
     sim.stepPhysics(state, 1 / 60);
     if (sim.ballInsideTriangle(state.ball, tri)) insideFrames += 1;
-    if (state.ball.y > 430 && state.ball.x > 260 && state.ball.x < 340) fellThrough = true;
+    if (state.ball.y > 620 && state.ball.x > 140 && state.ball.x < 240) fellThrough = true;
   }
   assert(!sim.ballInsideTriangle(state.ball, tri), 'ball inside triangle ejects within 0.25s (xy=' + state.ball.x.toFixed(1) + ',' + state.ball.y.toFixed(1) + ')');
   assert(insideFrames <= 2, 'must not lodge vibrating inside (insideFrames=' + insideFrames + ')');
   assert(!fellThrough, 'must not fall through the bottom edge');
-  assert(state.ball.y < 440, 'eject stays in play, not down the floor (y=' + state.ball.y.toFixed(1) + ')');
+  assert(state.ball.y < 680, 'eject stays in play, not down the floor (y=' + state.ball.y.toFixed(1) + ')');
   assert(state.score - score0 < 200, 'no farm score while inside (dScore=' + (state.score - score0) + ')');
   assert(Math.hypot(state.ball.vx, state.ball.vy) > 40, 'eject has speed');
 
@@ -2804,4 +2800,67 @@ console.log('All tests passed.');
   assert(sim.HABITRAIL_ASSIST === 0 && sim.HABITRAIL_MIN_SPEED === 0, 'no habitrail assist');
   assert(sim.BALL_RADIUS === 12, 'BALL_RADIUS stays 12');
   console.log('PASS: orbit1 two-way + sausage tips (800 U y=' + p800.y.toFixed(1) + ' climb x=' + climb.x.toFixed(1) + ' w378=' + w378.toFixed(1) + ')');
+})();
+
+(function testLay1SaucerGateTriangleSpin() {
+  var state = fresh();
+  assert(Math.abs(state.saucer3.x - 138) < 8 && Math.abs(state.saucer3.y - 168) < 8, 'saucer3 near (138,168)');
+  assert(state.saucer3.radius === 15, 'saucer3 r=15');
+  assert(state.saucer.x === 95 && state.saucer.y === 520, 'lower-left hole stays');
+  assert(state.saucer2.x === 330 && state.saucer2.y === 148, 'UR hole stays');
+  assert(Math.abs(state.gateSpinner.x - 132) < 10 && Math.abs(state.gateSpinner.y - 388) < 12, 'gate near (132,388)');
+  assert(state.gateSpinner.h === 42, 'gate height stays 42');
+  var tri = state.pulseTriangle;
+  var cx = (tri.verts[0].x + tri.verts[1].x + tri.verts[2].x) / 3;
+  var cy = (tri.verts[0].y + tri.verts[1].y + tri.verts[2].y) / 3;
+  assert(Math.abs(cx - 186) < 6 && Math.abs(cy - 558) < 6, 'triangle centroid near (186,558) got ' + cx.toFixed(1) + ',' + cy.toFixed(1));
+  var w = Math.max(tri.verts[0].x, tri.verts[1].x, tri.verts[2].x) - Math.min(tri.verts[0].x, tri.verts[1].x, tri.verts[2].x);
+  var h = Math.max(tri.verts[0].y, tri.verts[1].y, tri.verts[2].y) - Math.min(tri.verts[0].y, tri.verts[1].y, tri.verts[2].y);
+  assert(Math.abs(w - 52) < 4 && Math.abs(h - 44) < 6, 'triangle size stays ~52x44 (w=' + w.toFixed(1) + ' h=' + h.toFixed(1) + ')');
+  assert(sim.TRIANGLE_SPIN === -0.28, 'TRIANGLE_SPIN is -0.28 rad/s (CCW on y-down)');
+  var top0 = tri.verts[0];
+  var vi;
+  for (vi = 1; vi < tri.verts.length; vi++) if (tri.verts[vi].y < top0.y) top0 = tri.verts[vi];
+  var top0x = top0.x;
+  var angle0 = tri.angle || 0;
+  var i;
+  for (i = 0; i < 60; i++) sim.tick(state, 1 / 60);
+  var dAngle = (state.pulseTriangle.angle || 0) - angle0;
+  assert(dAngle < 0 && Math.abs(dAngle) >= 0.2, 'rotated >=0.2 rad CCW in 1s (dAngle=' + dAngle.toFixed(3) + ')');
+  var top1 = state.pulseTriangle.verts[0];
+  for (vi = 1; vi < state.pulseTriangle.verts.length; vi++) if (state.pulseTriangle.verts[vi].y < top1.y) top1 = state.pulseTriangle.verts[vi];
+  assert(top1.x < top0x - 1, 'top vertex moved left (CCW on screen) ' + top0x.toFixed(1) + ' -> ' + top1.x.toFixed(1));
+
+  var st = fresh();
+  st.ball.inPlay = true;
+  st.exitedLaunchLane = true;
+  st.phase = 'playing';
+  st.ball.x = 186;
+  st.ball.y = 558;
+  st.ball.vx = 8;
+  st.ball.vy = -6;
+  for (i = 0; i < 20; i++) sim.tick(st, 1 / 60);
+  assert(!sim.ballInsideTriangle(st.ball, st.pulseTriangle), 'ball inside spinning triangle still ejected (xy=' + st.ball.x.toFixed(1) + ',' + st.ball.y.toFixed(1) + ')');
+  assert(Math.hypot(st.ball.vx, st.ball.vy) > 40, 'eject has speed while spinning');
+
+  var outer = state.sideRoutes.rightRamp.mergeOuter || [];
+  var topY = Math.min.apply(null, outer.map(function (s) { return Math.min(s.y1, s.y2); }));
+  assert(topY >= 8 && topY <= 16, 'raised horseshoe ceiling y=' + topY);
+  var leftTop = Math.min.apply(null, state.sideRoutes.leftRamp.segments.map(function (s) { return Math.min(s.y1, s.y2); }));
+  assert(leftTop >= 8 && leftTop <= 16, 'cyan U crown y=' + leftTop);
+  assert(state.sideRoutes.leftRamp.segments[0].x1 === 36 || state.sideRoutes.leftRamp.segments.some(function (s) { return s.x1 === 36 || s.x2 === 36; }), 'cabinet left wall stays x=36');
+  assert(state.sideRoutes.rightRamp.mergeInner.some(function (s) { return s.x1 === 390 && s.y1 === 88 && s.x2 === 378 && s.y2 === 80; }), 'merge3 plunge floor kept');
+  assert(sim.GRAVITY === 1400 && sim.TABLE_PITCH_DEG === 7.0 && sim.HABITRAIL_ASSIST === 0, 'physics constants stay');
+
+  st = fresh();
+  st.ball.inPlay = true;
+  st.exitedLaunchLane = true;
+  st.phase = 'playing';
+  st.ball.x = state.saucer3.x;
+  st.ball.y = state.saucer3.y;
+  st.ball.vx = 10;
+  st.ball.vy = 12;
+  for (i = 0; i < 8; i++) sim.tick(st, 1 / 60);
+  assert(st.saucer3.captured, 'saucer3 at new spot still captures');
+  console.log('PASS: lay1 saucer/gate/triangle spin + raised U (saucer3=' + state.saucer3.x + ',' + state.saucer3.y + ' gate=' + state.gateSpinner.x + ',' + state.gateSpinner.y + ' ceilY=' + topY + ')');
 })();
