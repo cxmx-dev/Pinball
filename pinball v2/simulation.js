@@ -1422,7 +1422,7 @@
     state.exitedLaunchLane = true;
     state.skillShotWindow = true;
     state.launchTick = 0;
-    state.launchRailT = null;
+    if (state.launchRailT == null) state.launchRailT = 0;
     // Ride the right horseshoe / copper outer. Never dump into the open U at 280,52.
     var targetX = 330;
     var targetY = 40;
@@ -2087,6 +2087,7 @@
     if (skipBallAssist(state, state.ball)) return;
     if (!state.sideRoutes || !state.ball.inPlay || !state.exitedLaunchLane) return;
     var ball = state.ball;
+    if (state.launchRailT != null && (ball.x < 310 || ball.y > 140)) state.launchRailT = null;
     var left = state.sideRoutes.leftRamp;
     var right = state.sideRoutes.rightRamp;
     rejectPlayfieldTunnelIn(state);
