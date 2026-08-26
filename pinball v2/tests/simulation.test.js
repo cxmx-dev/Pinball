@@ -1434,8 +1434,8 @@ console.log('=============================');
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
   state.phase = 'playing';
-  // Left inner guide ~ (80,276)-(100,342). Fire left into the chord.
-  state.ball.x = 104;
+  // Left inner guide ~ (92,276)-(116,340). Fire left into the widened chord.
+  state.ball.x = 122;
   state.ball.y = 300;
   state.ball.vx = -420;
   state.ball.vy = 20;
@@ -1451,8 +1451,8 @@ console.log('=============================');
     }
   }
   assert(hit, 'ball must bounce off the left inner habitrail');
-  // Chord at this height is ~x=86; bounce sits on the line + radius, not a ball-width inside.
-  assert(contactX > 86 && contactX < 112, 'left bounce must sit on the drawn chord (x=' + contactX.toFixed(1) + ')');
+  // Widened chord at y=300 is ~x=101; bounce sits on the line + radius.
+  assert(contactX > 100 && contactX < 130, 'left bounce must sit on the drawn chord (x=' + contactX.toFixed(1) + ')');
   console.log('PASS: left habitrail bounce on drawn chord (x=' + contactX.toFixed(1) + ')');
 })();
 
@@ -1523,7 +1523,7 @@ console.log('All tests passed.');
   var rightX = xAtY(rg, 160);
   assert(leftX != null, 'left mid inner exists');
   assert(rightX != null, 'right mid inner exists');
-  assert(leftX <= 66, 'left filler inner sits toward x=36 (got ' + leftX.toFixed(1) + ')');
+  assert(leftX >= 78 && leftX <= 92, 'left inner opened for 44px channel (got ' + leftX.toFixed(1) + ')');
   assert(rightX >= 360, 'right filler inner sits toward the launch wall (got ' + rightX.toFixed(1) + ')');
   var leftOuter = state.sideRoutes.leftRamp.segments;
   assert(leftOuter[leftOuter.length - 1].x2 >= 318, 'cyan U wraps past center toward the right');
@@ -2486,4 +2486,130 @@ console.log('All tests passed.');
   var rubber = fresh().bumpers.find(function (b) { return b.id === 'rubber-mid'; });
   assert(rubber && rubber.x === 300 && rubber.y === 478 && rubber.radius === 18, '500 stays');
   console.log('PASS: merge3 floor/sausage/shooter (800 U y=' + p800.y.toFixed(1) + ' 1400 U y=' + p1400.y.toFixed(1) + ' V x=' + v.x.toFixed(1) + ')');
+})();
+
+(function testWide1TriangleSolidAndCyanClimb() {
+  var state = fresh();
+  var left = state.sideRoutes.leftRamp;
+  assert(left.entry.w >= 44, 'left ramp mouth w>=44 (w=' + left.entry.w + ')');
+  assert(left.entry.h <= 32, 'entry sensor still hugs the mouth');
+  assert(left.entry.x === 80 && left.entry.y === 337, 'entry centered on the opened mouth');
+
+  function xAtY(segs, y) {
+    var i;
+    for (i = 0; i < segs.length; i++) {
+      var a = segs[i];
+      var minY = Math.min(a.y1, a.y2);
+      var maxY = Math.max(a.y1, a.y2);
+      if (minY <= y && maxY >= y && maxY !== minY) {
+        var t = (y - a.y1) / (a.y2 - a.y1);
+        return a.x1 + (a.x2 - a.x1) * t;
+      }
+    }
+    return null;
+  }
+  function horizWidth(y) {
+    var xo = xAtY(left.segments, y);
+    var xi = xAtY(left.guides, y);
+    assert(xo != null && xi != null, 'channel exists at y=' + y);
+    return Math.abs(xi - xo);
+  }
+  var w278 = horizWidth(278);
+  var w200 = horizWidth(200);
+  var w146 = horizWidth(146);
+  assert(w278 >= 44, 'channel at y=278 >= 44 (w=' + w278.toFixed(1) + ')');
+  assert(w200 >= 44, 'channel at y=200 >= 44 (w=' + w200.toFixed(1) + ')');
+  assert(w146 >= 44, 'channel at y=146 >= 44 (w=' + w146.toFixed(1) + ')');
+
+  function distPointSeg(px, py, s) {
+    var dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+    var lenSq = dx * dx + dy * dy;
+    if (lenSq < 1e-6) return Math.hypot(px - s.x1, py - s.y1);
+    var tt = Math.max(0, Math.min(1, ((px - s.x1) * dx + (py - s.y1) * dy) / lenSq));
+    return Math.hypot(px - (s.x1 + dx * tt), py - (s.y1 + dy * tt));
+  }
+  var bendMin = 999;
+  var gi, t;
+  for (gi = 0; gi < left.guides.length; gi++) {
+    var g = left.guides[gi];
+    for (t = 0; t <= 6; t++) {
+      var px = g.x1 + (g.x2 - g.x1) * (t / 6);
+      var py = g.y1 + (g.y2 - g.y1) * (t / 6);
+      if (py > 150 || py < 70 || px > 160) continue;
+      var oi;
+      for (oi = 0; oi < left.segments.length; oi++) {
+        var o = left.segments[oi];
+        if (Math.max(o.y1, o.y2) < 70 || Math.min(o.y1, o.y2) > 155) continue;
+        bendMin = Math.min(bendMin, distPointSeg(px, py, o));
+      }
+    }
+  }
+  assert(bendMin >= 44, 'left-top bend min width >= 44 (w=' + bendMin.toFixed(1) + ')');
+
+  var merge = state.sideRoutes.rightRamp.mergeInner || [];
+  assert(merge.some(function (s) { return s.x1 === 390 && s.y1 === 88 && s.x2 === 378 && s.y2 === 80; }), 'merge3 inner kept');
+  assert(left.guides[left.guides.length - 1].x2 === 300 && left.guides[left.guides.length - 1].y2 === 70, 'cyan inner still joins merge3 at 300,70');
+  assert(sim.HABITRAIL_ASSIST === 0 && sim.HABITRAIL_MIN_SPEED === 0, 'no habitrail assist');
+  assert(sim.GRAVITY === 1400 && sim.TABLE_PITCH_DEG === 7.0, 'gravity/pitch stay');
+
+  var tri = state.pulseTriangle;
+  var triWalls = (state.walls || []).filter(function (w) { return w.kind === 'tri-solid'; });
+  assert(triWalls.length === 3, 'triangle has 3 solid edge walls');
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.ball.x = 300;
+  state.ball.y = 396;
+  state.ball.vx = 12;
+  state.ball.vy = -8;
+  var score0 = state.score;
+  var k;
+  var insideFrames = 0;
+  var fellThrough = false;
+  for (k = 0; k < 15; k++) {
+    sim.stepPhysics(state, 1 / 60);
+    if (sim.ballInsideTriangle(state.ball, tri)) insideFrames += 1;
+    if (state.ball.y > 430 && state.ball.x > 260 && state.ball.x < 340) fellThrough = true;
+  }
+  assert(!sim.ballInsideTriangle(state.ball, tri), 'ball inside triangle ejects within 0.25s (xy=' + state.ball.x.toFixed(1) + ',' + state.ball.y.toFixed(1) + ')');
+  assert(insideFrames <= 2, 'must not lodge vibrating inside (insideFrames=' + insideFrames + ')');
+  assert(!fellThrough, 'must not fall through the bottom edge');
+  assert(state.ball.y < 440, 'eject stays in play, not down the floor (y=' + state.ball.y.toFixed(1) + ')');
+  assert(state.score - score0 < 200, 'no farm score while inside (dScore=' + (state.score - score0) + ')');
+  assert(Math.hypot(state.ball.vx, state.ball.vy) > 40, 'eject has speed');
+
+  function shootLeft(speed) {
+    var st = fresh();
+    st.ball.inPlay = true;
+    st.exitedLaunchLane = true;
+    st.phase = 'playing';
+    st.ball.x = 80;
+    st.ball.y = 330;
+    st.ball.vx = -30;
+    st.ball.vy = -speed;
+    st.activeHabitrail = 'ramp-l';
+    var n;
+    var reversed = false;
+    var cleared = false;
+    var minY = st.ball.y;
+    for (n = 0; n < 90; n++) {
+      var yBefore = st.ball.y;
+      sim.stepPhysics(st, 1 / 60);
+      if (st.ball.y < minY) minY = st.ball.y;
+      if (st.ball.y < 100 && st.ball.x > 80) cleared = true;
+      if (yBefore < 140 && yBefore > 100 && st.ball.vy > 40 && st.ball.y > yBefore + 1) reversed = true;
+      if (cleared) break;
+    }
+    return { cleared: cleared, reversed: reversed, x: st.ball.x, y: st.ball.y, minY: minY, vy: st.ball.vy };
+  }
+  var s1000 = shootLeft(1000);
+  assert(s1000.cleared, '1000 px/s left-ramp shot must clear the bend (y<100,x>80) got x=' + s1000.x.toFixed(1) + ' y=' + s1000.y.toFixed(1) + ' minY=' + s1000.minY.toFixed(1));
+  assert(!s1000.reversed, '1000 px/s must not reverse at the old y~120 pinch');
+  var s900 = shootLeft(900);
+  assert(s900.minY < 120, '900 px/s must climb past the old 30px pinch (minY=' + s900.minY.toFixed(1) + ')');
+  var s1100 = shootLeft(1100);
+  assert(s1100.cleared || s1100.minY < 100, '1100 px/s must climb past y=120 (minY=' + s1100.minY.toFixed(1) + ')');
+
+  assert(sim.HABITRAIL_ASSIST === 0, 'HABITRAIL_ASSIST stays 0');
+  console.log('PASS: wide1 triangle solid + cyan climb (w278=' + w278.toFixed(1) + ' bend=' + bendMin.toFixed(1) + ' shot y=' + s1000.y.toFixed(1) + ')');
 })();

@@ -535,7 +535,7 @@
     if (q().wallGlowPass) {
       state.walls.forEach(function (wall) {
         var kind = wall.kind || 'rail';
-        if (kind === 'lane' || kind === 'chute' || kind === 'filler' || kind === 'cage') return;
+        if (kind === 'lane' || kind === 'chute' || kind === 'filler' || kind === 'cage' || kind === 'tri-solid') return;
         if (kind === 'rail' && !wall.arc && Math.min(wall.x1, wall.x2) >= 390) return;
         if (kind === 'rail' && wall.cyan && Math.min(wall.y1, wall.y2) >= 568) return;
         if (kind === 'rail' && wall.arc) {
@@ -559,7 +559,7 @@
     }
     state.walls.forEach(function (wall) {
       var kind = wall.kind || 'rail';
-      if (kind === 'chute' || kind === 'filler') return;
+      if (kind === 'chute' || kind === 'filler' || kind === 'tri-solid') return;
       if (kind === 'lane' && !wall.wireform) return;
       if (wall.wireform) {
         // Leftover white launch-wire stroke sat on the copper inner wall. Physics stays.

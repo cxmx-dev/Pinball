@@ -319,6 +319,11 @@
     return (b1 === b2) && (b2 === b3);
   }
 
+  function ballInsideTriangle(ball, tri) {
+    if (!ball || !tri || !tri.verts) return false;
+    return pointInTriangle(ball.x, ball.y, tri.verts);
+  }
+
   function resolvePulseTriangle(state) {
     var tri = state && state.pulseTriangle;
     var ball = state && state.ball;
@@ -340,6 +345,10 @@
         ball.vy = rv.vy;
       }
     }
+    if (ballInsideTriangle(ball, tri)) {
+      unstickOneTriangleInterior(state, ball, tri);
+      return;
+    }
     for (i = 0; i < tri.sides.length; i++) {
       var s = tri.sides[i];
       var preVx = ball.vx;
@@ -349,30 +358,12 @@
         var kick = clamp(incident * SLING_KICK_GAIN, SLING_KICK_MIN, SLING_KICK_MAX);
         ball.vx += s.nx * kick;
         ball.vy += s.ny * kick - kick * 0.32;
-        if (s.cooldown <= 0 && !lodgeFarming(state, ball)) {
+        if (s.cooldown <= 0 && !lodgeFarming(state, ball) && !ballInsideTriangle(ball, tri)) {
           awardScore(state, s.score, 'tri-rubber', s.theme, (s.x1 + s.x2) * 0.5, (s.y1 + s.y2) * 0.5);
           s.cooldown = HIT_COOLDOWN_SLING;
           s.flash = 0.38;
         }
       });
-    }
-    if (pointInTriangle(ball.x, ball.y, tri.verts)) {
-      var best = null;
-      for (i = 0; i < tri.sides.length; i++) {
-        var side = tri.sides[i];
-        var near = nearestPointOnSegments(ball.x, ball.y, [side]);
-        if (near && (!best || near.dist < best.dist)) {
-          best = { dist: near.dist, side: side, x: near.x, y: near.y };
-        }
-      }
-      if (best) {
-        ball.x = best.x + best.side.nx * (ball.radius + 2);
-        ball.y = best.y + best.side.ny * (ball.radius + 2);
-        if (dot(ball.vx, ball.vy, best.side.nx, best.side.ny) < 0) {
-          ball.vx += best.side.nx * 160;
-          ball.vy += best.side.ny * 160;
-        }
-      }
     }
   }
 
@@ -407,7 +398,7 @@
   function createSideRoutes() {
     // Horseshoe orbit: left slide + top channel + right slide meet under the arch.
     // Outer / inner polylines are also the draw hulls (cyan left, copper right).
-    // Top channel ~38px (outer y=32, inner y=70 at x=240). Inner U is a dense habitrail wall.
+    // Top channel ~50px (outer y=26, inner y=76 at x=240). Cyan climb min width 44.
     return {
       leftCaptive: {
         id: 'captive-l',
@@ -421,8 +412,8 @@
         id: 'ramp-l',
         score: 800,
         cooldown: 0,
-        entry: { x: 74, y: 337, w: 32, h: 26 },
-        exit: { x: 74, y: 337 },
+        entry: { x: 80, y: 337, w: 44, h: 30 },
+        exit: { x: 80, y: 337 },
         boost: 0,
         segments: [
           { x1: 60, y1: 345, x2: 46, y2: 278 },
@@ -438,17 +429,17 @@
           { x1: 310, y1: 31, x2: 328, y2: 34 }
         ],
         guides: [
-          { x1: 100, y1: 342, x2: 76, y2: 276 },
-          { x1: 76, y1: 276, x2: 66, y2: 200 },
-          { x1: 66, y1: 200, x2: 74, y2: 146 },
-          { x1: 74, y1: 146, x2: 96, y2: 124 },
-          { x1: 96, y1: 124, x2: 112, y2: 108 },
-          { x1: 112, y1: 108, x2: 128, y2: 94 },
-          { x1: 128, y1: 94, x2: 150, y2: 82 },
-          { x1: 150, y1: 82, x2: 168, y2: 76 },
-          { x1: 168, y1: 76, x2: 200, y2: 72 },
-          { x1: 200, y1: 72, x2: 240, y2: 72 },
-          { x1: 240, y1: 72, x2: 280, y2: 72 },
+          { x1: 116, y1: 340, x2: 92, y2: 276 },
+          { x1: 92, y1: 276, x2: 82, y2: 200 },
+          { x1: 82, y1: 200, x2: 96, y2: 146 },
+          { x1: 96, y1: 146, x2: 124, y2: 128 },
+          { x1: 124, y1: 128, x2: 142, y2: 116 },
+          { x1: 142, y1: 116, x2: 160, y2: 102 },
+          { x1: 160, y1: 102, x2: 180, y2: 90 },
+          { x1: 180, y1: 90, x2: 200, y2: 82 },
+          { x1: 200, y1: 82, x2: 220, y2: 76 },
+          { x1: 220, y1: 76, x2: 240, y2: 76 },
+          { x1: 240, y1: 76, x2: 280, y2: 72 },
           { x1: 280, y1: 72, x2: 300, y2: 70 }
         ]
       },
@@ -1006,6 +997,23 @@
 
     // Real left orbit / right habitrail travel paths (replaces token diagonal kick chutes)
     walls = walls.concat(createHabitrailWalls());
+
+    var triBody = createPulseTriangle();
+    if (triBody && triBody.sides) {
+      var ti;
+      for (ti = 0; ti < triBody.sides.length; ti++) {
+        var ts = triBody.sides[ti];
+        walls.push({
+          x1: ts.x1,
+          y1: ts.y1,
+          x2: ts.x2,
+          y2: ts.y2,
+          kind: 'tri-solid',
+          nx: ts.nx,
+          ny: ts.ny
+        });
+      }
+    }
 
     // Chrome safety-cage bars — short steel outlane rails just above the
     // flipper row, framing the timed cyan boingers (VOID PULSE annotation).
@@ -1759,12 +1767,15 @@
     var nearTri = ball.y - (ball.radius || BALL_RADIUS) < bot + 6;
     var nearRub = vecLen(ball.x - rubber.x, ball.y - rubber.y) < rubber.radius + (ball.radius || BALL_RADIUS) + 6;
     var inSlot = ball.y > bot - 4 && ball.y < rubber.y + 4;
+    var inGap = inX && ball.y > bot - 6 && ball.y < rubber.y - 2;
+    if (inGap && vecLen(ball.vx, ball.vy) < 130) return true;
     return !!(inX && inSlot && nearTri && nearRub);
   }
 
   function lodgeFarming(state, ball) {
     if (!ball) return false;
     if (sausageFarmPocket(state, ball)) return true;
+    if (state && ballInsideTriangle(ball, state.pulseTriangle)) return true;
     if ((ball._copperStuck || 0) >= 4) return true;
     if ((ball._sausageStuck || 0) >= 4) return true;
     if ((ball._triPinchStuck || 0) >= 3) return true;
@@ -1774,7 +1785,81 @@
     return false;
   }
 
+  function unstickOneTriangleInterior(state, ball, tri) {
+    if (skipBallAssist(state, ball)) return false;
+    if (!ball || !ball.inPlay || !tri) return false;
+    if (!ballInsideTriangle(ball, tri)) {
+      ball._triInsideStuck = 0;
+      return false;
+    }
+    ball._triInsideStuck = (ball._triInsideStuck || 0) + 1;
+    var cx = (tri.verts[0].x + tri.verts[1].x + tri.verts[2].x) / 3;
+    var cy = (tri.verts[0].y + tri.verts[1].y + tri.verts[2].y) / 3;
+    var bot = Math.max(tri.verts[0].y, tri.verts[1].y, tri.verts[2].y);
+    var best = null;
+    var i;
+    for (i = 0; i < tri.sides.length; i++) {
+      var side = tri.sides[i];
+      var near = nearestPointOnSegments(ball.x, ball.y, [side]);
+      if (near && (!best || near.dist < best.dist)) {
+        best = { dist: near.dist, side: side, x: near.x, y: near.y };
+      }
+    }
+    var nx;
+    var ny;
+    if (best) {
+      nx = best.side.nx;
+      ny = best.side.ny;
+    } else {
+      nx = ball.x - cx;
+      ny = ball.y - cy;
+    }
+    // Never eject down through the flat bottom into the 500 / drain.
+    if (ny > 0.18) {
+      nx = ball.x >= cx ? 0.94 : -0.94;
+      ny = -0.34;
+    }
+    var nlen = vecLen(nx, ny) || 1;
+    nx /= nlen;
+    ny /= nlen;
+    var r = ball.radius || BALL_RADIUS;
+    if (best) {
+      ball.x = best.x + nx * (r + 6);
+      ball.y = best.y + ny * (r + 6);
+    } else {
+      ball.x = cx + nx * (r + 16);
+      ball.y = cy + ny * (r + 16);
+    }
+    if (ball.y > bot - 4) {
+      ball.y = bot - (r + 8);
+      if (Math.abs(ball.x - cx) < r + 4) {
+        ball.x = cx + (ball.x >= cx ? 1 : -1) * (r + 20);
+      }
+    }
+    var sp = vecLen(ball.vx, ball.vy);
+    var keep = Math.max(sp, 160);
+    ball.vx = ball.vx * 0.12 + nx * keep * 0.88;
+    ball.vy = ball.vy * 0.12 + ny * keep * 0.88;
+    if (vecLen(ball.vx, ball.vy) < 120) {
+      ball.vx += nx * 120;
+      ball.vy += ny * 120;
+    }
+    if (ball.vy > 30) ball.vy = -Math.abs(ny) * 140 - 40;
+    return true;
+  }
+
+  function unstickTriangleInterior(state) {
+    var tri = state && state.pulseTriangle;
+    if (!tri) return;
+    var balls = allLiveBalls(state);
+    var i;
+    for (i = 0; i < balls.length; i++) {
+      unstickOneTriangleInterior(state, balls[i], tri);
+    }
+  }
+
   function unstickTriangle500(state) {
+    unstickTriangleInterior(state);
     var ball = state && state.ball;
     if (skipBallAssist(state, ball)) return;
     if (!triangle500Wedged(state, ball)) {
@@ -3839,6 +3924,7 @@
     blockShooterLaneIntrusion(state);
     resolveWallCollisions(state);
     ejectSausageInteriors(state);
+    unstickTriangleInterior(state);
     assistHabitrails(state, dt);
     peelLeftInlaneWedge(state);
     guardLeftOutlaneShelf(state);
@@ -4225,6 +4311,8 @@
     stepPulseTriangle: stepPulseTriangle,
     resolvePulseTriangle: resolvePulseTriangle,
     triangleSidePulse: triangleSidePulse,
+    ballInsideTriangle: ballInsideTriangle,
+    unstickTriangleInterior: unstickTriangleInterior,
     countLiveBalls: countLiveBalls,
     extraLiveBalls: extraLiveBalls,
     allLiveBalls: allLiveBalls,
