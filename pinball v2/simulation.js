@@ -940,8 +940,8 @@
   function createGateSpinner() {
     // Vertical spinner above the lower-left HOLE / left of the 120 saver, under the cyan mouth.
     return {
-      x: 98,
-      y: 458,
+      x: 108,
+      y: 416,
       h: 42,
       angle: 0,
       spinVel: 0,
