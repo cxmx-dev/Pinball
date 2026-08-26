@@ -200,9 +200,9 @@
         hitCooldown: 0
       },
       {
-        // Powerful rubber-ring bumper on the right-slide dump / mouth exit
-        x: 346,
-        y: 358,
+        // Powerful rubber-ring bumper below the pulse triangle, toward playfield center
+        x: 300,
+        y: 452,
         radius: 18,
         score: RUBBER_BUMPER_SCORE,
         color: '#b31f3a',
@@ -229,7 +229,7 @@
   }
 
   function createPulseTriangle() {
-    // Mid-field decision: left of the 500, below the 300s, above the saver, right of the gate.
+    // Mid-field decision: above the 500, below the 300s, above the saver, right of the gate.
     var verts = [
       { x: 300, y: 374 },
       { x: 326, y: 416 },
@@ -1705,67 +1705,7 @@
     if (state.sideRoutes && state.sideRoutes.rightRamp) {
       state.sideRoutes.rightRamp.cooldown = Math.max(state.sideRoutes.rightRamp.cooldown || 0, SIDE_ROUTE_COOLDOWN);
     }
-    if (other && other.id === 'ramp-r') {
-      ball._dumpAtRubber = 12;
-      aimBallAtRubberMid(ball, state, 0.6);
-    }
     return true;
-  }
-
-  function rubberMidOf(state) {
-    var i;
-    if (!state || !state.bumpers) return null;
-    for (i = 0; i < state.bumpers.length; i++) {
-      if (state.bumpers[i] && state.bumpers[i].id === 'rubber-mid') return state.bumpers[i];
-    }
-    return null;
-  }
-
-  function aimBallAtRubberMid(ball, state, blend) {
-    var rub = rubberMidOf(state);
-    if (!rub || !ball) return;
-    var tx = rub.x - ball.x;
-    var ty = rub.y - ball.y;
-    var dist = vecLen(tx, ty);
-    if (dist < 1e-6) return;
-    var ax = tx / dist;
-    var ay = ty / dist;
-    var cur = vecLen(ball.vx, ball.vy);
-    var sp = Math.max(cur, 280);
-    var k = blend != null ? blend : 0.55;
-    ball.vx = ball.vx * (1 - k) + ax * sp * k;
-    ball.vy = ball.vy * (1 - k) + ay * sp * k;
-  }
-
-  function markRightRampMouthOrigin(state) {
-    var ball = state.ball;
-    var right = state.sideRoutes && state.sideRoutes.rightRamp;
-    if (!ball || !right || state.activeHabitrail !== 'ramp-r') return;
-    if (pointInRouteEntry(ball, right.entry) || (ball.x > 318 && ball.y > 300 && ball.y < 368)) {
-      ball._rightFromMouth = true;
-    }
-  }
-
-  function dumpRightRampTowardRubber(state) {
-    var ball = state.ball;
-    if (!ball || state.activeHabitrail !== 'ramp-r') return false;
-    var right = state.sideRoutes && state.sideRoutes.rightRamp;
-    if (!right) return false;
-    if (pointInRouteEntry(ball, right.entry) && ball.y >= 300 && ball.vy > 18) {
-      state.activeHabitrail = null;
-      ball._rightFromMouth = false;
-      ball._dumpAtRubber = 12;
-      aimBallAtRubberMid(ball, state, 0.62);
-      return true;
-    }
-    if (ball._rightFromMouth && ball.y < 292 && ball.x > 300) {
-      state.activeHabitrail = null;
-      ball._rightFromMouth = false;
-      ball._dumpAtRubber = 14;
-      aimBallAtRubberMid(ball, state, 0.58);
-      return true;
-    }
-    return false;
   }
 
   function allLiveBalls(state) {
@@ -1861,7 +1801,6 @@
   function containHorseshoeInner(state) {
     var ball = state.ball;
     if (!ball || !state.activeHabitrail) return;
-    if (ball._dumpAtRubber) return;
     if (ball.y < 24 || ball.y > 140) return;
     if (ball.x < 88 || ball.x > 368) return;
     // Copper lodge box: do not snap the ball into the orange inner V.
@@ -1890,8 +1829,6 @@
     var left = state.sideRoutes.leftRamp;
     var right = state.sideRoutes.rightRamp;
     rejectPlayfieldTunnelIn(state);
-    markRightRampMouthOrigin(state);
-    dumpRightRampTowardRubber(state);
     containHorseshoeInner(state);
     var travel = horseshoeTravelSegs(left, right);
     var nearTravel = nearestPointOnSegments(ball.x, ball.y, travel);
@@ -1921,7 +1858,6 @@
     if (state.activeHabitrail && !inChannel && nearTravel && nearTravel.dist > ball.radius + 40) {
       state.activeHabitrail = null;
     }
-    if (ball._dumpAtRubber) ball._dumpAtRubber = Math.max(0, ball._dumpAtRubber - 1);
   }
 
   function peelLeftInlaneWedge(/* state */) {
@@ -2266,7 +2202,6 @@
     var r = ball.radius;
 
     state.walls.forEach(function (wall) {
-      if (ball._dumpAtRubber && wall.kind === 'guide' && wall.x1 > 300 && wall.x2 > 300) return;
       if (!state.exitedLaunchLane && (wall.wireform || wall.kind === 'lane')) return;
       if (wall.kind === 'filler' && (state.activeHabitrail ||
           inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp) ||

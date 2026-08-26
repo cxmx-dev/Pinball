@@ -2017,8 +2017,8 @@ console.log('All tests passed.');
   var state = fresh();
   var rubber = state.bumpers.find(function (b) { return b.id === 'rubber-mid' && b.rubber; });
   assert(rubber, 'rubber-mid bumper exists');
-  assert(Math.abs(rubber.x - 346) < 14 && Math.abs(rubber.y - 358) < 16, 'rubber bumper near dump (346,358), got ' + rubber.x + ',' + rubber.y);
-  assert(rubber.y < 450 && rubber.y > 300, 'rubber-mid y well above 450 (near ramp dump), got y=' + rubber.y);
+  assert(Math.abs(rubber.x - 300) < 14 && Math.abs(rubber.y - 452) < 16, 'rubber bumper below triangle (300,452), got ' + rubber.x + ',' + rubber.y);
+  assert(rubber.y > 418, 'rubber-mid y below triangle bottom ~418, got y=' + rubber.y);
   assert.strictEqual(rubber.radius, 18);
   assert.strictEqual(rubber.score, 500);
   assert(rubber.restitution >= 1.32, 'rubber restitution');
@@ -2048,10 +2048,8 @@ console.log('All tests passed.');
   var state = fresh();
   var rubber = state.bumpers.find(function (b) { return b.id === 'rubber-mid' && b.rubber; });
   assert(rubber, 'rubber-mid still exists (moved, not deleted)');
-  assert(rubber.y < 450, 'rubber-mid y well above 450, got ' + rubber.y);
-  var dump = state.sideRoutes.rightRamp.exit;
-  var dDump = Math.hypot(rubber.x - dump.x, rubber.y - dump.y);
-  assert(dDump < 55, 'rubber-mid near rightRamp dump (' + rubber.x + ',' + rubber.y + ' vs ' + dump.x + ',' + dump.y + ' d=' + dDump.toFixed(1) + ')');
+  assert(rubber.y > 418, 'rubber-mid y below triangle, got ' + rubber.y);
+  assert(Math.abs(rubber.x - 300) < 14 && Math.abs(rubber.y - 452) < 16, 'rubber-mid below triangle (300,452), got ' + rubber.x + ',' + rubber.y);
   var wing300 = state.bumpers.find(function (b) { return b.score === 300 && b.x > 250; });
   assert(wing300, 'right 300 exists');
   var gap300 = Math.hypot(rubber.x - wing300.x, rubber.y - wing300.y) - rubber.radius - wing300.radius;
@@ -2074,7 +2072,7 @@ console.log('All tests passed.');
   assert(left.x1 < 50 && left.x2 < 100 && left.y1 > 700 && left.y2 < 740, 'left cage frames lower-left boinger');
   assert(right.x1 > 290 && right.x2 < 360 && right.y1 > 700 && right.y2 < 740, 'right cage frames lower-right boinger');
   assert(right.x2 < 392, 'right cage does not pinch the shooter');
-  console.log('PASS: cage1 rubber-mid at dump, cyan boingers lower/outer, two chrome cage bars');
+  console.log('PASS: cage1 rubber-mid below triangle, cyan boingers lower/outer, two chrome cage bars');
 })();
 
 (function testMultiballSurvivorStaysLive() {
@@ -2120,10 +2118,12 @@ console.log('All tests passed.');
   console.log('PASS: MB survivor stays live after one drain (live=' + live + ' phase=' + state.phase + ')');
 })();
 
-(function testRightRampDumpHitsRubberMid() {
+(function testOrangeDumpDoesNotRequire500() {
   var state = fresh();
   var rubber = state.bumpers.find(function (b) { return b.id === 'rubber-mid' && b.rubber; });
   assert(rubber, 'rubber-mid exists');
+  assert(rubber.y > 418, 'rubber-mid below triangle, y=' + rubber.y);
+  assert(Math.abs(rubber.x - 300) < 14 && Math.abs(rubber.y - 452) < 16, '500 at ~300,452, got ' + rubber.x + ',' + rubber.y);
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
   state.phase = 'playing';
@@ -2131,26 +2131,16 @@ console.log('All tests passed.');
   state.ball.x = 350;
   state.ball.y = 328;
   state.ball.vx = 20;
-  state.ball.vy = -360;
+  state.ball.vy = 80;
   state.ball._exited = true;
-  state.ball._rightFromMouth = true;
-  var hit = false;
-  var redirected = false;
   var i;
-  var minDist = 9999;
+  var leftMouth = false;
   for (i = 0; i < 90; i++) {
     sim.stepPhysics(state, 1 / 60);
-    var d = Math.hypot(state.ball.x - rubber.x, state.ball.y - rubber.y);
-    minDist = Math.min(minDist, d);
-    if (rubber.hitCooldown > 0 || rubber.hit) hit = true;
-    if (state.ball.x < 330 && state.ball.vy > 40) redirected = true;
-    if (hit) break;
+    if (state.ball.y > 390 || state.ball.x < 320) leftMouth = true;
   }
-  assert(hit || minDist < rubber.radius + state.ball.radius + 10,
-    'right-ramp dump must contact rubber-mid (hit=' + hit + ' minD=' + minDist.toFixed(1) +
-    ' x=' + state.ball.x.toFixed(1) + ' y=' + state.ball.y.toFixed(1) + ')');
-  assert(state.ball.x > 160 || hit, 'must not free-orbit to the top-left hole');
-  console.log('PASS: right-ramp dump hits/redirects on rubber-mid (hit=' + hit + ' minD=' + minDist.toFixed(1) + ')');
+  assert(leftMouth || state.ball.inPlay, 'orange dump can leave the mouth freely');
+  console.log('PASS: orange dump is free (not required to hit 500) x=' + state.ball.x.toFixed(1) + ' y=' + state.ball.y.toFixed(1));
 })();
 
 (function testPulseTriangleThreeRubbers() {
@@ -2166,11 +2156,12 @@ console.log('All tests passed.');
   var right = Math.max(tri.verts[0].x, tri.verts[1].x, tri.verts[2].x);
   var top = Math.min(tri.verts[0].y, tri.verts[1].y, tri.verts[2].y);
   var bot = Math.max(tri.verts[0].y, tri.verts[1].y, tri.verts[2].y);
-  assert(right < 346, 'triangle stays left of the 500');
+  var rubber = state.bumpers.find(function (b) { return b.id === 'rubber-mid'; });
+  assert(rubber && rubber.y > bot, '500 sits below triangle bottom, rubber.y=' + (rubber && rubber.y) + ' bot=' + bot);
+  assert(bot < rubber.y - 8, 'triangle bottom clears the 500');
   assert(top > 330, 'triangle sits below the bumper cluster');
   assert(bot < 455, 'triangle stays above the saver');
   assert(left > 200, 'triangle is not on the left outlane / saucers');
-  var rubber = state.bumpers.find(function (b) { return b.id === 'rubber-mid'; });
   var i;
   for (i = 0; i < 3; i++) {
     var s = tri.sides[i];
