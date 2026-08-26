@@ -245,6 +245,7 @@
     drawRollovers(ctx, state);
     drawDropTargets(ctx, state);
     drawSlingshots(ctx, state);
+    drawBoinger(ctx, state);
     drawTargets(ctx, state);
     drawPosts(ctx, state, glowPulse);
     drawSaucer(ctx, state, glowPulse);
@@ -287,10 +288,11 @@
   function drawLaunchLaneDashes(ctx, state) {
     var dashes = state.launchLaneDashes;
     if (!dashes || !dashes.length) return;
+    var joinY = root.PinballSim.LAUNCH_WIRE_Y1;
     var i;
     for (i = 0; i < dashes.length; i++) {
       var d = dashes[i];
-      if (d.y < 360) continue;
+      if (d.y < joinY) continue;
       var intensity = d.intensity != null ? d.intensity : (d.lit ? 1 : 0);
       if (intensity < 0) intensity = 0;
       if (intensity > 1) intensity = 1;
@@ -525,13 +527,7 @@
       if (kind === 'chute' || kind === 'filler') return;
       if (kind === 'lane' && !wall.wireform) return;
       if (wall.wireform) {
-        strokeTubeSegment(ctx, wall.x1, wall.y1, wall.x2, wall.y2, {
-          core: 'rgba(220, 230, 255, 0.95)',
-          glow: 'rgba(140, 190, 255, 0.42)',
-          hi: 'rgba(255,255,255,0.7)',
-          width: 3.6,
-          dashed: false
-        });
+        // Leftover white launch-wire stroke sat on the copper inner wall. Physics stays.
         return;
       }
       if (kind === 'rail' && wall.arc) {
@@ -609,6 +605,49 @@
     });
     // Copper habitrail is drawn once via drawPioneerRamp + merge rims. A second
     // strokeTubePath of the full rightRamp was the brick-line / double-hull seam.
+    ctx.restore();
+  }
+
+
+  function drawBoinger(ctx, state) {
+    var b = state.boinger;
+    if (!b) return;
+    var pop = b.pop != null ? b.pop : (b.up ? 1 : 0);
+    if (pop < 0) pop = 0;
+    if (pop > 1) pop = 1;
+    var r = b.radius;
+    ctx.save();
+    if (pop < 0.12) {
+      ctx.globalAlpha = 0.5;
+      ctx.strokeStyle = 'rgba(0, 140, 0, 0.55)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y + 1, r * 0.52, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(0, 70, 0, 0.32)';
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
+    var hot = b.flash > 0;
+    var capR = r * (0.42 + 0.58 * pop);
+    var stemH = 8 * pop;
+    var capY = b.y - stemH * 0.35;
+    ctx.shadowColor = 'rgba(0, 255, 0, ' + (0.28 + 0.5 * pop) + ')';
+    ctx.shadowBlur = hot ? 22 : 10 + pop * 10;
+    ctx.fillStyle = pop > 0.5 ? 'rgba(18, 130, 18, 0.95)' : 'rgba(16, 80, 16, 0.7)';
+    ctx.fillRect(b.x - 3.1, capY, 6.2, stemH + 4);
+    var g = ctx.createRadialGradient(b.x - capR * 0.3, capY - capR * 0.35, 2, b.x, capY, capR);
+    g.addColorStop(0, hot ? '#ccff88' : '#66ff44');
+    g.addColorStop(0.45, '#00ff00');
+    g.addColorStop(1, '#007a10');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(b.x, capY, capR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(200, 255, 180, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -775,7 +814,7 @@
       var i;
       for (i = 0; i < segs.length; i++) {
         // Keep the U mouth; drop only leftover floor chords that ride the U hull.
-        if (dropUFloor && segs[i].x2 <= 300) continue;
+        if (dropUFloor && segs[i].x2 <= 330) continue;
         pts.push({ x: segs[i].x2, y: segs[i].y2 });
       }
       return pts;
@@ -793,7 +832,7 @@
     var copperGuide = {
       core: 'rgba(255, 220, 140, 0.55)',
       glow: 'rgba(255, 180, 60, 0.22)',
-      hi: 'rgba(255,255,255,0.4)',
+      hi: 'rgba(255, 230, 170, 0.45)',
       width: 3.5,
       smooth: true
     };
@@ -1616,7 +1655,8 @@
       jackpot: '#ffee22',
       lanedash: '#ffe066',
       ballsave: '#66ffcc',
-      combo: '#aaff88'
+      combo: '#aaff88',
+      boinger: '#00ff00'
     };
     var color = colors[state.lastHitType] || '#ffffff';
     var x = offset.ox + (state.lastScorePopup ? state.lastScorePopup.x : state.ball.x);

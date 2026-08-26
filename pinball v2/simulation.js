@@ -117,6 +117,16 @@
   var EOB_DURATION = 1.65;
   var DROP_BANK_SIZE = 4;
   var SIDE_ROUTE_COOLDOWN = 0.35;
+  var BOINGER_X = 318;
+  var BOINGER_Y = 686;
+  var BOINGER_R = 12;
+  var BOINGER_UP_SEC = 3;
+  var BOINGER_DOWN_SEC = 1.5;
+  var BOINGER_POP_SEC = 0.18;
+  var BOINGER_RESTITUTION = 1.28;
+  var BOINGER_EXIT_SPEED = 280;
+  var BOINGER_SCORE = 250;
+  var HIT_COOLDOWN_BOINGER = 0.22;
 
   function clamp(v, lo, hi) {
     return v < lo ? lo : v > hi ? hi : v;
@@ -469,9 +479,9 @@
    */
   function createLaunchLaneDashes() {
     var dashes = [];
-    var count = 9;
+    var count = 15;
     var yBot = PLUNGER_REST_Y - 40;
-    var yTop = 500; // plunger hall up to ~500; skip draw y<360 so they stay out of the merge/U
+    var yTop = LAUNCH_WIRE_Y1; // hall lights run from plunger berth up to the merge join
     var i;
     for (i = 0; i < count; i++) {
       var t = count === 1 ? 0 : i / (count - 1);
@@ -551,6 +561,56 @@
       lit: false,
       flash: 0
     };
+  }
+
+
+  function createBoinger() {
+    return { x: BOINGER_X, y: BOINGER_Y, radius: BOINGER_R, score: BOINGER_SCORE, cycleT: 0, up: true, pop: 1, cooldown: 0, flash: 0 };
+  }
+
+  function stepBoinger(state, dt) {
+    var b = state.boinger;
+    if (!b) return;
+    if (b.cooldown > 0) b.cooldown = Math.max(0, b.cooldown - dt);
+    if (b.flash > 0) b.flash = Math.max(0, b.flash - dt);
+    var period = BOINGER_UP_SEC + BOINGER_DOWN_SEC;
+    b.cycleT += dt;
+    if (b.cycleT >= period) b.cycleT -= period;
+    if (b.cycleT < 0) b.cycleT = 0;
+    var wantUp = b.cycleT < BOINGER_UP_SEC;
+    b.up = wantUp;
+    var target = wantUp ? 1 : 0;
+    if (BOINGER_POP_SEC <= 0) { b.pop = target; }
+    else {
+      var k = dt / BOINGER_POP_SEC;
+      if (b.pop < target) b.pop = Math.min(target, b.pop + k);
+      else if (b.pop > target) b.pop = Math.max(target, b.pop - k);
+    }
+  }
+
+  function collideBoinger(state) {
+    var b = state.boinger;
+    var ball = state.ball;
+    if (!b || !ball) return;
+    if (!b.up || b.pop < 0.55) return;
+    var dx = ball.x - b.x;
+    var dy = ball.y - b.y;
+    var dist = vecLen(dx, dy);
+    var minDist = ball.radius + b.radius;
+    if (dist >= minDist || dist < 1e-6) return;
+    var n = normalize(dx, dy);
+    var sep = minDist + 2;
+    ball.x = b.x + n.x * sep;
+    ball.y = b.y + n.y * sep;
+    var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, BOINGER_RESTITUTION);
+    ball.vx = rv.vx;
+    ball.vy = rv.vy;
+    applyBumperExitSpeed(ball, n.x, n.y, BOINGER_EXIT_SPEED);
+    if (b.cooldown <= 0) {
+      b.cooldown = HIT_COOLDOWN_BOINGER;
+      b.flash = 0.28;
+      awardScore(state, b.score, 'boinger', 'boinger', b.x, b.y);
+    }
   }
 
   function saucersOf(state) {
@@ -755,6 +815,7 @@
       saucer: createSaucer(),
       saucer2: createSaucer2(),
       saucer3: createSaucer3(),
+      boinger: createBoinger(),
       gateSpinner: createGateSpinner(),
       walls: createWalls(),
       lockCount: 0,
@@ -3005,6 +3066,7 @@
     guardRightOutlaneShelf(state);
     resolveSlingshotCollisions(state);
     resolveBumperCollisions(state);
+    collideBoinger(state);
     unstickFromBumpers(state);
     unstickFromCorners(state);
     unstickWallSlide(state);
@@ -3267,6 +3329,7 @@
     ensureBallAtPlunger(state);
     decayCombo(state, dt);
     chargeLaunch(state, dt);
+    stepBoinger(state, dt);
     stepPhysics(state, dt);
     updateLaunchLaneDashes(state, dt);
     checkDrain(state);
@@ -3363,7 +3426,18 @@
     EOB_DURATION: EOB_DURATION,
     DROP_BANK_SIZE: DROP_BANK_SIZE,
     topArchFloorY: topArchFloorY,
-    ellipseArcSegments: ellipseArcSegments
+    ellipseArcSegments: ellipseArcSegments,
+    createBoinger: createBoinger,
+    stepBoinger: stepBoinger,
+    collideBoinger: collideBoinger,
+    BOINGER_X: BOINGER_X,
+    BOINGER_Y: BOINGER_Y,
+    BOINGER_R: BOINGER_R,
+    BOINGER_UP_SEC: BOINGER_UP_SEC,
+    BOINGER_DOWN_SEC: BOINGER_DOWN_SEC,
+    BOINGER_RESTITUTION: BOINGER_RESTITUTION,
+    BOINGER_EXIT_SPEED: BOINGER_EXIT_SPEED,
+    BOINGER_SCORE: BOINGER_SCORE
   };
 
   if (typeof module !== 'undefined' && module.exports) {
