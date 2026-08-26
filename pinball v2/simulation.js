@@ -418,9 +418,11 @@
         segments: [
           { x1: 60, y1: 345, x2: 46, y2: 278 },
           { x1: 46, y1: 278, x2: 36, y2: 200 },
-          { x1: 36, y1: 200, x2: 42, y2: 146 },
-          { x1: 42, y1: 146, x2: 62, y2: 107 },
-          { x1: 62, y1: 107, x2: 88, y2: 76 },
+          { x1: 36, y1: 200, x2: 36, y2: 146 },
+          { x1: 36, y1: 146, x2: 36, y2: 118 },
+          { x1: 36, y1: 118, x2: 48, y2: 94 },
+          { x1: 48, y1: 94, x2: 70, y2: 80 },
+          { x1: 70, y1: 80, x2: 88, y2: 76 },
           { x1: 88, y1: 76, x2: 150, y2: 32 },
           { x1: 150, y1: 32, x2: 190, y2: 28 },
           { x1: 190, y1: 28, x2: 240, y2: 26 },
@@ -472,13 +474,15 @@
           { x1: 364, y1: 216, x2: 362, y2: 286 },
           { x1: 362, y1: 286, x2: 328, y2: 342 }
         ],
+        // orbit1: smooth outer, no 1-seg V. Channel >=44 vs merge3 inner.
         mergeOuter: [
-          { x1: 444, y1: 103, x2: 438, y2: 86 },
-          { x1: 438, y1: 86, x2: 430, y2: 76 },
-          { x1: 430, y1: 76, x2: 412, y2: 60 },
-          { x1: 412, y1: 60, x2: 390, y2: 48 },
-          { x1: 390, y1: 48, x2: 360, y2: 38 },
-          { x1: 360, y1: 38, x2: 330, y2: 36 }
+          { x1: 444, y1: 103, x2: 444, y2: 88 },
+          { x1: 444, y1: 88, x2: 440, y2: 72 },
+          { x1: 440, y1: 72, x2: 428, y2: 56 },
+          { x1: 428, y1: 56, x2: 410, y2: 44 },
+          { x1: 410, y1: 44, x2: 388, y2: 36 },
+          { x1: 388, y1: 36, x2: 360, y2: 30 },
+          { x1: 360, y1: 30, x2: 330, y2: 28 }
         ],
         // merge3: rounded inner floor. No left-pointing beak. Channel >= 36px.
         mergeInner: [
@@ -501,7 +505,7 @@
           { x1: 36, y1: 568, x2: 36, y2: 610 },
           { x1: 36, y1: 610, x2: 36, y2: 650 },
           { x1: 36, y1: 650, x2: 36, y2: 680 },
-          { x1: 36, y1: 680, x2: 36, y2: 708 }
+          { x1: 36, y1: 680, x2: 36, y2: 706 }
         ],
         guides: [
           { x1: 36, y1: 568, x2: 48, y2: 578 },
@@ -509,9 +513,10 @@
           { x1: 64, y1: 598, x2: 76, y2: 628 },
           { x1: 76, y1: 628, x2: 80, y2: 652 },
           { x1: 80, y1: 652, x2: 74, y2: 676 },
-          { x1: 74, y1: 676, x2: 58, y2: 694 },
-          { x1: 58, y1: 694, x2: 42, y2: 706 },
-          { x1: 42, y1: 706, x2: 36, y2: 708 }
+          { x1: 74, y1: 676, x2: 60, y2: 692 },
+          { x1: 60, y1: 692, x2: 48, y2: 702 },
+          { x1: 48, y1: 702, x2: 40, y2: 706 },
+          { x1: 40, y1: 706, x2: 36, y2: 706 }
         ]
       },
       rightFiller: {
@@ -532,9 +537,10 @@
           { x1: 348, y1: 580, x2: 338, y2: 622 },
           { x1: 338, y1: 622, x2: 334, y2: 662 },
           { x1: 334, y1: 662, x2: 340, y2: 698 },
-          { x1: 340, y1: 698, x2: 354, y2: 722 },
-          { x1: 354, y1: 722, x2: 372, y2: 736 },
-          { x1: 372, y1: 736, x2: 392, y2: 744 }
+          { x1: 340, y1: 698, x2: 348, y2: 714 },
+          { x1: 348, y1: 714, x2: 362, y2: 728 },
+          { x1: 362, y1: 728, x2: 378, y2: 738 },
+          { x1: 378, y1: 738, x2: 392, y2: 744 }
         ]
       }
     };
@@ -957,14 +963,14 @@
     // Left side rail from arch end down
     var archLeftX = archCx - archRx;
     var archLeftY = archCy;
-    walls.push({ x1: archLeftX, y1: archLeftY, x2: 36, y2: archLeftY, kind: 'rail', cyan: true });
+    // orbit1: leftover (40,76)->(36,76) L-corner deleted. Cabinet vertical remains.
     walls.push({ x1: 36, y1: archLeftY, x2: 36, y2: TABLE_H - 80, kind: 'rail', cyan: true });
 
     // Outer right (cabinet edge past launch lane)
     walls.push({ x1: TABLE_W - 36, y1: LAUNCH_WIRE_Y1, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' });
 
     // Launch lane
-    walls.push({ x1: LAUNCH_LANE_LEFT, y1: LAUNCH_WIRE_Y1, x2: LAUNCH_WIRE_X2, y2: LAUNCH_WIRE_Y2, wireform: true, kind: 'lane' });
+    // orbit1: leftover wireform beak (392,103)->(360,80) deleted. Vertical shooter wall stays.
     walls.push({ x1: LAUNCH_LANE_LEFT, y1: LAUNCH_WIRE_Y1, x2: LAUNCH_LANE_LEFT, y2: TABLE_H - 80, rail: true, kind: 'lane' });
 
     // Merge lane (wireform + copper hull) replaces the old upper-right rail bulge.
@@ -1017,11 +1023,13 @@
 
     // Chrome safety-cage bars — short steel outlane rails just above the
     // flipper row, framing the timed cyan boingers (VOID PULSE annotation).
+    // orbit1: cages still guard the lower boingers, but no longer form a V
+    // with the sausage tips (gap >=28 or flush).
     walls.push({
       x1: 40,
-      y1: 714,
+      y1: 736,
       x2: 86,
-      y2: 720,
+      y2: 738,
       kind: 'cage',
       id: 'cage-l',
       chrome: true
@@ -1029,8 +1037,8 @@
     walls.push({
       x1: 302,
       y1: 716,
-      x2: 346,
-      y2: 722,
+      x2: 318,
+      y2: 718,
       kind: 'cage',
       id: 'cage-r',
       chrome: true
@@ -1951,7 +1959,14 @@
 
   // cyan1: right top cusp unstick box (playfield side of launch rail)
   function sausageCuspBox(ball) {
-    return !!(ball && ball.x >= 360 && ball.x <= 400 && ball.y >= 520 && ball.y <= 560);
+    if (!ball) return false;
+    // cyan1 leftover: right top cusp (playfield side of launch rail)
+    if (ball.x >= 360 && ball.x <= 400 && ball.y >= 520 && ball.y <= 560) return true;
+    // orbit1: right sausage tip vs cage / inlane join
+    if (ball.x >= 328 && ball.x <= 372 && ball.y >= 698 && ball.y <= 740) return true;
+    // orbit1: left sausage tip vs cage / post
+    if (ball.x >= 36 && ball.x <= 80 && ball.y >= 688 && ball.y <= 740) return true;
+    return false;
   }
 
   function sausageFarmPocket(state, ball) {
@@ -2044,19 +2059,22 @@
   }
 
   function peelSausageCusp(ball) {
-    var nx = -0.78;
-    var ny = 0.62;
-    var peel = 7;
+    var r = ball.radius || BALL_RADIUS;
+    var leftTip = ball.x < 200;
+    var nx = leftTip ? 0.84 : -0.84;
+    var ny = 0.36;
+    var peel = 8;
     ball.x += nx * peel;
     ball.y += ny * peel;
-    if (ball.x >= LAUNCH_LANE_LEFT) ball.x = LAUNCH_LANE_LEFT - (ball.radius || BALL_RADIUS) - 4;
+    if (ball.x >= LAUNCH_LANE_LEFT) ball.x = LAUNCH_LANE_LEFT - r - 4;
+    if (ball.x <= 36 + r) ball.x = 36 + r + 4;
     var sp = vecLen(ball.vx, ball.vy);
-    var keep = Math.max(sp, 140);
-    ball.vx = ball.vx * 0.22 + nx * keep * 0.78;
-    ball.vy = ball.vy * 0.22 + ny * keep * 0.78;
-    if (vecLen(ball.vx, ball.vy) < 90) {
-      ball.vx += nx * 90;
-      ball.vy += ny * 90;
+    var keep = Math.max(sp, 160);
+    ball.vx = ball.vx * 0.18 + nx * keep * 0.82;
+    ball.vy = ball.vy * 0.18 + ny * keep * 0.82;
+    if (vecLen(ball.vx, ball.vy) < 110) {
+      ball.vx += nx * 110;
+      ball.vy += ny * 110;
     }
   }
 
@@ -2073,16 +2091,16 @@
       return;
     }
     var sp = vecLen(ball.vx, ball.vy);
-    var sittingStill = sp < 55;
-    if (ball._sausageNearX != null && Math.abs(ball.x - ball._sausageNearX) < 12 && Math.abs(ball.y - ball._sausageNearY) < 12) {
+    var sittingStill = sp < 90;
+    if (ball._sausageNearX != null && Math.abs(ball.x - ball._sausageNearX) < 14 && Math.abs(ball.y - ball._sausageNearY) < 14) {
       ball._sausageStuck = (ball._sausageStuck || 0) + 1;
     } else {
       ball._sausageStuck = 1;
       ball._sausageNearX = ball.x;
       ball._sausageNearY = ball.y;
     }
-    var stuckLong = (ball._sausageStuck || 0) >= 8;
-    if (sp >= 120 && !stuckLong) return;
+    var stuckLong = (ball._sausageStuck || 0) >= 3;
+    if (sp >= 160 && !stuckLong) return;
     if (!sittingStill && !stuckLong) return;
     peelSausageCusp(ball);
   }
@@ -2181,7 +2199,7 @@
     if (skipBallAssist(state, state.ball)) return;
     if (!state.sideRoutes || !state.ball.inPlay || !state.exitedLaunchLane) return;
     var ball = state.ball;
-    if (state.launchRailT != null && (ball.x < 310 || (ball.y > 140 && ball.x < 350))) state.launchRailT = null;
+    if (state.launchRailT != null && (ball.x < 310 || ball.y > 140)) state.launchRailT = null;
     var left = state.sideRoutes.leftRamp;
     var right = state.sideRoutes.rightRamp;
     rejectPlayfieldTunnelIn(state);

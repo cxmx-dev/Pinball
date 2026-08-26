@@ -1635,8 +1635,8 @@ console.log('All tests passed.');
   assert(!fillerWalls.some(function (w) { return w.x1 === 348 && w.y1 === 580 && w.x2 === 338 && w.y2 === 622; }), 'right climb rubber is sling not filler');
   assert(!fillerWalls.some(function (w) { return w.x1 === 338 && w.y1 === 622 && w.x2 === 334 && w.y2 === 662; }), 'right peak rubber is sling not filler');
   assert(fillerWalls.some(function (w) { return w.x1 === 334 && w.y1 === 662 && w.x2 === 340 && w.y2 === 698; }), 'right downhill after peak stays filler');
-  assert(fillerWalls.some(function (w) { return w.x1 === 58 && w.y1 === 694 && w.x2 === 42 && w.y2 === 706; }), 'left bottom inner stays filler');
-  assert(fillerWalls.some(function (w) { return w.x1 === 354 && w.y1 === 722 && w.x2 === 372 && w.y2 === 736; }), 'right bottom inner stays filler');
+  assert(fillerWalls.some(function (w) { return w.x1 === 60 && w.y1 === 692 && w.x2 === 48 && w.y2 === 702; }), 'left bottom inner stays filler');
+  assert(fillerWalls.some(function (w) { return w.x1 === 348 && w.y1 === 714 && w.x2 === 362 && w.y2 === 728; }), 'right bottom inner stays filler');
   var midU = fillerWalls.some(function (w) {
     var y = Math.min(w.y1, w.y2);
     return y >= 170 && y <= 330;
@@ -2612,4 +2612,196 @@ console.log('All tests passed.');
 
   assert(sim.HABITRAIL_ASSIST === 0, 'HABITRAIL_ASSIST stays 0');
   console.log('PASS: wide1 triangle solid + cyan climb (w278=' + w278.toFixed(1) + ' bend=' + bendMin.toFixed(1) + ' shot y=' + s1000.y.toFixed(1) + ')');
+})();
+
+(function testOrbit1TwoWayAndSausageTips() {
+  var state = fresh();
+  var left = state.sideRoutes.leftRamp;
+  var right = state.sideRoutes.rightRamp;
+  var inner = right.mergeInner || [];
+  var outer = right.mergeOuter || [];
+  assert(inner.some(function (s) { return s.x1 === 390 && s.y1 === 88 && s.x2 === 378 && s.y2 === 80; }), 'merge3 inner kept');
+  assert(!left.segments.some(function (s) {
+    return (s.x1 === 42 && s.y1 === 146) || (s.x2 === 42 && s.y2 === 146) || (s.x1 === 62 && s.y1 === 107);
+  }), 'leftover top-left (42,146)/(62,107) cusp deleted');
+  assert(!outer.some(function (s) {
+    return (s.x1 === 438 && s.y1 === 86) || (s.x2 === 430 && s.y2 === 76 && s.x1 === 438);
+  }), 'leftover outer V (438,86)->(430,76) deleted');
+  var wireBeak = (state.walls || []).some(function (w) {
+    return w.kind === 'lane' && w.wireform && Math.abs(w.x2 - 360) < 1 && Math.abs(w.y2 - 80) < 1;
+  });
+  assert(!wireBeak, 'leftover wireform beak (392,103)->(360,80) deleted');
+  var lCorner = (state.walls || []).some(function (w) {
+    return Math.abs(w.x1 - 40) < 1 && Math.abs(w.y1 - 76) < 1 && Math.abs(w.x2 - 36) < 1 && Math.abs(w.y2 - 76) < 1;
+  });
+  assert(!lCorner, 'leftover (40,76)->(36,76) L-corner deleted');
+
+  function channelWidthAt(x) {
+    function yOn(segs, atX) {
+      var k, best = null;
+      for (k = 0; k < segs.length; k++) {
+        var s = segs[k];
+        var lo = Math.min(s.x1, s.x2), hi = Math.max(s.x1, s.x2);
+        if (atX < lo - 0.01 || atX > hi + 0.01) continue;
+        var t = (hi === lo) ? 0 : (atX - s.x1) / ((s.x2 - s.x1) || 1e-6);
+        best = s.y1 + t * (s.y2 - s.y1);
+      }
+      return best;
+    }
+    var yo = yOn(outer, x);
+    var yi = yOn(inner, x);
+    if (yo == null || yi == null) return 999;
+    return Math.abs(yi - yo);
+  }
+  var w378 = channelWidthAt(378);
+  var w362 = channelWidthAt(362);
+  var w344 = channelWidthAt(344);
+  assert(w378 >= 44, 'merge channel at x=378 >= 44 (w=' + w378.toFixed(1) + ')');
+  assert(w362 >= 44, 'merge channel at x=362 >= 44 (w=' + w362.toFixed(1) + ')');
+  assert(w344 >= 44, 'merge channel at x=344 >= 44 (w=' + w344.toFixed(1) + ')');
+
+  function xAtY(segs, y) {
+    var i;
+    for (i = 0; i < segs.length; i++) {
+      var a = segs[i];
+      var minY = Math.min(a.y1, a.y2), maxY = Math.max(a.y1, a.y2);
+      if (minY <= y && maxY >= y && maxY !== minY) {
+        var t = (y - a.y1) / (a.y2 - a.y1);
+        return a.x1 + (a.x2 - a.x1) * t;
+      }
+    }
+    return null;
+  }
+  function horizWidth(y) {
+    var xo = xAtY(left.segments, y);
+    var xi = xAtY(left.guides, y);
+    assert(xo != null && xi != null, 'left channel exists at y=' + y);
+    return Math.abs(xi - xo);
+  }
+  assert(horizWidth(146) >= 44, 'left bend y=146 >= 44');
+  assert(horizWidth(118) >= 44, 'left bend y=118 >= 44');
+  assert(left.entry.x === 80 && left.entry.y === 337 && left.entry.w === 44, 'wide1 entry kept');
+
+  function runPlunge(power) {
+    var st = fresh();
+    sim.launchBall(st, power);
+    var inU = false, left200 = false, dropped = false, lodged = false;
+    var n;
+    for (n = 0; n < 180; n++) {
+      sim.tick(st, 1 / 60);
+      var b = st.ball;
+      if (b.y < 95 && b.x > 140 && b.x < 360) inU = true;
+      if (inU && b.x < 200 && b.y < 160) left200 = true;
+      if (!inU && b.x > 350 && b.x < 410 && b.y > 140 && b.y < 280) dropped = true;
+      if (n > 24 && Math.hypot(b.vx, b.vy) < 25 && b.y < 160) lodged = true;
+      if (!b.inPlay && n > 12) break;
+    }
+    return { inU: inU, left200: left200, dropped: dropped, lodged: lodged, x: st.ball.x, y: st.ball.y, remaining: st.ballsRemaining };
+  }
+  var p800 = runPlunge(800);
+  assert(!p800.dropped && p800.inU, '800 still rides merge floor into U');
+  var p1400 = runPlunge(1400);
+  assert(!p1400.dropped && p1400.inU, '1400 still rides merge floor into U');
+  var p1000 = runPlunge(1000);
+  assert(p1000.inU && p1000.left200 && !p1000.lodged, '1000 plunge rides copper then cyan U and exits left of x=200');
+
+  function shootLeft(speed) {
+    var st = fresh();
+    st.ball.inPlay = true;
+    st.exitedLaunchLane = true;
+    st.phase = 'playing';
+    st.ball.x = 80;
+    st.ball.y = 330;
+    st.ball.vx = -30;
+    st.ball.vy = -speed;
+    st.activeHabitrail = 'ramp-l';
+    var n, reversed = false, reached = false, minY = st.ball.y;
+    for (n = 0; n < 120; n++) {
+      var yb = st.ball.y;
+      sim.stepPhysics(st, 1 / 60);
+      if (st.ball.y < minY) minY = st.ball.y;
+      if (st.ball.x > 240 && st.ball.y < 110) reached = true;
+      if (yb < 140 && yb > 100 && st.ball.vy > 40 && st.ball.y > yb + 1) reversed = true;
+      if (reached) break;
+    }
+    return { reached: reached, reversed: reversed, x: st.ball.x, y: st.ball.y, minY: minY };
+  }
+  var climb = shootLeft(1000);
+  assert(climb.reached, '1000 left-ramp climb must reach x>240 on the U (x=' + climb.x.toFixed(1) + ' y=' + climb.y.toFixed(1) + ')');
+  assert(!climb.reversed, '1000 must not reverse at the old y~120 pinch');
+
+  function orbitLodge(place, dirLabel) {
+    var st = fresh();
+    place(st, 1000);
+    var n, stuck = 0, last = { x: st.ball.x, y: st.ball.y };
+    for (n = 0; n < 90; n++) {
+      sim.stepPhysics(st, 1 / 60);
+      var b = st.ball;
+      var nearInner = b.x > 350 && b.x < 400 && b.y > 60 && b.y < 100;
+      var nearOuter = b.x > 400 && b.x < 445 && b.y > 40 && b.y < 100;
+      var nearBend = b.x > 30 && b.x < 80 && b.y > 90 && b.y < 150;
+      if (nearInner || nearOuter || nearBend) {
+        if (Math.hypot(b.x - last.x, b.y - last.y) < 3 && Math.hypot(b.vx, b.vy) < 40) stuck++;
+        else stuck = 0;
+      } else stuck = 0;
+      last = { x: b.x, y: b.y };
+    }
+    assert(stuck < 12, dirLabel + ' orbit must not lodge at a former X (xy=' + st.ball.x.toFixed(1) + ',' + st.ball.y.toFixed(1) + ')');
+  }
+  orbitLodge(placeInLeftMouth, 'LTR');
+  orbitLodge(placeInRightMouth, 'RTL');
+
+  function freeTip(x, y, label) {
+    var st = fresh();
+    st.ball.inPlay = true;
+    st.exitedLaunchLane = true;
+    st.phase = 'playing';
+    st.ball.x = x;
+    st.ball.y = y;
+    st.ball.vx = 0;
+    st.ball.vy = 0;
+    var score0 = st.score;
+    var n, freeAt = null;
+    for (n = 0; n < 15; n++) {
+      sim.stepPhysics(st, 1 / 60);
+      var b = st.ball;
+      var sp = Math.hypot(b.vx, b.vy);
+      if (Math.hypot(b.x - x, b.y - y) > 16 && sp > 40 && !freeAt) freeAt = n;
+    }
+    assert(freeAt != null, label + ' tip pinch must be free in 0.25s (xy=' + st.ball.x.toFixed(1) + ',' + st.ball.y.toFixed(1) + ')');
+    assert(st.score - score0 < 200, label + ' no farm while wedged (dScore=' + (st.score - score0) + ')');
+    return st.ball;
+  }
+  freeTip(350, 716, 'right sausage');
+  freeTip(52, 708, 'left sausage');
+
+  var fillL = state.sideRoutes.leftFiller;
+  var fillR = state.sideRoutes.rightFiller;
+  assert(fillL.segments[0].x1 === 36, 'left sausage still flush on x=36');
+  assert(fillR.segments[0].x1 === 392, 'right sausage still flush on LAUNCH_LANE_LEFT');
+  assert(fillL.guides.some(function (s) { return s.x2 === 80 && s.y2 === 652; }), 'left sausage peak kept');
+  assert(fillR.guides.some(function (s) { return s.x2 === 334 && s.y2 === 662; }), 'right sausage peak kept');
+
+  var cages = (state.walls || []).filter(function (w) { return w.kind === 'cage'; });
+  assert.strictEqual(cages.length, 2, 'two chrome cage bars kept');
+  var cageR = cages.find(function (w) { return w.id === 'cage-r'; });
+  assert(cageR && cageR.x2 <= 322, 'right cage shortened so it does not V the sausage (x2=' + (cageR && cageR.x2) + ')');
+
+  var oneWay = fresh();
+  oneWay.ball.inPlay = true;
+  oneWay.exitedLaunchLane = true;
+  oneWay.phase = 'playing';
+  oneWay.ball.x = 380;
+  oneWay.ball.y = 800;
+  oneWay.ball.vx = 180;
+  oneWay.ball.vy = 20;
+  var k;
+  for (k = 0; k < 24; k++) sim.stepPhysics(oneWay, 1 / 60);
+  assert(oneWay.ball.x < sim.LAUNCH_LANE_LEFT, 'one-way shooter still holds (x=' + oneWay.ball.x.toFixed(1) + ')');
+
+  assert(sim.GRAVITY === 1400, 'GRAVITY stays 1400');
+  assert(sim.TABLE_PITCH_DEG === 7.0, 'TABLE_PITCH_DEG stays 7');
+  assert(sim.HABITRAIL_ASSIST === 0 && sim.HABITRAIL_MIN_SPEED === 0, 'no habitrail assist');
+  assert(sim.BALL_RADIUS === 12, 'BALL_RADIUS stays 12');
+  console.log('PASS: orbit1 two-way + sausage tips (800 U y=' + p800.y.toFixed(1) + ' climb x=' + climb.x.toFixed(1) + ' w378=' + w378.toFixed(1) + ')');
 })();
