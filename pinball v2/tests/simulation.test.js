@@ -2017,7 +2017,7 @@ console.log('All tests passed.');
   var state = fresh();
   var rubber = state.bumpers.find(function (b) { return b.id === 'rubber-mid' && b.rubber; });
   assert(rubber, 'rubber-mid bumper exists');
-  assert(Math.abs(rubber.x - 300) < 14 && Math.abs(rubber.y - 452) < 16, 'rubber bumper below triangle (300,452), got ' + rubber.x + ',' + rubber.y);
+  assert(Math.abs(rubber.x - 300) < 14 && Math.abs(rubber.y - 478) < 16, 'rubber bumper below triangle (300,478), got ' + rubber.x + ',' + rubber.y);
   assert(rubber.y > 418, 'rubber-mid y below triangle bottom ~418, got y=' + rubber.y);
   assert.strictEqual(rubber.radius, 18);
   assert.strictEqual(rubber.score, 500);
@@ -2049,7 +2049,7 @@ console.log('All tests passed.');
   var rubber = state.bumpers.find(function (b) { return b.id === 'rubber-mid' && b.rubber; });
   assert(rubber, 'rubber-mid still exists (moved, not deleted)');
   assert(rubber.y > 418, 'rubber-mid y below triangle, got ' + rubber.y);
-  assert(Math.abs(rubber.x - 300) < 14 && Math.abs(rubber.y - 452) < 16, 'rubber-mid below triangle (300,452), got ' + rubber.x + ',' + rubber.y);
+  assert(Math.abs(rubber.x - 300) < 14 && Math.abs(rubber.y - 478) < 16, 'rubber-mid below triangle (300,478), got ' + rubber.x + ',' + rubber.y);
   var wing300 = state.bumpers.find(function (b) { return b.score === 300 && b.x > 250; });
   assert(wing300, 'right 300 exists');
   var gap300 = Math.hypot(rubber.x - wing300.x, rubber.y - wing300.y) - rubber.radius - wing300.radius;
@@ -2123,7 +2123,7 @@ console.log('All tests passed.');
   var rubber = state.bumpers.find(function (b) { return b.id === 'rubber-mid' && b.rubber; });
   assert(rubber, 'rubber-mid exists');
   assert(rubber.y > 418, 'rubber-mid below triangle, y=' + rubber.y);
-  assert(Math.abs(rubber.x - 300) < 14 && Math.abs(rubber.y - 452) < 16, '500 at ~300,452, got ' + rubber.x + ',' + rubber.y);
+  assert(Math.abs(rubber.x - 300) < 14 && Math.abs(rubber.y - 478) < 16, '500 at ~300,478, got ' + rubber.x + ',' + rubber.y);
   state.ball.inPlay = true;
   state.exitedLaunchLane = true;
   state.phase = 'playing';
@@ -2245,7 +2245,7 @@ console.log('All tests passed.');
   assert(sim.GRAVITY === 1400, 'GRAVITY stays 1400');
   assert(sim.HABITRAIL_ASSIST === 0, 'HABITRAIL_ASSIST stays 0');
   var rubber = fresh().bumpers.find(function (b) { return b.id === 'rubber-mid'; });
-  assert(rubber && rubber.x === 300 && rubber.y === 452, '500 rubber stays at 300,452');
+  assert(rubber && rubber.x === 300 && rubber.y === 478, '500 rubber stays at 300,478');
   console.log('PASS: cyan sausage solid + cusp free (cusp x=' + cusp.x.toFixed(1) + ' y=' + cusp.y.toFixed(1) + ')');
 })();
 (function testOneWayShooterAndSausageEject() {
@@ -2289,7 +2289,84 @@ console.log('All tests passed.');
   assert(sim.GRAVITY === 1400, 'GRAVITY stays 1400');
   assert(sim.HABITRAIL_ASSIST === 0, 'HABITRAIL_ASSIST stays 0');
   var rubber = fresh().bumpers.find(function (b) { return b.id === 'rubber-mid'; });
-  assert(rubber && rubber.x === 300 && rubber.y === 452, '500 rubber stays at 300,452');
+  assert(rubber && rubber.x === 300 && rubber.y === 478, '500 rubber stays at 300,478');
   console.log('PASS: one-way shooter + sausage eject (merge x=' + merge.x.toFixed(1) + ' y=' + merge.y.toFixed(1) + ')');
 })();
 
+
+(function testMerge2GapAndDrainSkip() {
+  function runPlunge(power) {
+    var state = fresh();
+    sim.launchBall(state, power);
+    var inU = false;
+    var fellGap = false;
+    var i;
+    for (i = 0; i < 200; i++) {
+      sim.tick(state, 1 / 60);
+      var b = state.ball;
+      if (b.y < 90 && b.x > 140 && b.x < 360) inU = true;
+      if (!inU && b.y > 200 && b.x > 350 && b.x < sim.LAUNCH_LANE_LEFT) fellGap = true;
+      if (state.exitedLaunchLane && b.y > 420) break;
+      if (!b.inPlay && i > 12) break;
+    }
+    return { inU: inU, fellGap: fellGap, x: state.ball.x, y: state.ball.y, remaining: state.ballsRemaining };
+  }
+  var a = runPlunge(800);
+  assert(!a.fellGap, '800 must not fall through the merge gap to y>200 at x>350 (x=' + a.x.toFixed(1) + ' y=' + a.y.toFixed(1) + ')');
+  assert(a.inU, '800 must ride the copper merge into the U');
+  var b = runPlunge(1400);
+  assert(!b.fellGap, '1400 must not fall through the merge gap to y>200 at x>350 (x=' + b.x.toFixed(1) + ' y=' + b.y.toFixed(1) + ')');
+  assert(b.inU, '1400 must ride the copper merge into the U');
+  assert(a.remaining === 3 && b.remaining === 3, 'plunge must not drain');
+
+  var state = fresh();
+  var rubber = state.bumpers.find(function (x) { return x.id === 'rubber-mid'; });
+  var tri = state.pulseTriangle;
+  var bot = Math.max(tri.verts[0].y, tri.verts[1].y, tri.verts[2].y);
+  var gap = (rubber.y - rubber.radius) - bot;
+  assert(gap >= 28, 'triangle-to-500 gap must be >= 28 (gap=' + gap.toFixed(1) + ')');
+  state.ball.inPlay = true;
+  state.exitedLaunchLane = true;
+  state.phase = 'playing';
+  state.ball.x = 300;
+  state.ball.y = (bot + (rubber.y - rubber.radius)) * 0.5;
+  state.ball.vx = 0;
+  state.ball.vy = 0;
+  var k, sandwiched = true;
+  for (k = 0; k < 24; k++) {
+    sim.stepPhysics(state, 1 / 60);
+    var still = state.ball.y > bot - 2 && state.ball.y < rubber.y - rubber.radius + 4 && Math.abs(state.ball.x - 300) < 28;
+    if (!still) { sandwiched = false; break; }
+  }
+  assert(!sandwiched, 'ball between triangle and 500 must be free within 0.4s (x=' + state.ball.x.toFixed(1) + ' y=' + state.ball.y.toFixed(1) + ')');
+
+  function notTopLeft(ball) {
+    return !(ball.x < 120 && ball.y < 160);
+  }
+  var dead = fresh();
+  dead.ball.inPlay = false;
+  dead.exitedLaunchLane = true;
+  dead.phase = 'playing';
+  dead.ball.x = 240;
+  dead.ball.y = 820;
+  dead.ball.vx = 0;
+  dead.ball.vy = 80;
+  for (k = 0; k < 20; k++) sim.stepPhysics(dead, 1 / 60);
+  assert(notTopLeft(dead.ball), 'inPlay=false drain ball must not teleport to top-left (x=' + dead.ball.x.toFixed(1) + ' y=' + dead.ball.y.toFixed(1) + ')');
+  assert(Math.abs(dead.ball.x - 240) < 8, 'dead ball x stays parked');
+  var falling = fresh();
+  falling.ball.inPlay = true;
+  falling.exitedLaunchLane = true;
+  falling.phase = 'playing';
+  falling.ball.x = 240;
+  falling.ball.y = 800;
+  falling.ball.vx = 0;
+  falling.ball.vy = 60;
+  var fy0 = falling.ball.y;
+  for (k = 0; k < 12; k++) sim.stepPhysics(falling, 1 / 60);
+  assert(notTopLeft(falling.ball), 'y>780 draining ball must not teleport to top-left (x=' + falling.ball.x.toFixed(1) + ' y=' + falling.ball.y.toFixed(1) + ')');
+  assert(falling.ball.y >= fy0 - 2, 'draining ball must not be yeeted upward (y0=' + fy0 + ' y=' + falling.ball.y.toFixed(1) + ')');
+  assert(sim.GRAVITY === 1400, 'GRAVITY stays 1400');
+  assert(sim.HABITRAIL_ASSIST === 0, 'HABITRAIL_ASSIST stays 0');
+  console.log('PASS: merge2 gap closed, 500 spacing, drain skip (800 U y=' + a.y.toFixed(1) + ')');
+})();

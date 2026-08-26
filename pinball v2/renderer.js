@@ -935,6 +935,45 @@
     ctx.restore();
   }
 
+  function drawCopperMergeShoulder(ctx, ramp) {
+    if (!ramp || !ramp.mergeInner || !ramp.segments) return;
+    var outer = [];
+    var i;
+    for (i = 0; i < ramp.segments.length; i++) {
+      var s = ramp.segments[i];
+      if (Math.min(s.y1, s.y2) > 110 || Math.max(s.x1, s.x2) < 320) continue;
+      if (Math.max(s.y1, s.y2) > 120) break;
+      if (!outer.length) outer.push({ x: s.x1, y: s.y1 });
+      outer.push({ x: s.x2, y: s.y2 });
+    }
+    if (outer.length < 2) return;
+    outer.push({ x: 392, y: 103 });
+    var inner = [];
+    for (i = 0; i < ramp.mergeInner.length; i++) {
+      var m = ramp.mergeInner[i];
+      if (!inner.length) inner.push({ x: m.x1, y: m.y1 });
+      inner.push({ x: m.x2, y: m.y2 });
+      if (m.x2 <= 300) break;
+    }
+    if (inner.length < 2) return;
+    var hull = outer.concat(inner.slice().reverse());
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    strokeSmooth(ctx, hull, true);
+    var g = ctx.createLinearGradient(330, 34, 392, 103);
+    g.addColorStop(0, 'rgba(255, 184, 72, 1)');
+    g.addColorStop(0.45, 'rgba(214, 96, 24, 1)');
+    g.addColorStop(1, 'rgba(110, 40, 10, 1)');
+    ctx.fillStyle = g;
+    ctx.fill();
+    strokeSmooth(ctx, hull, false);
+    ctx.strokeStyle = 'rgba(255, 168, 64, 0.92)';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawMergeJoinRims(ctx, outerSegs, innerSegs) {
     // Rim-only continuous copper join (no filled splice / sausage over the brown lane).
     function joinPts(segs, dropUFloor) {
@@ -1017,6 +1056,7 @@
       // One copper hull from the cyan handoff down the right slide. Merge is rims only
       // (no second filled tube over the brown alley).
       drawPioneerRamp(ctx, ramp, pulse);
+      drawCopperMergeShoulder(ctx, ramp);
       if (ramp.mergeOuter && ramp.mergeInner) {
         drawMergeJoinRims(ctx, ramp.mergeOuter, ramp.mergeInner);
       }
