@@ -82,6 +82,9 @@
   var MIN_BUMPER_EXIT_SPEED = 185;
   var SAVER_BUMPER_EXIT_SPEED = 150;
   var BUMPER_UNSTICK_SPEED = 125;
+  var RUBBER_BUMPER_RESTITUTION = 1.32;
+  var RUBBER_BUMPER_EXIT_SPEED = 320;
+  var RUBBER_BUMPER_SCORE = 500;
   var MAX_TILT_WARNINGS = 2;
   var TILT_COOLDOWN = 0.55;
   var LAUNCH_LANE_X = TABLE_W - 62;
@@ -195,6 +198,21 @@
         saver: true,
         id: 'outlane-saver',
         hitCooldown: 0
+      },
+      {
+        // Powerful rubber-ring bumper above the cyan right sausage
+        x: 322,
+        y: 500,
+        radius: 18,
+        score: RUBBER_BUMPER_SCORE,
+        color: '#b31f3a',
+        kind: 'bumper',
+        id: 'rubber-mid',
+        rubber: true,
+        restitution: RUBBER_BUMPER_RESTITUTION,
+        exitSpeed: RUBBER_BUMPER_EXIT_SPEED,
+        hitCooldown: 0,
+        hit: false
       }
     ];
   }
@@ -1394,7 +1412,7 @@
     var i;
     var seen = false;
     for (i = 0; i < bumpers.length; i++) {
-      if (bumpers[i].saver) continue;
+      if (bumpers[i].saver || bumpers[i].rubber) continue;
       seen = true;
       if (!bumpers[i].hit) return false;
     }
@@ -2099,7 +2117,8 @@
         var sep = minDist + 2;
         ball.x = bumper.x + n.x * sep;
         ball.y = bumper.y + n.y * sep;
-        var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, BUMPER_RESTITUTION);
+        var rest = bumper.restitution != null ? bumper.restitution : BUMPER_RESTITUTION;
+        var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, rest);
         ball.vx = rv.vx;
         ball.vy = rv.vy;
         if (bumper.saver) {
@@ -2109,7 +2128,8 @@
           }
           applyBumperExitSpeed(ball, n.x, n.y, SAVER_BUMPER_EXIT_SPEED);
         } else {
-          applyBumperExitSpeed(ball, n.x, n.y, MIN_BUMPER_EXIT_SPEED);
+          var exitSp = bumper.exitSpeed != null ? bumper.exitSpeed : MIN_BUMPER_EXIT_SPEED;
+          applyBumperExitSpeed(ball, n.x, n.y, exitSp);
         }
         bumper.hitCooldown = HIT_COOLDOWN_BUMPER;
         if (!bumper.saver) {
@@ -3455,6 +3475,9 @@
     ARCH_RY: ARCH_RY,
     BUMPER_RESTITUTION: BUMPER_RESTITUTION,
     MIN_BUMPER_EXIT_SPEED: MIN_BUMPER_EXIT_SPEED,
+    RUBBER_BUMPER_RESTITUTION: RUBBER_BUMPER_RESTITUTION,
+    RUBBER_BUMPER_EXIT_SPEED: RUBBER_BUMPER_EXIT_SPEED,
+    RUBBER_BUMPER_SCORE: RUBBER_BUMPER_SCORE,
     HABITRAIL_RESTITUTION: HABITRAIL_RESTITUTION,
     HABITRAIL_MIN_SPEED: HABITRAIL_MIN_SPEED,
     BALL_DRAG_BASE: BALL_DRAG_BASE,

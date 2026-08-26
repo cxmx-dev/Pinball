@@ -1883,3 +1883,33 @@ console.log('All tests passed.');
   assert(sim.BOINGER_B_X === 282 && sim.BOINGER_B_Y === 718, 'B stays 282,718');
   console.log('PASS: copper merge pocket unsticks (x=' + state.ball.x.toFixed(1) + ' y=' + state.ball.y.toFixed(1) + ' sp=' + lastSp.toFixed(1) + ')');
 })();
+(function testRubberMidBumperPowerful() {
+  var state = fresh();
+  var rubber = state.bumpers.find(function (b) { return b.id === 'rubber-mid' && b.rubber; });
+  assert(rubber, 'rubber-mid bumper exists');
+  assert(Math.abs(rubber.x - 322) < 12 && Math.abs(rubber.y - 500) < 16, 'rubber bumper near (322,500), got ' + rubber.x + ',' + rubber.y);
+  assert.strictEqual(rubber.radius, 18);
+  assert.strictEqual(rubber.score, 500);
+  assert(rubber.restitution >= 1.32, 'rubber restitution');
+  assert(rubber.exitSpeed >= 320, 'rubber exitSpeed');
+  assert(rubber.restitution > sim.BUMPER_RESTITUTION, 'rubber rest > global 1.15');
+  assert(rubber.exitSpeed > sim.MIN_BUMPER_EXIT_SPEED, 'rubber exit > normal 180 min');
+  var apex = state.bumpers[0];
+  function kickSpeed(target) {
+    var st = fresh();
+    var b = st.bumpers.find(function (x) { return x.x === target.x && x.y === target.y; });
+    st.ball.inPlay = true;
+    st.exitedLaunchLane = true;
+    st.ball.x = b.x;
+    st.ball.y = b.y - b.radius - st.ball.radius + 2;
+    st.ball.vx = 0;
+    st.ball.vy = 80;
+    sim.stepPhysics(st, 0.016);
+    return Math.hypot(st.ball.vx, st.ball.vy);
+  }
+  var rubberKick = kickSpeed(rubber);
+  var apexKick = kickSpeed(apex);
+  assert(rubberKick > apexKick, 'rubber kicks harder than 180 (rubber=' + rubberKick.toFixed(1) + ' apex=' + apexKick.toFixed(1) + ')');
+  assert(rubberKick >= 300, 'rubber min exit ~320, got ' + rubberKick.toFixed(1));
+  console.log('PASS: rubber-mid bumper at ' + rubber.x + ',' + rubber.y + ' r=' + rubber.radius + ' kicks harder than 180 (' + rubberKick.toFixed(1) + ' > ' + apexKick.toFixed(1) + ')');
+})();

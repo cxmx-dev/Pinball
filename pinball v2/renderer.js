@@ -1005,9 +1005,58 @@
     });
   }
 
+  function drawRubberBumper(ctx, bumper, pulse, idx) {
+    var glow = 0.55 + 0.45 * Math.sin(pulse * 4 + idx * 1.1);
+    var hot = bumper.hitCooldown && bumper.hitCooldown > 0.08;
+    var r = bumper.radius;
+    ctx.save();
+    var cap = ctx.createRadialGradient(
+      bumper.x - r * 0.28,
+      bumper.y - r * 0.32,
+      r * 0.08,
+      bumper.x,
+      bumper.y,
+      r * 0.72
+    );
+    cap.addColorStop(0, '#f4f1ea');
+    cap.addColorStop(0.35, '#c8c4bb');
+    cap.addColorStop(0.75, '#8a8680');
+    cap.addColorStop(1, '#5c5854');
+    ctx.beginPath();
+    ctx.arc(bumper.x, bumper.y, r * 0.72, 0, Math.PI * 2);
+    ctx.fillStyle = cap;
+    ctx.fill();
+    ctx.shadowColor = hot ? 'rgba(255,70,110,0.95)' : 'rgba(180,30,55,0.55)';
+    ctx.shadowBlur = hot ? 22 : 8 + glow * 8;
+    ctx.strokeStyle = hot ? '#ff6a8a' : '#b31f3a';
+    ctx.lineWidth = Math.max(3.8, r * 0.28);
+    ctx.beginPath();
+    ctx.arc(bumper.x, bumper.y, r * 0.86, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = hot ? 'rgba(255,180,200,0.85)' : 'rgba(80,10,20,0.7)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(bumper.x, bumper.y, r * 0.98, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(bumper.x, bumper.y, r * 0.74, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = hot ? 'rgba(255,240,244,0.95)' : 'rgba(40,12,16,0.82)';
+    ctx.font = 'bold 9px Orbitron, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(bumper.score), bumper.x, bumper.y);
+    ctx.restore();
+  }
+
   function drawBumpers(ctx, state, pulse) {
     var Assets = getAssets();
     state.bumpers.forEach(function (bumper, idx) {
+      if (bumper.rubber) {
+        drawRubberBumper(ctx, bumper, pulse, idx);
+        return;
+      }
       var glow = 0.6 + 0.4 * Math.sin(pulse * 3 + idx * 1.2);
       var usedSprite = false;
       ctx.save();
