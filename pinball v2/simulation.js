@@ -202,7 +202,7 @@
       {
         // Powerful rubber-ring bumper below the pulse triangle, toward playfield center
         x: 300,
-        y: 452,
+        y: 478,
         radius: 18,
         score: RUBBER_BUMPER_SCORE,
         color: '#b31f3a',
@@ -349,7 +349,7 @@
         var kick = clamp(incident * SLING_KICK_GAIN, SLING_KICK_MIN, SLING_KICK_MAX);
         ball.vx += s.nx * kick;
         ball.vy += s.ny * kick - kick * 0.32;
-        if (s.cooldown <= 0) {
+        if (s.cooldown <= 0 && !lodgeFarming(state, ball)) {
           awardScore(state, s.score, 'tri-rubber', s.theme, (s.x1 + s.x2) * 0.5, (s.y1 + s.y2) * 0.5);
           s.cooldown = HIT_COOLDOWN_SLING;
           s.flash = 0.38;
@@ -441,11 +441,11 @@
           { x1: 100, y1: 342, x2: 76, y2: 276 },
           { x1: 76, y1: 276, x2: 66, y2: 200 },
           { x1: 66, y1: 200, x2: 74, y2: 146 },
-          { x1: 74, y1: 146, x2: 92, y2: 120 },
-          { x1: 92, y1: 120, x2: 106, y2: 102 },
-          { x1: 106, y1: 102, x2: 122, y2: 88 },
-          { x1: 122, y1: 88, x2: 146, y2: 77 },
-          { x1: 146, y1: 77, x2: 168, y2: 76 },
+          { x1: 74, y1: 146, x2: 96, y2: 124 },
+          { x1: 96, y1: 124, x2: 112, y2: 108 },
+          { x1: 112, y1: 108, x2: 128, y2: 94 },
+          { x1: 128, y1: 94, x2: 150, y2: 82 },
+          { x1: 150, y1: 82, x2: 168, y2: 76 },
           { x1: 168, y1: 76, x2: 200, y2: 72 },
           { x1: 200, y1: 72, x2: 240, y2: 72 },
           { x1: 240, y1: 72, x2: 280, y2: 72 },
@@ -616,6 +616,7 @@
     }
     pushMerge(routes.rightRamp.mergeOuter, 'habitrail');
     pushMerge(routes.rightRamp.mergeInner, 'habitrail');
+    walls.push({ x1: 390, y1: 90, x2: 392, y2: 103, kind: 'habitrail', merge: true });
     function pushFiller(fill) {
       if (!fill) return;
       pushPath(fill.segments, 'filler');
@@ -958,8 +959,8 @@
     // Left side rail from arch end down
     var archLeftX = archCx - archRx;
     var archLeftY = archCy;
-    walls.push({ x1: archLeftX, y1: archLeftY, x2: 36, y2: 110, kind: 'rail', cyan: true });
-    walls.push({ x1: 36, y1: 110, x2: 36, y2: TABLE_H - 80, kind: 'rail', cyan: true });
+    walls.push({ x1: archLeftX, y1: archLeftY, x2: 36, y2: archLeftY, kind: 'rail', cyan: true });
+    walls.push({ x1: 36, y1: archLeftY, x2: 36, y2: TABLE_H - 80, kind: 'rail', cyan: true });
 
     // Outer right (cabinet edge past launch lane)
     walls.push({ x1: TABLE_W - 36, y1: LAUNCH_WIRE_Y1, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' });
@@ -1380,6 +1381,7 @@
 
   function ejectFromShooterLaneApron(state) {
     var ball = state.ball;
+    if (skipBallAssist(state, state.ball)) return;
     if (ball.y < LAUNCH_WIRE_Y1 + 48 || state.skillShotWindow) return;
     var r = ball.radius;
     ball.x = LAUNCH_LANE_LEFT - r - 2;
@@ -1723,6 +1725,59 @@
   }
 
 
+  function skipBallAssist(state, ball) {
+    var b = ball || (state && state.ball);
+    if (!b) return true;
+    if (!b.inPlay) return true;
+    if (b.y > FLIPPER_ROW_Y + 20) return true;
+    if (b.y > 780) return true;
+    return false;
+  }
+
+  function triangle500Wedged(state, ball) {
+    var tri = state && state.pulseTriangle;
+    var rubber = copperRubberMid(state);
+    if (!tri || !tri.verts || !rubber || !ball) return false;
+    var bot = Math.max(tri.verts[0].y, tri.verts[1].y, tri.verts[2].y);
+    var left = Math.min(tri.verts[0].x, tri.verts[1].x, tri.verts[2].x);
+    var right = Math.max(tri.verts[0].x, tri.verts[1].x, tri.verts[2].x);
+    var inX = ball.x > left - 8 && ball.x < right + 8;
+    var nearTri = ball.y - (ball.radius || BALL_RADIUS) < bot + 6;
+    var nearRub = vecLen(ball.x - rubber.x, ball.y - rubber.y) < rubber.radius + (ball.radius || BALL_RADIUS) + 6;
+    var inSlot = ball.y > bot - 4 && ball.y < rubber.y + 4;
+    return !!(inX && inSlot && nearTri && nearRub);
+  }
+
+  function lodgeFarming(state, ball) {
+    if (!ball) return false;
+    if (sausageFarmPocket(state, ball)) return true;
+    if ((ball._copperStuck || 0) >= 4) return true;
+    if ((ball._sausageStuck || 0) >= 4) return true;
+    if ((ball._triPinchStuck || 0) >= 3) return true;
+    if ((ball._topLeftStuck || 0) >= 4) return true;
+    if (triangle500Wedged(state, ball)) return true;
+    if (ball.x < 120 && ball.y < 130 && ball.y > 28 && vecLen(ball.vx, ball.vy) < 80) return true;
+    return false;
+  }
+
+  function unstickTriangle500(state) {
+    var ball = state && state.ball;
+    if (skipBallAssist(state, ball)) return;
+    if (!triangle500Wedged(state, ball)) {
+      if (ball) ball._triPinchStuck = 0;
+      return;
+    }
+    ball._triPinchStuck = (ball._triPinchStuck || 0) + 1;
+    if (ball._triPinchStuck < 4 && vecLen(ball.vx, ball.vy) > 80) return;
+    var rubber = copperRubberMid(state);
+    var side = ball.x >= rubber.x ? 1 : -1;
+    ball.x = rubber.x + side * (rubber.radius + (ball.radius || BALL_RADIUS) + 10);
+    ball.y = rubber.y + 6;
+    ball.vx = side * 180;
+    ball.vy = 140;
+  }
+
+
   function nearestPointOnSegments(px, py, segs) {
     if (!segs || !segs.length) return null;
     var best = null;
@@ -1874,6 +1929,7 @@
   }
 
   function ejectSausageInteriors(state) {
+    if (skipBallAssist(state, state.ball)) return;
     var routes = state && state.sideRoutes;
     if (!routes) return;
     var balls = allLiveBalls(state);
@@ -1911,6 +1967,7 @@
   }
 
   function unstickOneSausageCusp(state, ball) {
+    if (skipBallAssist(state, ball)) return;
     if (!ball || !ball.inPlay) return;
     if (state.launchRailT != null && ball === state.ball) return;
     if (ball.x >= LAUNCH_LANE_LEFT) {
@@ -1982,6 +2039,7 @@
   /** Playfield ball that tunneled up through the inner U — bounce it back down. */
   function rejectPlayfieldTunnelIn(state) {
     var ball = state.ball;
+    if (skipBallAssist(state, state.ball)) return;
     if (!ball || state.activeHabitrail) return;
     if (ball.y < 24 || ball.y > 140) return;
     if (ball.vy >= -20) return;
@@ -2001,6 +2059,7 @@
    */
   function containHorseshoeInner(state) {
     var ball = state.ball;
+    if (skipBallAssist(state, state.ball)) return;
     if (!ball || !state.activeHabitrail) return;
     if (ball.y < 24 || ball.y > 140) return;
     if (ball.x < 88 || ball.x > 368) return;
@@ -2025,6 +2084,7 @@
 
   /** Leak-contain only. No snap-to-path, no constant-speed conveyor. */
   function assistHabitrails(state, dt) {
+    if (skipBallAssist(state, state.ball)) return;
     if (!state.sideRoutes || !state.ball.inPlay || !state.exitedLaunchLane) return;
     var ball = state.ball;
     var left = state.sideRoutes.leftRamp;
@@ -2540,7 +2600,7 @@
           ball.vx -= kick;
           ball.vy -= up;
         }
-        if (sling.cooldown <= 0 && !sausageFarmPocket(state, ball)) {
+        if (sling.cooldown <= 0 && !lodgeFarming(state, ball)) {
           awardScore(state, sling.score, 'sling', sling.side, (sling.x1 + sling.x2) * 0.5, (sling.y1 + sling.y2) * 0.5);
           sling.cooldown = HIT_COOLDOWN_SLING;
           scored = true;
@@ -2594,7 +2654,9 @@
           }
         }
         if (!sausageFarmPocket(state, ball)) {
+          if (!lodgeFarming(state, ball)) {
           awardScore(state, bumper.score, 'bumper', String(idx), bumper.x, bumper.y);
+        }
         }
         state.lastHitBumper = idx;
         if (state.jackpotLit) {
@@ -2607,6 +2669,7 @@
 
   function unstickFromBumpers(state) {
     var ball = state.ball;
+    if (skipBallAssist(state, state.ball)) return;
     var speed = ballSpeed(ball);
     if (speed > BUMPER_UNSTICK_SPEED) return;
     state.bumpers.forEach(function (bumper) {
@@ -2687,6 +2750,7 @@
   }
 
   function unstickOneCopper(state, ball) {
+    if (skipBallAssist(state, ball)) return;
     if (!ball || !ball.inPlay) return;
     if (state.launchRailT != null && ball === state.ball) return;
     var top = copperLodgeBox(ball);
@@ -2774,6 +2838,7 @@
   }
   function unstickFromCorners(state) {
     var ball = state.ball;
+    if (skipBallAssist(state, state.ball)) return;
     if (!ball.inPlay || !state.exitedLaunchLane) return;
     var speed = ballSpeed(ball);
     var r = ball.radius;
@@ -2810,13 +2875,24 @@
     if (speed > 70) return;
 
     // Top-left pocket: near left rail + upper third
-    var nearLeft = ball.x - r < 36 + 28;
-    if (nearLeft && speed <= 70) {
-      ball.x = Math.max(ball.x, 36 + r + 14);
-      ball.y = Math.max(ball.y, 60 + r + 8);
-      ball.vx = Math.max(ball.vx, 160);
-      ball.vy = Math.min(ball.vy, 40); // drop back into play, not into ceiling
-      return;
+    var topLeftCusp = ball.x < 120 && ball.y < 130 && ball.y > 28;
+    if (topLeftCusp && speed <= 90) {
+      if (ball._topLeftNearX != null && Math.abs(ball.x - ball._topLeftNearX) < 14 && Math.abs(ball.y - ball._topLeftNearY) < 14) {
+        ball._topLeftStuck = (ball._topLeftStuck || 0) + 1;
+      } else {
+        ball._topLeftStuck = 1;
+        ball._topLeftNearX = ball.x;
+        ball._topLeftNearY = ball.y;
+      }
+      if ((ball._topLeftStuck || 0) >= 6 || speed <= 40) {
+        ball.x = Math.max(ball.x + 18, 150);
+        ball.y = Math.max(ball.y + 16, 140);
+        ball.vx = Math.max(160, Math.abs(ball.vx));
+        ball.vy = Math.max(140, Math.abs(ball.vy));
+        return;
+      }
+    } else if (ball.x >= 120 || ball.y >= 130) {
+      ball._topLeftStuck = 0;
     }
 
     // Top-right outer corner (outer right rail, above play â€” rare)
@@ -3167,6 +3243,7 @@
 
   function unstickFromStandupShelves(state) {
     var ball = state.ball;
+    if (skipBallAssist(state, state.ball)) return;
     if (!ball.inPlay || !state.exitedLaunchLane || !state.targets) return;
     if (ballSpeed(ball) > 90) return;
     var r = ball.radius;
@@ -3191,7 +3268,9 @@
   }
 
   function unstickFromFlippers(state) {
-    if (!state.ball.inPlay || !state.exitedLaunchLane) return;
+    if (!state.ball || !state.ball.inPlay) return;
+    if (!state.exitedLaunchLane) return;
+    if (state.ball.y > FLIPPER_ROW_Y + 24) return;
     if (apronAssistsBlocked(state)) return;
     var ball = state.ball;
     var speed = ballSpeed(ball);
@@ -3259,6 +3338,7 @@
    */
   function unstickWallSlide(state) {
     var ball = state.ball;
+    if (skipBallAssist(state, state.ball)) return;
     if (!ball.inPlay || !state.exitedLaunchLane) return;
     if (state.activeHabitrail) return;
     if (nearHabitrailMouthOrWall(state)) return;
@@ -3744,6 +3824,7 @@
     resolveBumperCollisions(state);
     collideBoinger(state);
     unstickFromBumpers(state);
+    unstickTriangle500(state);
     unstickFromCorners(state);
     unstickWallSlide(state);
     unstickCopperMergePocket(state);
