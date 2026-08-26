@@ -492,6 +492,40 @@
     ctx.restore();
   }
 
+  function drawChromeCageBar(ctx, x1, y1, x2, y2) {
+    var grad = ctx.createLinearGradient(x1, y1, x2, y2);
+    grad.addColorStop(0, '#6d7580');
+    grad.addColorStop(0.32, '#c5ccd6');
+    grad.addColorStop(0.5, '#f3f6fa');
+    grad.addColorStop(0.68, '#b4bcc6');
+    grad.addColorStop(1, '#5c646e');
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(0,0,0,0.42)';
+    ctx.lineWidth = 6.4;
+    ctx.beginPath();
+    ctx.moveTo(x1 + 1.0, y1 + 1.4);
+    ctx.lineTo(x2 + 1.0, y2 + 1.4);
+    ctx.stroke();
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 4.1;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.88)';
+    ctx.lineWidth = 1.15;
+    ctx.beginPath();
+    ctx.moveTo(x1 - 0.55, y1 - 0.9);
+    ctx.lineTo(x2 - 0.55, y2 - 0.9);
+    ctx.stroke();
+    ctx.restore();
+    drawSteelSlingPost(ctx, x1, y1);
+    drawSteelSlingPost(ctx, x2, y2);
+  }
+
   function drawWalls(ctx, state) {
     ctx.save();
     ctx.lineCap = 'round';
@@ -500,7 +534,7 @@
     if (q().wallGlowPass) {
       state.walls.forEach(function (wall) {
         var kind = wall.kind || 'rail';
-        if (kind === 'lane' || kind === 'chute' || kind === 'filler') return;
+        if (kind === 'lane' || kind === 'chute' || kind === 'filler' || kind === 'cage') return;
         if (kind === 'rail' && !wall.arc && Math.min(wall.x1, wall.x2) >= 390) return;
         if (kind === 'rail' && wall.cyan && Math.min(wall.y1, wall.y2) >= 568) return;
         if (kind === 'rail' && wall.arc) {
@@ -528,6 +562,10 @@
       if (kind === 'lane' && !wall.wireform) return;
       if (wall.wireform) {
         // Leftover white launch-wire stroke sat on the copper inner wall. Physics stays.
+        return;
+      }
+      if (kind === 'cage') {
+        drawChromeCageBar(ctx, wall.x1, wall.y1, wall.x2, wall.y2);
         return;
       }
       if (kind === 'rail' && wall.arc) {

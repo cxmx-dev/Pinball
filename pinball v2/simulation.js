@@ -122,10 +122,10 @@
   var SIDE_ROUTE_COOLDOWN = 0.35;
   var BOINGER_X = 318;
   var BOINGER_Y = 686;
-  var BOINGER_B_X = 282;
-  var BOINGER_B_Y = 718;
-  var BOINGER_C_X = 102;
-  var BOINGER_C_Y = 708;
+  var BOINGER_B_X = 318;
+  var BOINGER_B_Y = 740;
+  var BOINGER_C_X = 72;
+  var BOINGER_C_Y = 738;
   var BOINGER_R = 12;
   var BOINGER_UP_SEC = 3;
   var BOINGER_DOWN_SEC = 1.5;
@@ -200,9 +200,9 @@
         hitCooldown: 0
       },
       {
-        // Powerful rubber-ring bumper above the cyan right sausage
-        x: 322,
-        y: 500,
+        // Powerful rubber-ring bumper in the orange/copper dump mouth
+        x: 346,
+        y: 358,
         radius: 18,
         score: RUBBER_BUMPER_SCORE,
         color: '#b31f3a',
@@ -850,6 +850,27 @@
 
     // Real left orbit / right habitrail travel paths (replaces token diagonal kick chutes)
     walls = walls.concat(createHabitrailWalls());
+
+    // Chrome safety-cage bars — short steel outlane rails just above the
+    // flipper row, framing the timed cyan boingers (VOID PULSE annotation).
+    walls.push({
+      x1: 40,
+      y1: 714,
+      x2: 86,
+      y2: 720,
+      kind: 'cage',
+      id: 'cage-l',
+      chrome: true
+    });
+    walls.push({
+      x1: 302,
+      y1: 716,
+      x2: 346,
+      y2: 722,
+      kind: 'cage',
+      id: 'cage-r',
+      chrome: true
+    });
 
     return walls;
   }
