@@ -609,9 +609,16 @@
   }
 
 
-  function drawBoinger(ctx, state) {
-    var b = state.boinger;
+  function drawBoinger(ctx, b, theme) {
+    if (b && (b.boingers || (b.boinger && b.ball))) {
+      var pack = b.boingers && b.boingers.length ? b.boingers : (b.boinger ? [b.boinger] : []);
+      var pi;
+      for (pi = 0; pi < pack.length; pi++) drawBoinger(ctx, pack[pi], pack[pi].theme);
+      return;
+    }
     if (!b) return;
+    theme = theme || b.theme || 'copper';
+    var copper = theme === 'copper';
     var pop = b.pop != null ? b.pop : (b.up ? 1 : 0);
     if (pop < 0) pop = 0;
     if (pop > 1) pop = 1;
@@ -619,12 +626,12 @@
     ctx.save();
     if (pop < 0.12) {
       ctx.globalAlpha = 0.5;
-      ctx.strokeStyle = 'rgba(0, 140, 0, 0.55)';
+      ctx.strokeStyle = copper ? 'rgba(180, 80, 20, 0.55)' : 'rgba(20, 120, 160, 0.55)';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(b.x, b.y + 1, r * 0.52, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.fillStyle = 'rgba(0, 70, 0, 0.32)';
+      ctx.fillStyle = copper ? 'rgba(74, 28, 8, 0.32)' : 'rgba(10, 48, 64, 0.32)';
       ctx.fill();
       ctx.restore();
       return;
@@ -633,19 +640,29 @@
     var capR = r * (0.42 + 0.58 * pop);
     var stemH = 8 * pop;
     var capY = b.y - stemH * 0.35;
-    ctx.shadowColor = 'rgba(0, 255, 0, ' + (0.28 + 0.5 * pop) + ')';
+    ctx.shadowColor = copper
+      ? ('rgba(255, 140, 40, ' + (0.28 + 0.5 * pop) + ')')
+      : ('rgba(40, 200, 255, ' + (0.28 + 0.5 * pop) + ')');
     ctx.shadowBlur = hot ? 22 : 10 + pop * 10;
-    ctx.fillStyle = pop > 0.5 ? 'rgba(18, 130, 18, 0.95)' : 'rgba(16, 80, 16, 0.7)';
+    ctx.fillStyle = copper
+      ? (pop > 0.5 ? 'rgba(120, 44, 8, 0.95)' : 'rgba(74, 28, 8, 0.7)')
+      : (pop > 0.5 ? 'rgba(6, 70, 100, 0.95)' : 'rgba(10, 48, 64, 0.7)');
     ctx.fillRect(b.x - 3.1, capY, 6.2, stemH + 4);
     var g = ctx.createRadialGradient(b.x - capR * 0.3, capY - capR * 0.35, 2, b.x, capY, capR);
-    g.addColorStop(0, hot ? '#ccff88' : '#66ff44');
-    g.addColorStop(0.45, '#00ff00');
-    g.addColorStop(1, '#007a10');
+    if (copper) {
+      g.addColorStop(0, hot ? '#ffe0a0' : '#ffb040');
+      g.addColorStop(0.45, '#d65814');
+      g.addColorStop(1, '#782c08');
+    } else {
+      g.addColorStop(0, hot ? '#c8f8ff' : '#5ae0ff');
+      g.addColorStop(0.45, '#1296c8');
+      g.addColorStop(1, '#064664');
+    }
     ctx.fillStyle = g;
     ctx.beginPath();
     ctx.arc(b.x, capY, capR, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(200, 255, 180, 0.7)';
+    ctx.strokeStyle = copper ? 'rgba(255, 230, 170, 0.7)' : 'rgba(200, 245, 255, 0.7)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.restore();
@@ -814,7 +831,17 @@
       var i;
       for (i = 0; i < segs.length; i++) {
         // Keep the U mouth; drop only leftover floor chords that ride the U hull.
-        if (dropUFloor && segs[i].x2 <= 330) continue;
+        if (dropUFloor) {
+          var sdy = Math.abs(segs[i].y2 - segs[i].y1);
+          var sdx = Math.abs(segs[i].x2 - segs[i].x1);
+          var sminX = Math.min(segs[i].x1, segs[i].x2);
+          var smaxX = Math.max(segs[i].x1, segs[i].x2);
+          var sminY = Math.min(segs[i].y1, segs[i].y2);
+          var smaxY = Math.max(segs[i].y1, segs[i].y2);
+          var inSeamBand = smaxX >= 300 && sminX <= 400 && smaxY >= 70 && sminY <= 103;
+          var flatSeam = sdy <= 14 || (sdx > 1 && sdy / sdx <= 0.55);
+          if (segs[i].x2 <= 330 || (inSeamBand && flatSeam)) continue;
+        }
         pts.push({ x: segs[i].x2, y: segs[i].y2 });
       }
       return pts;
@@ -837,7 +864,9 @@
       smooth: true
     };
     strokeTubePath(ctx, outer, copperTube);
-    strokeTubePath(ctx, inner, copperGuide);
+    // Do not stroke inner copperGuide. Leftover 392,103→344,78 (and flatter
+    // U-floor chords) drew a white/light-orange horizontal seam at the top of
+    // the vertical orange lane as it curves left into the cyan U. Physics stays.
   }
   function drawSideRoutes(ctx, state, pulse) {
     if (!state.sideRoutes) return;
@@ -1656,7 +1685,7 @@
       lanedash: '#ffe066',
       ballsave: '#66ffcc',
       combo: '#aaff88',
-      boinger: '#00ff00'
+      boinger: '#ffb040'
     };
     var color = colors[state.lastHitType] || '#ffffff';
     var x = offset.ox + (state.lastScorePopup ? state.lastScorePopup.x : state.ball.x);

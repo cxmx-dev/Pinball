@@ -119,6 +119,8 @@
   var SIDE_ROUTE_COOLDOWN = 0.35;
   var BOINGER_X = 318;
   var BOINGER_Y = 686;
+  var BOINGER_B_X = 258;
+  var BOINGER_B_Y = 690;
   var BOINGER_R = 12;
   var BOINGER_UP_SEC = 3;
   var BOINGER_DOWN_SEC = 1.5;
@@ -564,20 +566,43 @@
   }
 
 
-  function createBoinger() {
-    return { x: BOINGER_X, y: BOINGER_Y, radius: BOINGER_R, score: BOINGER_SCORE, cycleT: 0, up: true, pop: 1, cooldown: 0, flash: 0 };
+  function createBoinger(opts) {
+    opts = opts || {};
+    var phase = opts.phase || 'a';
+    var invert = phase === 'b' || !!opts.invert;
+    return {
+      x: opts.x != null ? opts.x : BOINGER_X,
+      y: opts.y != null ? opts.y : BOINGER_Y,
+      radius: BOINGER_R,
+      score: BOINGER_SCORE,
+      phase: phase,
+      invert: invert,
+      theme: opts.theme || (phase === 'b' ? 'cyan' : 'copper'),
+      cycleT: 0,
+      up: invert ? false : true,
+      pop: invert ? 0 : 1,
+      cooldown: 0,
+      flash: 0
+    };
   }
 
-  function stepBoinger(state, dt) {
-    var b = state.boinger;
+  function createBoingers() {
+    return [
+      createBoinger({ x: BOINGER_X, y: BOINGER_Y, phase: 'a', theme: 'copper' }),
+      createBoinger({ x: BOINGER_B_X, y: BOINGER_B_Y, phase: 'b', theme: 'cyan' })
+    ];
+  }
+
+  function boingersOf(state) {
+    if (state && state.boingers && state.boingers.length) return state.boingers;
+    if (state && state.boinger) return [state.boinger];
+    return [];
+  }
+
+  function stepOneBoinger(b, dt, wantUp) {
     if (!b) return;
     if (b.cooldown > 0) b.cooldown = Math.max(0, b.cooldown - dt);
     if (b.flash > 0) b.flash = Math.max(0, b.flash - dt);
-    var period = BOINGER_UP_SEC + BOINGER_DOWN_SEC;
-    b.cycleT += dt;
-    if (b.cycleT >= period) b.cycleT -= period;
-    if (b.cycleT < 0) b.cycleT = 0;
-    var wantUp = b.cycleT < BOINGER_UP_SEC;
     b.up = wantUp;
     var target = wantUp ? 1 : 0;
     if (BOINGER_POP_SEC <= 0) { b.pop = target; }
@@ -588,9 +613,25 @@
     }
   }
 
-  function collideBoinger(state) {
-    var b = state.boinger;
-    var ball = state.ball;
+  function stepBoinger(state, dt) {
+    if (!state) return;
+    var period = BOINGER_UP_SEC + BOINGER_DOWN_SEC;
+    state.boingerT = (state.boingerT || 0) + dt;
+    if (state.boingerT >= period) state.boingerT -= period;
+    if (state.boingerT < 0) state.boingerT = 0;
+    var t = state.boingerT;
+    var list = boingersOf(state);
+    var i;
+    for (i = 0; i < list.length; i++) {
+      var b = list[i];
+      var invert = b.phase === 'b' || !!b.invert;
+      var wantUp = invert ? (t >= BOINGER_UP_SEC) : (t < BOINGER_UP_SEC);
+      stepOneBoinger(b, dt, wantUp);
+    }
+    if (list.length) state.boinger = list[0];
+  }
+
+  function collideOneBoinger(state, b, ball) {
     if (!b || !ball) return;
     if (!b.up || b.pop < 0.55) return;
     var dx = ball.x - b.x;
@@ -611,6 +652,14 @@
       b.flash = 0.28;
       awardScore(state, b.score, 'boinger', 'boinger', b.x, b.y);
     }
+  }
+
+  function collideBoinger(state) {
+    var ball = state && state.ball;
+    if (!ball) return;
+    var list = boingersOf(state);
+    var i;
+    for (i = 0; i < list.length; i++) collideOneBoinger(state, list[i], ball);
   }
 
   function saucersOf(state) {
@@ -785,6 +834,7 @@
   }
 
   function createInitialState() {
+    var boingers = createBoingers();
     return {
       tableW: TABLE_W,
       tableH: TABLE_H,
@@ -815,7 +865,9 @@
       saucer: createSaucer(),
       saucer2: createSaucer2(),
       saucer3: createSaucer3(),
-      boinger: createBoinger(),
+      boingerT: 0,
+      boingers: boingers,
+      boinger: boingers[0],
       gateSpinner: createGateSpinner(),
       walls: createWalls(),
       lockCount: 0,
@@ -3428,10 +3480,14 @@
     topArchFloorY: topArchFloorY,
     ellipseArcSegments: ellipseArcSegments,
     createBoinger: createBoinger,
+    createBoingers: createBoingers,
+    boingersOf: boingersOf,
     stepBoinger: stepBoinger,
     collideBoinger: collideBoinger,
     BOINGER_X: BOINGER_X,
     BOINGER_Y: BOINGER_Y,
+    BOINGER_B_X: BOINGER_B_X,
+    BOINGER_B_Y: BOINGER_B_Y,
     BOINGER_R: BOINGER_R,
     BOINGER_UP_SEC: BOINGER_UP_SEC,
     BOINGER_DOWN_SEC: BOINGER_DOWN_SEC,
