@@ -467,14 +467,14 @@
           { x1: 365, y1: 47, x2: 375, y2: 56 },
           { x1: 375, y1: 56, x2: 382, y2: 66 },
           { x1: 382, y1: 66, x2: 387, y2: 77 },
-          { x1: 387, y1: 77, x2: 390, y2: 90 },
-          { x1: 390, y1: 90, x2: 390, y2: 159 },
+          { x1: 387, y1: 77, x2: 390, y2: 88 },
+          { x1: 390, y1: 88, x2: 390, y2: 159 },
           { x1: 390, y1: 159, x2: 390, y2: 216 },
           { x1: 390, y1: 216, x2: 388, y2: 286 },
           { x1: 388, y1: 286, x2: 364, y2: 345 }
         ],
         guides: [
-          { x1: 340, y1: 66, x2: 352, y2: 100 },
+          { x1: 344, y1: 73, x2: 352, y2: 100 },
           { x1: 352, y1: 100, x2: 358, y2: 124 },
           { x1: 358, y1: 124, x2: 364, y2: 159 },
           { x1: 364, y1: 159, x2: 364, y2: 216 },
@@ -489,12 +489,13 @@
           { x1: 390, y1: 48, x2: 360, y2: 38 },
           { x1: 360, y1: 38, x2: 330, y2: 36 }
         ],
+        // merge3: rounded inner floor. No left-pointing beak. Channel >= 36px.
         mergeInner: [
-          { x1: 392, y1: 103, x2: 378, y2: 86 },
-          { x1: 378, y1: 86, x2: 360, y2: 70 },
-          { x1: 360, y1: 70, x2: 340, y2: 66 },
-          { x1: 340, y1: 66, x2: 316, y2: 66 },
-          { x1: 316, y1: 66, x2: 300, y2: 70 },
+          { x1: 390, y1: 88, x2: 378, y2: 80 },
+          { x1: 378, y1: 80, x2: 362, y2: 76 },
+          { x1: 362, y1: 76, x2: 344, y2: 73 },
+          { x1: 344, y1: 73, x2: 324, y2: 70 },
+          { x1: 324, y1: 70, x2: 300, y2: 70 },
           { x1: 300, y1: 70, x2: 280, y2: 72 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
@@ -604,19 +605,25 @@
       if (!segs) return;
       var m;
       for (m = 0; m < segs.length; m++) {
-        walls.push({
-          x1: segs[m].x1,
-          y1: segs[m].y1,
-          x2: segs[m].x2,
-          y2: segs[m].y2,
-          kind: kind,
-          merge: true
-        });
+        var pieces = subdivideSeg(segs[m], 16);
+        var p;
+        for (p = 0; p < pieces.length; p++) {
+          walls.push({
+            x1: pieces[p].x1,
+            y1: pieces[p].y1,
+            x2: pieces[p].x2,
+            y2: pieces[p].y2,
+            kind: kind,
+            merge: true
+          });
+        }
       }
     }
     pushMerge(routes.rightRamp.mergeOuter, 'habitrail');
     pushMerge(routes.rightRamp.mergeInner, 'habitrail');
-    walls.push({ x1: 390, y1: 90, x2: 392, y2: 103, kind: 'habitrail', merge: true });
+    // merge3 closer: vertical launch join then rounded into the floor. No bird-beak.
+    walls.push({ x1: 392, y1: 103, x2: 392, y2: 94, kind: 'habitrail', merge: true });
+    walls.push({ x1: 392, y1: 94, x2: 390, y2: 88, kind: 'habitrail', merge: true });
     function pushFiller(fill) {
       if (!fill) return;
       pushPath(fill.segments, 'filler');
@@ -1470,9 +1477,16 @@
       state.launchRailT = null;
       return;
     }
-    if (ball.y > 125 && ball.x + ball.radius < LAUNCH_LANE_LEFT) {
+    if (ball.y > 140 && ball.x < LAUNCH_LANE_LEFT) {
+      state.exitedLaunchLane = true;
+      if (ball.x < 350) state.launchRailT = null;
+      if (ball.y > 200) state.activeHabitrail = null;
+      return;
+    }
+    if (ball.y > 500 && ball.x < LAUNCH_LANE_LEFT) {
       state.exitedLaunchLane = true;
       state.launchRailT = null;
+      state.activeHabitrail = null;
       return;
     }
 
@@ -1929,21 +1943,16 @@
   }
 
   function ejectSausageInteriors(state) {
-    if (skipBallAssist(state, state.ball)) return;
     var routes = state && state.sideRoutes;
     if (!routes) return;
     var balls = allLiveBalls(state);
     var i;
     for (i = 0; i < balls.length; i++) {
       var ball = balls[i];
+      if (skipBallAssist(state, ball)) continue;
       if (!ball || !ball.inPlay) continue;
-      // Always eject if inside fill-l / fill-r. Do not skip x>=392:
-      // that is the rail/sausage join and is exactly where a fallen
-      // shooter ball gets stuck. Only skip the open plunger well.
-      var wellR = ball.radius || BALL_RADIUS;
-      var inRight = ballInsideFiller(ball, routes.rightFiller);
-      var inLeft = ballInsideFiller(ball, routes.leftFiller);
-      if (ball.x > LAUNCH_LANE_LEFT + wellR && !inRight && !inLeft) continue;
+      // merge3: solid hull. Eject every frame if inside either sausage.
+      // Do not skip near LAUNCH_LANE_LEFT — that join is where balls tunnel.
       ejectOneFromFiller(ball, routes.rightFiller);
       ejectOneFromFiller(ball, routes.leftFiller);
     }
@@ -2087,7 +2096,7 @@
     if (skipBallAssist(state, state.ball)) return;
     if (!state.sideRoutes || !state.ball.inPlay || !state.exitedLaunchLane) return;
     var ball = state.ball;
-    if (state.launchRailT != null && (ball.x < 310 || ball.y > 140)) state.launchRailT = null;
+    if (state.launchRailT != null && (ball.x < 310 || (ball.y > 140 && ball.x < 350))) state.launchRailT = null;
     var left = state.sideRoutes.leftRamp;
     var right = state.sideRoutes.rightRamp;
     rejectPlayfieldTunnelIn(state);
@@ -2413,7 +2422,7 @@
   function isFreshShooterTravel(state) {
     // Only a plunged ball that has not yet exited may travel the lane
     // (up into the merge, or back down a failed plunge to the berth).
-    return !!(state && state.ball && state.ball.inPlay && !state.exitedLaunchLane);
+    return !!(state && state.ball && state.ball.inPlay && !state.exitedLaunchLane && isBallInLaunchLane(state));
   }
 
   function peelOutOfShooterLane(ball, intoU) {
@@ -2525,8 +2534,11 @@
     var r = ball.radius;
 
     state.walls.forEach(function (wall) {
-      if (!state.exitedLaunchLane && (wall.wireform || wall.kind === 'lane')) return;
-      if (wall.kind === 'filler' && (state.activeHabitrail ||
+      if (!state.exitedLaunchLane && (wall.wireform || wall.kind === 'lane')) {
+        var playfieldSide = ball.x + r < LAUNCH_LANE_LEFT + 1 && ball.y > LAUNCH_WIRE_Y1 + 8;
+        if (!(wall.kind === 'lane' && playfieldSide)) return;
+      }
+      if (wall.kind === 'filler' && ball.y < 500 && (state.activeHabitrail ||
           inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp) ||
           inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp))) {
         return;
@@ -2540,11 +2552,18 @@
       // Raised merge sits over the right-orbit corner in 2D.
       // Plunge / merge riders must hit the floor; RTL climbers in the right slide must not.
       if (wall.merge) {
-        // Raised on-ramp only. Orbit climbers / U riders use the copper walls.
+        // merge3: plunge / launchRailT riders MUST hit the floor.
+        // RTL climbers below the raised floor skip so they do not bounce from under.
         if (state.activeHabitrail === 'ramp-l') return;
-        var orbiting = state.exitedLaunchLane && state.launchRailT == null && !isBallInLaunchLane(state);
-        if (orbiting) return;
-      } else if (!state.exitedLaunchLane && state.launchRailT != null && wall.kind === 'habitrail' && ball.y < 115) {
+        // RTL in the right slide skips the raised underside. Once in the U, the floor holds.
+        if (state.activeHabitrail === 'ramp-r' && ball.x > 340 && ball.y > 78) return;
+        var ridingPlunge = state.launchRailT != null || (!state.exitedLaunchLane && isBallInLaunchLane(state));
+        if (!ridingPlunge) {
+          var underFloor = ball.y > 115 && state.exitedLaunchLane && !isBallInLaunchLane(state);
+          if (underFloor) return;
+          if (state.activeHabitrail === 'ramp-r' && ball.y > 115) return;
+        }
+      } else if (!state.exitedLaunchLane && state.launchRailT != null && wall.kind === 'habitrail' && !wall.merge && ball.y < 115) {
         var minX = Math.min(wall.x1, wall.x2);
         var maxX = Math.max(wall.x1, wall.x2);
         var minY = Math.min(wall.y1, wall.y2);
@@ -2703,7 +2722,7 @@
    * tangent into the channel — nudge, no teleport, no rail snap.
    */
   function copperLodgeBox(ball) {
-    return !!(ball && ball.x >= 290 && ball.x <= 400 && ball.y >= 28 && ball.y <= 130);
+    return !!(ball && ball.x >= 300 && ball.x <= 410 && ball.y >= 28 && ball.y <= 140);
   }
 
   function copperDumpMouthBox(ball) {
@@ -2753,7 +2772,9 @@
   function unstickOneCopper(state, ball) {
     if (skipBallAssist(state, ball)) return;
     if (!ball || !ball.inPlay) return;
-    if (state.launchRailT != null && ball === state.ball) return;
+    var rideHab = state.activeHabitrail === 'ramp-l' || state.activeHabitrail === 'ramp-r';
+    if (rideHab && vecLen(ball.vx, ball.vy) > 50) return;
+    if (state.launchRailT != null && ball === state.ball && vecLen(ball.vx, ball.vy) > 180) return;
     var top = copperLodgeBox(ball);
     var dump = copperDumpMouthBox(ball);
     if (!top && !dump) {
@@ -2795,36 +2816,38 @@
     }
     var inSlot = slot < 26 && slot > 2 && nearMerge && nearGuide && nearMerge.dist < r + 8 && nearGuide.dist < r + 8;
     var atVertex = wallDist < r + 8;
-    var sittingStill = atVertex && vecLen(ball.vx, ball.vy) < 55;
+    var sp = vecLen(ball.vx, ball.vy);
+    var sittingStill = (atVertex || inSlot || wedgedDump) && sp < 180;
     var sitting = sittingStill || wedgedDump || inSlot;
     if (!sitting) {
       ball._copperStuck = 0;
       return;
     }
-    if (ball._copperNearX != null && Math.abs(ball.x - ball._copperNearX) < 12 && Math.abs(ball.y - ball._copperNearY) < 12) {
+    if (ball._copperNearX != null && Math.abs(ball.x - ball._copperNearX) < 10 && Math.abs(ball.y - ball._copperNearY) < 10) {
       ball._copperStuck = (ball._copperStuck || 0) + 1;
     } else {
       ball._copperStuck = 1;
       ball._copperNearX = ball.x;
       ball._copperNearY = ball.y;
     }
-    var sp = vecLen(ball.vx, ball.vy);
-    var stuckLong = (ball._copperStuck || 0) >= 8;
-    if (sp >= 120 && !stuckLong) return;
-    var nx = 0.2;
-    var ny = -0.98;
+    var stuckLong = (ball._copperStuck || 0) >= 4;
+    if (!stuckLong) return;
+    if (sp >= 180) return;
+    var nx = -0.72;
+    var ny = 0.28;
     if (nearWall && wallDist > 1e-6) {
       nx = (ball.x - nearWall.x) / wallDist;
       ny = (ball.y - nearWall.y) / wallDist;
     }
     if (top) {
-      if (ny > -0.15) { nx = nx * 0.35 + 0.18; ny = -0.96; }
+      nx = -0.78;
+      ny = 0.22;
     }
     if (wedgedDump) {
       nx = -0.72;
       ny = 0.7;
     }
-    var preferX = top && ball.x >= 330 ? 0.88 : (top ? -0.88 : -0.72);
+    var preferX = -0.86;
     peelCopperBall(ball, nx, ny, preferX);
   }
 

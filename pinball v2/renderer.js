@@ -947,13 +947,16 @@
       outer.push({ x: s.x2, y: s.y2 });
     }
     if (outer.length < 2) return;
+    // merge3: follow the rounded closer into the open inner floor.
     outer.push({ x: 392, y: 103 });
+    outer.push({ x: 392, y: 94 });
+    outer.push({ x: 390, y: 88 });
     var inner = [];
     for (i = 0; i < ramp.mergeInner.length; i++) {
       var m = ramp.mergeInner[i];
       if (!inner.length) inner.push({ x: m.x1, y: m.y1 });
       inner.push({ x: m.x2, y: m.y2 });
-      if (m.x2 <= 300) break;
+      if (m.x2 <= 280) break;
     }
     if (inner.length < 2) return;
     var hull = outer.concat(inner.slice().reverse());
