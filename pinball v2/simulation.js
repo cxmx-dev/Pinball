@@ -73,7 +73,7 @@
   /** Seconds of ball-save after a CENTER skill shot before it expires unused. */
   var BALL_SAVE_DURATION = 8;
   var HIT_COOLDOWN_SPINNER = 0.35;
-  var HIT_COOLDOWN_SLING = 0.18;
+  var HIT_COOLDOWN_SLING = 0.22;
   var SLING_KICK_GAIN = 1.05;
   var SLING_KICK_MIN = 120;
   var SLING_KICK_MAX = 260;
@@ -224,7 +224,7 @@
       { side: 'left', x1: 76, y1: 628, x2: 80, y2: 652, score: 150, cooldown: 0 },
       { side: 'right', x1: 348, y1: 580, x2: 338, y2: 622, score: 150, cooldown: 0 },
       { side: 'right', x1: 338, y1: 622, x2: 334, y2: 662, score: 150, cooldown: 0 },
-      { side: 'right', face: 'top', x1: 378, y1: 534, x2: 362, y2: 548, score: 150, cooldown: 0 }
+      { side: 'right', face: 'top', x1: 370, y1: 558, x2: 358, y2: 570, score: 150, cooldown: 0 }
     ];
   }
 
@@ -533,9 +533,10 @@
           { x1: 392, y1: 720, x2: 392, y2: 744 }
         ],
         guides: [
-          { x1: 392, y1: 538, x2: 378, y2: 534 },
-          { x1: 378, y1: 534, x2: 362, y2: 548 },
-          { x1: 362, y1: 548, x2: 348, y2: 580 },
+          { x1: 392, y1: 538, x2: 382, y2: 546 },
+          { x1: 382, y1: 546, x2: 370, y2: 558 },
+          { x1: 370, y1: 558, x2: 358, y2: 570 },
+          { x1: 358, y1: 570, x2: 348, y2: 580 },
           { x1: 348, y1: 580, x2: 338, y2: 622 },
           { x1: 338, y1: 622, x2: 334, y2: 662 },
           { x1: 334, y1: 662, x2: 340, y2: 698 },
@@ -1741,6 +1742,200 @@
     return best;
   }
 
+﻿  function fillerHullPoints(fill) {
+    var pts = [];
+    function pushPt(x, y) {
+      var n = pts.length;
+      if (n && pts[n - 1].x === x && pts[n - 1].y === y) return;
+      pts.push({ x: x, y: y });
+    }
+    var i;
+    var segs = (fill && fill.segments) || [];
+    var guides = (fill && fill.guides) || [];
+    for (i = 0; i < segs.length; i++) {
+      pushPt(segs[i].x1, segs[i].y1);
+      pushPt(segs[i].x2, segs[i].y2);
+    }
+    for (i = guides.length - 1; i >= 0; i--) {
+      pushPt(guides[i].x2, guides[i].y2);
+      pushPt(guides[i].x1, guides[i].y1);
+    }
+    return pts;
+  }
+
+  function fillerBoundarySegs(fill) {
+    var segs = [];
+    if (!fill) return segs;
+    if (fill.segments) segs = segs.concat(fill.segments);
+    if (fill.guides) segs = segs.concat(fill.guides);
+    return segs;
+  }
+
+  function pointInPoly(x, y, pts) {
+    if (!pts || pts.length < 3) return false;
+    var inside = false;
+    var j = pts.length - 1;
+    var i;
+    for (i = 0; i < pts.length; i++) {
+      var yi = pts[i].y;
+      var yj = pts[j].y;
+      var xi = pts[i].x;
+      var xj = pts[j].x;
+      if ((yi > y) !== (yj > y)) {
+        var xHit = (xj - xi) * (y - yi) / ((yj - yi) || 1e-12) + xi;
+        if (x < xHit) inside = !inside;
+      }
+      j = i;
+    }
+    return inside;
+  }
+
+  function ballInsideFiller(ball, fill) {
+    if (!ball || !fill) return false;
+    return pointInPoly(ball.x, ball.y, fillerHullPoints(fill));
+  }
+
+  // cyan1: right top cusp unstick box (playfield side of launch rail)
+  function sausageCuspBox(ball) {
+    return !!(ball && ball.x >= 360 && ball.x <= 400 && ball.y >= 520 && ball.y <= 560);
+  }
+
+  function sausageFarmPocket(state, ball) {
+    if (!ball) return false;
+    if (sausageCuspBox(ball)) return true;
+    var routes = state && state.sideRoutes;
+    if (!routes) return false;
+    return ballInsideFiller(ball, routes.leftFiller) || ballInsideFiller(ball, routes.rightFiller);
+  }
+
+  function ejectOneFromFiller(ball, fill) {
+    if (!ball || !fill || !ballInsideFiller(ball, fill)) return false;
+    var r = ball.radius || BALL_RADIUS;
+    var inner = nearestPointOnSegments(ball.x, ball.y, fill.guides || []);
+    var outer = nearestPointOnSegments(ball.x, ball.y, fill.segments || []);
+    var near = nearestPointOnSegments(ball.x, ball.y, fillerBoundarySegs(fill));
+    if (fill.id === 'fill-r' && inner) {
+      if (!near || (outer && outer.dist <= inner.dist + 0.5) || (near.x >= LAUNCH_LANE_LEFT - 6)) {
+        near = inner;
+      }
+    }
+    if (fill.id === 'fill-l' && inner) {
+      if (!near || (outer && outer.dist <= inner.dist + 0.5) || (near.x <= 42)) {
+        near = inner;
+      }
+    }
+    if (!near) {
+      ball.x += fill.id === 'fill-r' ? -(r + 6) : (r + 6);
+      return true;
+    }
+    var nx = ball.x - near.x;
+    var ny = ball.y - near.y;
+    var nlen = vecLen(nx, ny);
+    if (nlen < 1e-6) {
+      nx = fill.id === 'fill-r' ? -1 : 1;
+      ny = 0.15;
+      nlen = vecLen(nx, ny);
+    }
+    nx /= nlen;
+    ny /= nlen;
+    nx = -nx;
+    ny = -ny;
+    if (fill.id === 'fill-r' && nx > -0.2) {
+      nx = -0.82;
+      ny = 0.45;
+      nlen = vecLen(nx, ny);
+      nx /= nlen;
+      ny /= nlen;
+    }
+    if (fill.id === 'fill-l' && nx < 0.2) {
+      nx = 0.82;
+      ny = 0.45;
+      nlen = vecLen(nx, ny);
+      nx /= nlen;
+      ny /= nlen;
+    }
+    ball.x = near.x + nx * (r + 3);
+    ball.y = near.y + ny * (r + 3);
+    if (fill.id === 'fill-r' && ball.x >= LAUNCH_LANE_LEFT - r) {
+      ball.x = LAUNCH_LANE_LEFT - r - 4;
+    }
+    if (fill.id === 'fill-l' && ball.x <= 36 + r) {
+      ball.x = 36 + r + 4;
+    }
+    var sp = vecLen(ball.vx, ball.vy);
+    var keep = Math.max(sp, 130);
+    ball.vx = ball.vx * 0.2 + nx * keep * 0.8;
+    ball.vy = ball.vy * 0.2 + ny * keep * 0.8;
+    if (vecLen(ball.vx, ball.vy) < 90) {
+      ball.vx += nx * 90;
+      ball.vy += ny * 90;
+    }
+    return true;
+  }
+
+  function ejectSausageInteriors(state) {
+    var routes = state && state.sideRoutes;
+    if (!routes) return;
+    var balls = allLiveBalls(state);
+    var i;
+    for (i = 0; i < balls.length; i++) {
+      var ball = balls[i];
+      if (!ball || !ball.inPlay) continue;
+      if (ball.x >= LAUNCH_LANE_LEFT) continue;
+      ejectOneFromFiller(ball, routes.rightFiller);
+      ejectOneFromFiller(ball, routes.leftFiller);
+    }
+  }
+
+  function peelSausageCusp(ball) {
+    var nx = -0.78;
+    var ny = 0.62;
+    var peel = 7;
+    ball.x += nx * peel;
+    ball.y += ny * peel;
+    if (ball.x >= LAUNCH_LANE_LEFT) ball.x = LAUNCH_LANE_LEFT - (ball.radius || BALL_RADIUS) - 4;
+    var sp = vecLen(ball.vx, ball.vy);
+    var keep = Math.max(sp, 140);
+    ball.vx = ball.vx * 0.22 + nx * keep * 0.78;
+    ball.vy = ball.vy * 0.22 + ny * keep * 0.78;
+    if (vecLen(ball.vx, ball.vy) < 90) {
+      ball.vx += nx * 90;
+      ball.vy += ny * 90;
+    }
+  }
+
+  function unstickOneSausageCusp(state, ball) {
+    if (!ball || !ball.inPlay) return;
+    if (state.launchRailT != null && ball === state.ball) return;
+    if (ball.x >= LAUNCH_LANE_LEFT) {
+      ball._sausageStuck = 0;
+      return;
+    }
+    if (!sausageCuspBox(ball)) {
+      ball._sausageStuck = 0;
+      return;
+    }
+    var sp = vecLen(ball.vx, ball.vy);
+    var sittingStill = sp < 55;
+    if (ball._sausageNearX != null && Math.abs(ball.x - ball._sausageNearX) < 12 && Math.abs(ball.y - ball._sausageNearY) < 12) {
+      ball._sausageStuck = (ball._sausageStuck || 0) + 1;
+    } else {
+      ball._sausageStuck = 1;
+      ball._sausageNearX = ball.x;
+      ball._sausageNearY = ball.y;
+    }
+    var stuckLong = (ball._sausageStuck || 0) >= 8;
+    if (sp >= 120 && !stuckLong) return;
+    if (!sittingStill && !stuckLong) return;
+    peelSausageCusp(ball);
+  }
+
+  function unstickSausageCusp(state) {
+    var balls = allLiveBalls(state);
+    var i;
+    for (i = 0; i < balls.length; i++) unstickOneSausageCusp(state, balls[i]);
+  }
+
   function topHorseshoeInnerSegs(leftRamp, rightRamp) {
     var segs = [];
     function add(list) {
@@ -2278,7 +2473,7 @@
           ball.vx -= kick;
           ball.vy -= up;
         }
-        if (sling.cooldown <= 0) {
+        if (sling.cooldown <= 0 && !sausageFarmPocket(state, ball)) {
           awardScore(state, sling.score, 'sling', sling.side, (sling.x1 + sling.x2) * 0.5, (sling.y1 + sling.y2) * 0.5);
           sling.cooldown = HIT_COOLDOWN_SLING;
           scored = true;
@@ -2331,7 +2526,9 @@
             startRushMode(state);
           }
         }
-        awardScore(state, bumper.score, 'bumper', String(idx), bumper.x, bumper.y);
+        if (!sausageFarmPocket(state, ball)) {
+          awardScore(state, bumper.score, 'bumper', String(idx), bumper.x, bumper.y);
+        }
         state.lastHitBumper = idx;
         if (state.jackpotLit) {
           awardScore(state, 5000, 'jackpot', 'jackpot', bumper.x, bumper.y - 30);
@@ -3470,6 +3667,7 @@
     guideShooterLane(state, dt);
     blockShooterLaneIntrusion(state);
     resolveWallCollisions(state);
+    ejectSausageInteriors(state);
     assistHabitrails(state, dt);
     peelLeftInlaneWedge(state);
     guardLeftOutlaneShelf(state);
@@ -3482,6 +3680,7 @@
     unstickFromCorners(state);
     unstickWallSlide(state);
     unstickCopperMergePocket(state);
+    unstickSausageCusp(state);
     resolvePostCollisions(state);
     resolveKickerCollisions(state);
     resolveTargetCollisions(state);

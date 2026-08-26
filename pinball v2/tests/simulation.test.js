@@ -1695,7 +1695,7 @@ console.log('All tests passed.');
   assert(hasSeg('left', 76, 628, 80, 652), 'left climb rubber 76,628-80,652');
   assert(hasSeg('right', 348, 580, 338, 622), 'right climb rubber 348,580-338,622');
   assert(hasSeg('right', 338, 622, 334, 662), 'right climb rubber 338,622-334,662');
-  assert(hasSeg('right', 378, 534, 362, 548), 'right top rubber 378,534-362,548');
+  assert(hasSeg('right', 370, 558, 358, 570), 'right top rubber 370,558-358,570');
   assert(!hasSeg('left', 80, 652, 74, 676), 'no left downhill rubber after peak');
   assert(!hasSeg('right', 334, 662, 340, 698), 'no right downhill rubber after peak');
   var classic = slings.some(function (s) {
@@ -1734,13 +1734,13 @@ console.log('All tests passed.');
   var topR = slings.filter(function (s) { return s.side === 'right' && s.face === 'top'; });
   assert.strictEqual(climbR.length, 2, 'right climb slings still two segs');
   assert.strictEqual(topR.length, 1, 'right top rubber is one short band');
-  assert(topR[0].x1 === 378 && topR[0].y1 === 534 && topR[0].x2 === 362 && topR[0].y2 === 548);
+  assert(topR[0].x1 === 370 && topR[0].y1 === 558 && topR[0].x2 === 358 && topR[0].y2 === 570);
   assert(!slings.some(function (s) { return s.side === 'left' && s.face === 'top'; }), 'no invented left top rubber');
   var right = state.sideRoutes.rightFiller;
   assert(right.segments[0].y1 === 538, 'right filler starts higher');
-  assert(right.guides.some(function (s) { return s.x1 === 378 && s.y1 === 534 && s.x2 === 362 && s.y2 === 548; }), 'top cap is on the hull');
+  assert(right.guides.some(function (s) { return s.x1 === 370 && s.y1 === 558 && s.x2 === 358 && s.y2 === 570; }), 'top cap is on the hull');
   var fillerWalls = state.walls.filter(function (w) { return w.kind === 'filler'; });
-  assert(!fillerWalls.some(function (w) { return w.x1 === 378 && w.y1 === 534 && w.x2 === 362 && w.y2 === 548; }), 'top rubber is sling not filler');
+  assert(!fillerWalls.some(function (w) { return w.x1 === 370 && w.y1 === 558 && w.x2 === 358 && w.y2 === 570; }), 'top rubber is sling not filler');
   assert(!fillerWalls.some(function (w) { return w.x1 === 348 && w.y1 === 580 && w.x2 === 338 && w.y2 === 622; }), 'right climb still sling not filler');
   assert(fillerWalls.some(function (w) { return w.x1 === 334 && w.y1 === 662 && w.x2 === 340 && w.y2 === 698; }), 'right downhill after peak stays filler');
   dashes.forEach(function (d) {
@@ -2190,5 +2190,61 @@ console.log('All tests passed.');
   assert(Math.abs(litA - litB) > 0.02 || Math.abs(litB - litC) > 0.02 || Math.abs(litA - litC) > 0.02, 'sides are out of phase after the sweep starts');
   console.log('PASS: pulse triangle at ~300,396 with 3 colored rubbers');
 })();
-
-
+﻿(function testCyanSausageSolidAndCuspFree() {
+  function runAt(x, y, frames) {
+    var state = fresh();
+    state.ball.inPlay = true;
+    state.exitedLaunchLane = true;
+    state.phase = 'playing';
+    state.ball.x = x;
+    state.ball.y = y;
+    state.ball.vx = 0;
+    state.ball.vy = 0;
+    var k, maxSp = 0;
+    for (k = 0; k < frames; k++) {
+      sim.stepPhysics(state, 1 / 60);
+      var sp = Math.hypot(state.ball.vx, state.ball.vy);
+      if (sp > maxSp) maxSp = sp;
+    }
+    return { state: state, x: state.ball.x, y: state.ball.y, maxSp: maxSp, lastSp: Math.hypot(state.ball.vx, state.ball.vy) };
+  }
+  var right = fresh().sideRoutes.rightFiller;
+  assert(right.segments[0].x1 === 392 && right.segments[0].y1 === 538, 'outer still meets rail at 392,538');
+  assert(right.guides[0].x1 === 392 && right.guides[0].y1 === 538 && right.guides[0].x2 === 382 && right.guides[0].y2 === 546, 'open shoulder down-left, not knife V');
+  assert(!right.guides.some(function (s) { return s.y2 < s.y1 && s.x1 === 392; }), 'first inner must not climb above the rail join');
+  var cusp = runAt(388, 536, 24);
+  assert(cusp.maxSp > 40, 'cusp sit 388,536 must be moving within 0.4s (sp=' + cusp.maxSp.toFixed(1) + ')');
+  var stillV = cusp.x >= 378 && cusp.x <= 396 && cusp.y >= 528 && cusp.y <= 548 && cusp.lastSp < 30;
+  assert(!stillV, 'must not still sit in the V (x=' + cusp.x.toFixed(1) + ' y=' + cusp.y.toFixed(1) + ')');
+  var insideR = runAt(370, 620, 8);
+  assert(insideR.x < 360, 'right interior 370,620 ejects toward playfield (x=' + insideR.x.toFixed(1) + ')');
+  assert(insideR.x < sim.LAUNCH_LANE_LEFT - 8, 'right eject must not enter shooter');
+  assert(insideR.maxSp > 40, 'right interior eject has roll');
+  var insideL = runAt(50, 640, 8);
+  assert(insideL.x > 70, 'left interior 50,640 ejects toward playfield (x=' + insideL.x.toFixed(1) + ')');
+  assert(insideL.maxSp > 40, 'left interior eject has roll');
+  var farm = fresh();
+  farm.ball.inPlay = true;
+  farm.exitedLaunchLane = true;
+  farm.phase = 'playing';
+  farm.score = 0;
+  farm.ball.x = 388;
+  farm.ball.y = 536;
+  farm.ball.vx = 0;
+  farm.ball.vy = 0;
+  var f;
+  for (f = 0; f < 30; f++) sim.stepPhysics(farm, 1 / 60);
+  assert(farm.score < 400, 'cusp must not farm sling/bumper spam (score=' + farm.score + ')');
+  var plunge = fresh();
+  sim.launchBall(plunge, 800);
+  assert.strictEqual(plunge.ball.x, sim.LAUNCH_LANE_X, '800 plunge still starts in shooter');
+  var p;
+  for (p = 0; p < 90; p++) sim.tick(plunge, 1 / 60);
+  assert(plunge.exitedLaunchLane, '800 plunge still leaves the lane');
+  assert(plunge.ball.x < sim.LAUNCH_LANE_LEFT + 20 || plunge.exitedLaunchLane, '800 shooter still works');
+  assert(sim.GRAVITY === 1400, 'GRAVITY stays 1400');
+  assert(sim.HABITRAIL_ASSIST === 0, 'HABITRAIL_ASSIST stays 0');
+  var rubber = fresh().bumpers.find(function (b) { return b.id === 'rubber-mid'; });
+  assert(rubber && rubber.x === 300 && rubber.y === 452, '500 rubber stays at 300,452');
+  console.log('PASS: cyan sausage solid + cusp free (cusp x=' + cusp.x.toFixed(1) + ' y=' + cusp.y.toFixed(1) + ')');
+})();
