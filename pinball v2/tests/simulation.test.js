@@ -3260,7 +3260,7 @@ console.log('All tests passed.');
   assert(renSrcPop.indexOf('segments: (ramp.segments') === -1, 'no Pioneer on rightRamp');
   assert(renSrcPop.indexOf('drawPioneerRamp(ctx, { segments: ramp.mergeOuter') === -1, 'no Pioneer on mergeOuter');
   var idxSrc = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxSrc.indexOf('?v=shoe4') !== -1, 'cache bust shoe4');
+  assert(idxSrc.indexOf('?v=shoe5') !== -1, 'cache bust shoe5');
   assert(renSrcPop.indexOf('{ x: 472, y: 103 }') === -1, 'leftover closer-cap draw is gone');
   var segs = fresh().sideRoutes.rightRamp.segments;
   assert(!segs.some(function (sg) { return sg.x1 === 408 && sg.y1 === 14; }), 'copper join curve 408,14 pinch deleted (PHYSICS=DRAW)');
@@ -3626,7 +3626,7 @@ console.log('All tests passed.');
   assert(u, 'full plunge must still ride the U (x=' + plunge.ball.x.toFixed(1) + ' y=' + plunge.ball.y.toFixed(1) + ')');
   console.log('PASS: opt2 crown shelf eject + channel >=38 + plunge rides U');
 })();
-(function testShoe4ThickCopper() {
+(function testShoe5RoundedU() {
   var fs = require('fs');
   var path = require('path');
   var ren = fs.readFileSync(path.join(__dirname, '..', 'renderer.js'), 'utf8');
@@ -3645,7 +3645,7 @@ console.log('All tests passed.');
   assert(ren.indexOf('var dropI') === -1, 'no leftover dropI scrap stroke');
   assert(ren.indexOf('strokeTubePath(ctx, drop') === -1, 'no leftover drop tube strokes');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxHtml.indexOf('?v=shoe4') !== -1, 'live cache tag shoe4');
+  assert(idxHtml.indexOf('?v=shoe5') !== -1, 'live cache tag shoe5');
   assert.strictEqual(sim.GRAVITY, 1180);
   assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
   assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
@@ -3660,19 +3660,19 @@ console.log('All tests passed.');
   assert(ren.indexOf('var dropI') === -1, 'no leftover dropI scrap stroke');
   assert(ren.indexOf('strokeTubePath(ctx, drop') === -1, 'no leftover drop tube strokes');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxHtml.indexOf('?v=shoe4') !== -1, 'live cache tag shoe4');
+  assert(idxHtml.indexOf('?v=shoe5') !== -1, 'live cache tag shoe5');
   assert.strictEqual(sim.GRAVITY, 1180);
   assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
   assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
   assert.strictEqual(sim.TABLE_W, 560);
   var right = fresh().sideRoutes.rightRamp;
-  assert(right.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'merge3 plunge start kept');
+  assert(right.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88; }), 'plunge mouth still starts at 470,88');
   assert(right.mergeInner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'join inner y=80 kept');
   assert(!right.mergeInner.some(function (s) { return s.x1 === 372 || s.x2 === 372; }), 'orange inner dent x=372 deleted');
   assert(!right.mergeOuter.some(function (s) { return s.x1 === 526 || s.x2 === 526; }), 'square 526,90 corner stays gone');
   assert(right.mergeOuter.some(function (s) { return s.x1 === 524 && s.y1 === 64 && s.x2 === 518 && s.y2 === 42; }), 'NE outer stays out then rounds to crown');
   var right = fresh().sideRoutes.rightRamp;
-  assert(right.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'merge3 plunge start kept');
+  assert(right.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88; }), 'plunge mouth still starts at 470,88');
   assert(right.mergeInner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'join inner y=80 kept');
   assert(!right.mergeInner.some(function (s) { return s.x1 === 372 || s.x2 === 372; }), 'orange inner dent x=372 deleted');
   assert(!right.mergeOuter.some(function (s) { return s.x1 === 526 || s.x2 === 526; }), 'square 526,90 corner stays gone');
@@ -3704,5 +3704,59 @@ console.log('All tests passed.');
     if (plunge.exitedLaunchLane && plunge.ball.y > 420) break;
   }
   assert(plunge.exitedLaunchLane && u, 'full plunge 1400 rides U');
-  console.log('PASS: shoe4 thick NE copper sausage, no needle scrap');
+  // shoe5: both elbows exist as thick sausages; crown has no gap.
+  function nearestDist(x, y, segs) {
+    var best = 1e9, i;
+    for (i = 0; i < segs.length; i++) {
+      var s = segs[i];
+      var dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+      var len2 = dx * dx + dy * dy;
+      var t = len2 < 1e-8 ? 0 : ((x - s.x1) * dx + (y - s.y1) * dy) / len2;
+      if (t < 0) t = 0;
+      if (t > 1) t = 1;
+      var d = Math.hypot(x - (s.x1 + t * dx), y - (s.y1 + t * dy));
+      if (d < best) best = d;
+    }
+    return best;
+  }
+  function insideChannel(x, y, outer, inner, minW) {
+    var dO = nearestDist(x, y, outer);
+    var dI = nearestDist(x, y, inner);
+    return (dO + dI) >= minW && dO < 70 && dI < 70;
+  }
+  var leftR = fresh().sideRoutes.leftRamp;
+  var rightR = fresh().sideRoutes.rightRamp;
+  var nwOuter = leftR.segments;
+  var nwInner = leftR.guides;
+  var neOuter = rightR.mergeOuter;
+  var neInner = rightR.mergeInner;
+  assert(insideChannel(70, 40, nwOuter, nwInner, 50), 'NW corner (~70,40) is inside the cyan channel');
+  assert(insideChannel(500, 40, neOuter, neInner, 50), 'NE corner (~500,40) is inside a 50px+ copper hull');
+  function yOnCrown(segs, atX) {
+    var k, y = null;
+    for (k = 0; k < segs.length; k++) {
+      var s = segs[k];
+      var lo = Math.min(s.x1, s.x2), hi = Math.max(s.x1, s.x2);
+      if (atX < lo - 0.01 || atX > hi + 0.01) continue;
+      if (s.y1 > 24 && s.y2 > 24) continue;
+      var dx = s.x2 - s.x1;
+      var t = Math.abs(dx) < 1e-6 ? 0 : (atX - s.x1) / dx;
+      y = s.y1 + t * (s.y2 - s.y1);
+    }
+    return y;
+  }
+  var crown = (leftR.segments || []).concat(rightR.mergeOuter || []);
+  var cx;
+  for (cx = 60; cx <= 478; cx += 22) {
+    var cy = yOnCrown(crown, cx);
+    assert(cy != null && cy >= 16 && cy <= 22, 'crown outer continuous at x=' + cx + ' y=' + cy);
+  }
+  assert(leftR.segments.some(function (s) { return s.x1 === 40 && s.y1 === 28 && s.x2 === 48 && s.y2 === 22; }), 'NW outer rounds through (40,28)');
+  assert(leftR.segments.some(function (s) { return s.x1 === 48 && s.y1 === 22 && s.x2 === 60 && s.y2 === 18; }), 'NW outer lands on crown (60,18)');
+  assert(!leftR.guides.some(function (s) { return s.x1 === 82 && s.y1 === 62 && s.x2 === 110 && s.y2 === 64; }), 'square-L inner jog deleted');
+  assert(rightR.mergeOuter.some(function (s) { return s.x1 === 502 && s.y1 === 26 && s.x2 === 478 && s.y2 === 18; }), 'NE outer (502,26)-(478,18)');
+  assert(ren.indexOf('clipSegsBelowY(right.segments, 88)') === -1, 'no right-ramp stick scrap');
+  assert(ren.indexOf('clipSegsBelowY(right.mergeOuter, 64)') !== -1, 'copper drop continues the elbow');
+  assert(ren.indexOf('var seen = false;') !== -1, 'clip waits until keep-side is entered');
+  console.log('PASS: shoe5 rounded on-ramp and orange elbow');
 })();

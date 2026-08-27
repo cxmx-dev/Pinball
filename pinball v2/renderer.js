@@ -857,11 +857,13 @@
     if (!pts || pts.length < 2) return pts || [];
     var out = [];
     var i;
+    var seen = false;
     for (i = 0; i < pts.length; i++) {
       var p = pts[i];
       var prev = i > 0 ? pts[i - 1] : null;
       var onSide = keepLeft ? p.x <= joinX + 0.51 : p.x >= joinX - 0.51;
       if (onSide) {
+        seen = true;
         if (prev) {
           var prevOn = keepLeft ? prev.x <= joinX + 0.51 : prev.x >= joinX - 0.51;
           if (!prevOn) {
@@ -871,7 +873,7 @@
           }
         }
         out.push(p);
-      } else if (prev) {
+      } else if (prev && seen) {
         var prevKeep = keepLeft ? prev.x <= joinX + 0.51 : prev.x >= joinX - 0.51;
         if (prevKeep) {
           var dx1 = p.x - prev.x;
@@ -1116,13 +1118,13 @@
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    // One continuous U path. Copper under, cyan over, 26px color blend. No vertical join cut.
+    // One continuous U. Copper under, cyan over, 26px blend. Drop continues the elbow.
     if (right && right.mergeOuter && right.mergeInner) {
       fillSausageHull(ctx, clipPtsAtJoinX(fullOuter, 280 - blend, false), clipPtsAtJoinX(fullInner, 280 - blend, false), 'copper', simple, tubeW);
-      var fallOuter = segsToPoints(clipSegsBelowY(right.segments, 88));
-      var fallInner = segsToPoints(clipSegsBelowY(right.guides, 88));
-      if (fallOuter.length >= 2 && fallInner.length >= 2) {
-        fillSausageHull(ctx, fallOuter, fallInner, 'copper', simple, tubeW);
+      var elbowContOuter = segsToPoints(clipSegsBelowY(right.mergeOuter, 64));
+      var elbowContInner = segsToPoints(clipSegsBelowY(right.mergeInner, 64));
+      if (elbowContOuter.length >= 2 && elbowContInner.length >= 2) {
+        fillSausageHull(ctx, elbowContOuter, elbowContInner, 'copper', simple, tubeW);
       }
     }
     fillSausageHull(ctx, clipPtsAtJoinX(fullOuter, 280 + blend, true), clipPtsAtJoinX(fullInner, 280 + blend, true), 'cyan', simple, tubeW);
