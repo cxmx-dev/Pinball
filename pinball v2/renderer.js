@@ -1056,26 +1056,9 @@
   function horseshoeInnerPoints(left, right) {
     var pts = segsToPoints(left && left.guides);
     appendOriented(pts, segsToPoints(right && right.mergeInner));
-    // dump3: same copper piece continues into the hall. right.failDump is a
-    // mouth cut on the inner wall (Williams peel), not a second floating hull.
-    var dump = right && right.failDump;
-    if (dump && dump.outer && dump.outer.length) {
-      pts.push({ x: 472, y: 100 });
-      var dumpO = segsToPoints(dump.outer);
-      var hi;
-      for (hi = 0; hi < dumpO.length; hi++) pts.push(dumpO[hi]);
-      if (dump.gate && dump.gate.length) {
-        pts.push({ x: dump.gate[0].x2, y: dump.gate[0].y2 });
-      }
-      pts.push({ x: 472, y: 220 });
-    } else {
-      pts.push({ x: 472, y: 100 });
-    }
-    pts.push({ x: 472, y: 286 });
     return pts;
   }
 
-  /** shoe3: solid sausage fill + one neon rim on the physics outer. Never stroke the closed hull (that was the x=280 brick seam). */
   function fillSausageHull(ctx, outerPts, innerPts, theme, simple, rimW) {
     if (!outerPts || !innerPts || outerPts.length < 2 || innerPts.length < 2) return;
     var outer = chaikinSmooth(outerPts, 2);
@@ -1195,8 +1178,15 @@
     ctx.stroke();
     ctx.restore();
 
-    // dump3: dump mouth is folded into horseshoeInnerPoints (one copper hull).
-    // Do not fill a second failDump sausage - that was the floating orange stub.
+    // dump2 physics: no clipSegsBelowY copper drop fill. Fail dump is a
+    // short Williams peel-off under the inner elbow, not the only orange piece.
+    if (right && right.failDump && right.failDump.outer && right.failDump.inner) {
+      var dumpO = segsToPoints(right.failDump.outer);
+      var dumpI = segsToPoints(right.failDump.inner);
+      if (dumpO.length >= 2 && dumpI.length >= 2) {
+        fillSausageHull(ctx, dumpO, dumpI, 'copper', simple, tubeW);
+      }
+    }
   }
 
   function drawCopperMergeShoulder(ctx, ramp, pulse) {
