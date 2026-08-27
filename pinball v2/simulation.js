@@ -135,10 +135,10 @@
   var SIDE_ROUTE_COOLDOWN = 0.35;
   var BOINGER_X = 398;
   var BOINGER_Y = 686;
-  var BOINGER_B_X = 374;
-  var BOINGER_B_Y = 740;
-  var BOINGER_C_X = 72;
-  var BOINGER_C_Y = 738;
+  var BOINGER_B_X = 352;
+  var BOINGER_B_Y = 707;
+  var BOINGER_C_X = 125;
+  var BOINGER_C_Y = 708;
   var BOINGER_R = 12;
   var BOINGER_UP_SEC = 3;
   var BOINGER_DOWN_SEC = 1.5;
@@ -225,7 +225,7 @@
       { x: 280, y: 275, radius: 16, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0, hit: false },
       // Wings - mid-field under the lifted U, clear of slide mouths
       { x: 155, y: 308, radius: 22, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0, hit: false },
-      { x: 298, y: 308, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0, hit: false },
+      { x: 343, y: 295, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0, hit: false },
       {
         // Weaker / smaller saver - outlane tension
         x: 210,
@@ -240,8 +240,8 @@
       },
       {
         // Powerful rubber-ring bumper below the pulse triangle, toward playfield center
-        x: 300,
-        y: 478,
+        x: 340,
+        y: 520,
         radius: 18,
         score: RUBBER_BUMPER_SCORE,
         color: '#b31f3a',
@@ -550,8 +550,8 @@
    */
   function createSideRoutes() {
     // Horseshoe orbit: left slide + top channel + right slide meet under the arch.
-    // Outer / inner polylines are also the draw hulls (cyan left, copper right).
-    // top2: matching sausages join at (240,8). Crown y~8, channel >=44. Cyan climb min width 44.
+    // Outer / inner polylines are also the draw tubes (cyan left, copper right).
+    // lay2: flatter crown y~18 join x=280. Green-trace U. Channel >=38. Cyan climb min width 44.
     return {
       leftCaptive: {
         id: 'captive-l',
@@ -571,31 +571,27 @@
         segments: [
           { x1: 60, y1: 345, x2: 46, y2: 278 },
           { x1: 46, y1: 278, x2: 36, y2: 200 },
-          { x1: 36, y1: 200, x2: 36, y2: 146 },
-          { x1: 36, y1: 146, x2: 36, y2: 118 },
-          { x1: 36, y1: 118, x2: 48, y2: 94 },
-          { x1: 48, y1: 94, x2: 70, y2: 80 },
-          { x1: 70, y1: 80, x2: 88, y2: 76 },
-          { x1: 88, y1: 76, x2: 108, y2: 52 },
-          { x1: 108, y1: 52, x2: 132, y2: 28 },
-          { x1: 132, y1: 28, x2: 160, y2: 14 },
-          { x1: 160, y1: 14, x2: 190, y2: 8 },
-          { x1: 190, y1: 8, x2: 216, y2: 7 },
-          { x1: 216, y1: 7, x2: 248, y2: 7 },
-          { x1: 248, y1: 7, x2: 280, y2: 8 }
+          { x1: 36, y1: 200, x2: 36, y2: 118 },
+          { x1: 36, y1: 118, x2: 36, y2: 70 },
+          { x1: 36, y1: 70, x2: 36, y2: 50 },
+          { x1: 36, y1: 50, x2: 38, y2: 36 },
+          { x1: 38, y1: 36, x2: 40, y2: 28 },
+          { x1: 40, y1: 28, x2: 48, y2: 22 },
+          { x1: 48, y1: 22, x2: 60, y2: 18 },
+          { x1: 60, y1: 18, x2: 140, y2: 18 },
+          { x1: 140, y1: 18, x2: 210, y2: 18 },
+          { x1: 210, y1: 18, x2: 280, y2: 18 }
         ],
         guides: [
           { x1: 116, y1: 340, x2: 92, y2: 276 },
           { x1: 92, y1: 276, x2: 82, y2: 200 },
-          { x1: 82, y1: 200, x2: 96, y2: 146 },
-          { x1: 96, y1: 146, x2: 124, y2: 128 },
-          { x1: 124, y1: 128, x2: 142, y2: 116 },
-          { x1: 142, y1: 116, x2: 160, y2: 102 },
-          { x1: 160, y1: 102, x2: 180, y2: 90 },
-          { x1: 180, y1: 90, x2: 200, y2: 82 },
-          { x1: 200, y1: 82, x2: 220, y2: 70 },
-          { x1: 220, y1: 70, x2: 250, y2: 68 },
-          { x1: 250, y1: 68, x2: 280, y2: 68 }
+          { x1: 82, y1: 200, x2: 98, y2: 161 },
+          { x1: 98, y1: 161, x2: 90, y2: 100 },
+          { x1: 90, y1: 100, x2: 86, y2: 70 },
+          { x1: 86, y1: 70, x2: 126, y2: 66 },
+          { x1: 126, y1: 66, x2: 178, y2: 70 },
+          { x1: 178, y1: 70, x2: 245, y2: 79 },
+          { x1: 245, y1: 79, x2: 280, y2: 79 }
         ]
       },
       rightRamp: {
@@ -606,51 +602,40 @@
         exit: { x: 430, y: 335 },
         boost: 0,
         segments: [
-          { x1: 408, y1: 14, x2: 410, y2: 16 },
-          { x1: 410, y1: 16, x2: 422, y2: 22 },
-          { x1: 422, y1: 22, x2: 434, y2: 30 },
-          { x1: 434, y1: 30, x2: 445, y2: 42 },
-          { x1: 445, y1: 42, x2: 455, y2: 54 },
-          { x1: 455, y1: 54, x2: 462, y2: 66 },
-          { x1: 462, y1: 66, x2: 467, y2: 77 },
-          { x1: 467, y1: 77, x2: 470, y2: 88 },
+          { x1: 468, y1: 68, x2: 470, y2: 88 },
           { x1: 470, y1: 88, x2: 470, y2: 159 },
           { x1: 470, y1: 159, x2: 470, y2: 216 },
           { x1: 470, y1: 216, x2: 468, y2: 286 },
           { x1: 468, y1: 286, x2: 444, y2: 345 }
         ],
         guides: [
-          { x1: 424, y1: 73, x2: 432, y2: 100 },
-          { x1: 432, y1: 100, x2: 438, y2: 124 },
-          { x1: 438, y1: 124, x2: 444, y2: 159 },
-          { x1: 444, y1: 159, x2: 444, y2: 216 },
-          { x1: 444, y1: 216, x2: 442, y2: 286 },
-          { x1: 442, y1: 286, x2: 408, y2: 342 }
+          { x1: 373, y1: 90, x2: 406, y2: 110 },
+          { x1: 406, y1: 110, x2: 429, y2: 130 },
+          { x1: 429, y1: 130, x2: 441, y2: 161 },
+          { x1: 441, y1: 161, x2: 442, y2: 180 },
+          { x1: 442, y1: 180, x2: 442, y2: 250 },
+          { x1: 442, y1: 250, x2: 436, y2: 335 },
+          { x1: 436, y1: 335, x2: 428, y2: 420 }
         ],
-        // orbit1: smooth outer, no 1-seg V. Channel >=44 vs merge3 inner.
+        // lay2: green-trace far outer (526,90)..(473,28) then flat crown y=18.
         mergeOuter: [
-          { x1: 524, y1: 103, x2: 524, y2: 78 },
-          { x1: 524, y1: 78, x2: 524, y2: 48 },
-          { x1: 524, y1: 48, x2: 518, y2: 24 },
-          { x1: 518, y1: 24, x2: 504, y2: 12 },
-          { x1: 504, y1: 12, x2: 484, y2: 8 },
-          { x1: 484, y1: 8, x2: 456, y2: 7 },
-          { x1: 456, y1: 7, x2: 424, y2: 7 },
-          { x1: 424, y1: 7, x2: 388, y2: 7 },
-          { x1: 388, y1: 7, x2: 348, y2: 7 },
-          { x1: 348, y1: 7, x2: 312, y2: 8 },
-          { x1: 312, y1: 8, x2: 280, y2: 8 }
+          { x1: 524, y1: 103, x2: 524, y2: 90 },
+          { x1: 524, y1: 90, x2: 526, y2: 90 },
+          { x1: 526, y1: 90, x2: 520, y2: 69 },
+          { x1: 520, y1: 69, x2: 505, y2: 49 },
+          { x1: 505, y1: 49, x2: 473, y2: 28 },
+          { x1: 473, y1: 28, x2: 420, y2: 18 },
+          { x1: 420, y1: 18, x2: 348, y2: 18 },
+          { x1: 348, y1: 18, x2: 280, y2: 18 }
         ],
-        // merge3: rounded inner floor. No left-pointing beak. Channel >= 36px.
+        // merge3 plunge floor kept. Inner U floor joins cyan at (280,79).
         mergeInner: [
           { x1: 470, y1: 88, x2: 458, y2: 80 },
           { x1: 458, y1: 80, x2: 442, y2: 76 },
-          { x1: 442, y1: 76, x2: 424, y2: 73 },
-          { x1: 424, y1: 73, x2: 404, y2: 70 },
-          { x1: 404, y1: 70, x2: 372, y2: 69 },
-          { x1: 372, y1: 69, x2: 336, y2: 68 },
-          { x1: 336, y1: 68, x2: 308, y2: 68 },
-          { x1: 308, y1: 68, x2: 280, y2: 68 }
+          { x1: 442, y1: 76, x2: 406, y2: 88 },
+          { x1: 406, y1: 88, x2: 373, y2: 90 },
+          { x1: 373, y1: 90, x2: 312, y2: 79 },
+          { x1: 312, y1: 79, x2: 280, y2: 79 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 345,
@@ -663,18 +648,20 @@
         segments: [
           { x1: 36, y1: 568, x2: 36, y2: 610 },
           { x1: 36, y1: 610, x2: 36, y2: 650 },
-          { x1: 36, y1: 650, x2: 36, y2: 680 },
-          { x1: 36, y1: 680, x2: 36, y2: 688 }
+          { x1: 36, y1: 650, x2: 36, y2: 688 },
+          { x1: 36, y1: 688, x2: 36, y2: 712 },
+          { x1: 36, y1: 712, x2: 36, y2: 738 }
         ],
         guides: [
           { x1: 36, y1: 568, x2: 48, y2: 578 },
           { x1: 48, y1: 578, x2: 64, y2: 598 },
           { x1: 64, y1: 598, x2: 76, y2: 628 },
           { x1: 76, y1: 628, x2: 80, y2: 652 },
-          { x1: 80, y1: 652, x2: 74, y2: 676 },
-          { x1: 74, y1: 676, x2: 56, y2: 686 },
-          { x1: 56, y1: 686, x2: 44, y2: 688 },
-          { x1: 44, y1: 688, x2: 36, y2: 688 }
+          { x1: 80, y1: 652, x2: 82, y2: 670 },
+          { x1: 82, y1: 670, x2: 122, y2: 712 },
+          { x1: 122, y1: 712, x2: 90, y2: 728 },
+          { x1: 90, y1: 728, x2: 50, y2: 738 },
+          { x1: 50, y1: 738, x2: 36, y2: 738 }
         ]
       },
       rightFiller: {
@@ -2165,7 +2152,7 @@
     // orbit1: right sausage tip vs cage / inlane join
     if (ball.x >= 408 && ball.x <= 452 && ball.y >= 698 && ball.y <= 740) return true;
     // need1: left sausage tip vs cage / post (opened tip + old pocket)
-    if (ball.x >= 36 && ball.x <= 88 && ball.y >= 676 && ball.y <= 740) return true;
+    if (ball.x >= 36 && ball.x <= 112 && ball.y >= 668 && ball.y <= 748) return true;
     return false;
   }
 
