@@ -89,4 +89,4 @@ Gravity, flippers, charge launch, wireform, bumpers, slings, targets, rollovers,
 
 ## Changelog
 
-**2026-08-26** — VOID PULSE table pass (t139): cyan boingers in/up (C 125,708 / B 352,707), right 300 at 343,295, mid 500 at 340,520, horseshoe crown y=18 joining at x=280, cache \?v=lay2\.
+**2026-08-26** — VOID PULSE table pass (t139): cyan boingers in/up (C 125,708 / B 352,707), right 300 at 343,295, mid 500 at 340,520, horseshoe crown y=18 joining at x=280, cache `?v=lay2`.
