@@ -2980,6 +2980,7 @@
         var floorSit = ball.x >= 388 && ball.x <= 458 && ball.y >= 70 && ball.y <= 92 && spM < 200;
         if ((inPeel || floorSit) && !climbing && !huggingOuter) return;
       }
+      if (wall.merge && ball.x >= 388 && ball.x <= 458 && ball.y >= 70 && ball.y <= 92 && vecLen(ball.vx, ball.vy) < 200 && ball.vy > -40) return;
       // dump5: (424,73)-(428,86) lip is a dump mouth, not an RTL backboard.
       var elbowLip = (wall.kind === 'habitrail' || wall.kind === 'guide') &&
         Math.min(wall.x1, wall.x2) >= 420 && Math.max(wall.x1, wall.x2) <= 432 &&
