@@ -175,6 +175,7 @@
   }
 
   function restartGame() {
+    releasePointerHolds();
     state = Sim.createInitialState();
     if (Assets && Assets.getThemeId && Sim.setThemeId) {
       Sim.setThemeId(state, Assets.getThemeId());
@@ -182,6 +183,8 @@
     soundPrev = Audio.createPrev();
     lastPhase = state.phase;
     lastHighScoreRecorded = -1;
+    setLeftFlipper(false);
+    setRightFlipper(false);
     updateGameOverUi();
     updateDockContext();
   }
@@ -318,6 +321,30 @@
     else endLaunchCharge();
   }
 
+  function releasePointerHolds() {
+    var id;
+    for (id in activePointers) delete activePointers[id];
+    dockHeld.left = false;
+    dockHeld.right = false;
+    syncFlippersAndLaunch();
+  }
+
+  function canvasPointFromEvent(e) {
+    var rect = canvas.getBoundingClientRect();
+    var rw = rect.width || canvas.width;
+    var rh = rect.height || canvas.height;
+    return {
+      x: (e.clientX - rect.left) * (canvas.width / rw),
+      y: (e.clientY - rect.top) * (canvas.height / rh)
+    };
+  }
+
+  function isGameOverRestartHit(x, y) {
+    if (y >= 72 && y <= canvas.height - 28) return true;
+    var ty = canvas.height * 0.38 + 44;
+    return Math.abs(y - ty) < 40 && Math.abs(x - canvas.width * 0.5) < 220;
+  }
+
   function setPaused(on) {
     paused = !!on;
     var el = document.getElementById('pause-overlay');
@@ -426,18 +453,31 @@
 
   function handlePointerDown(e) {
     unlockAudio();
+    if (state.phase === 'game_over') {
+      if (e.target && e.target.closest && e.target.closest('#btn-copy-score')) return;
+      if (isUiChrome(e) && e.target && e.target.closest && e.target.closest('#gameover-restart')) {
+        return;
+      }
+      var gpt = canvasPointFromEvent(e);
+      if (isGameOverRestartHit(gpt.x, gpt.y)) {
+        e.preventDefault();
+        restartGame();
+        return;
+      }
+    }
     if (isUiChrome(e)) return;
+    if (legendOpen) return;    if (isUiChrome(e)) return;
     if (legendOpen) return;
 
     if (e.pointerType === 'mouse' || e.pointerType === 'pen') {
       if (e.button === 0) {
         e.preventDefault();
-        syncFlippersAndLaunch();
         activePointers[e.pointerId] = 'left';
+        syncFlippersAndLaunch();
       } else if (e.button === 2) {
         e.preventDefault();
-        syncFlippersAndLaunch();
         activePointers[e.pointerId] = 'right';
+        syncFlippersAndLaunch();
       }
     } else {
       e.preventDefault();
@@ -496,6 +536,8 @@
     el.addEventListener('pointerdown', down);
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', up);
+    el.addEventListener('pointerleave', up);
+    el.addEventListener('lostpointercapture', up);
   }
 
   function bindTapButton(el, fn) {
@@ -534,13 +576,18 @@
     bindTapButton(document.getElementById('btn-theme'), cycleTheme);
     bindTapButton(document.getElementById('btn-legend'), toggleLegend);
 
+    function pressRestart(ev) {
+      if (ev.target && ev.target.closest && ev.target.closest('#btn-copy-score')) return;
+      unlockAudio();
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (state.phase === 'game_over') restartGame();
+    }
+    if (gameOverUi) {
+      gameOverUi.addEventListener('pointerdown', pressRestart);
+      gameOverUi.addEventListener('click', pressRestart);
+    }
     if (btnRestartBall) {
-      function pressRestart(ev) {
-        unlockAudio();
-        ev.preventDefault();
-        ev.stopPropagation();
-        if (state.phase === 'game_over') restartGame();
-      }
       btnRestartBall.addEventListener('pointerdown', pressRestart);
       btnRestartBall.addEventListener('click', pressRestart);
     }
@@ -624,6 +671,9 @@
     updateDockContext();
 
     if (state.phase !== lastPhase) {
+      if (state.phase === 'game_over' || lastPhase === 'game_over') {
+        releasePointerHolds();
+      }
       lastPhase = state.phase;
       updateGameOverUi();
     }
@@ -685,6 +735,11 @@
   }, true);
   document.addEventListener('pointerup', handlePointerUp, true);
   document.addEventListener('pointercancel', handlePointerUp, true);
+  document.addEventListener('pointerleave', handlePointerUp, true);
+  window.addEventListener('blur', releasePointerHolds);
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) releasePointerHolds();
+  });
   document.body.addEventListener('auxclick', function (e) {
     if (e.button === 2) e.preventDefault();
   });
@@ -713,7 +768,10 @@
       return Assets && Assets.getThemeId ? Assets.getThemeId() : null;
     },
     toggleLegend: toggleLegend,
-    setLegendOpen: setLegendOpen
+    setLegendOpen: setLegendOpen,
+    releasePointerHolds: releasePointerHolds,
+    isGameOverRestartHit: isGameOverRestartHit,
+    pointerHolds: pointerHolds
   };
 
   requestAnimationFrame(gameLoop);

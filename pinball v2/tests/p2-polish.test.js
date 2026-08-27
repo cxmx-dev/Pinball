@@ -1,6 +1,7 @@
 'use strict';
 
 var assert = require('assert');
+var fs = require('fs');
 var HS = require('../highscores.js');
 var Audio = require('../audio.js');
 
@@ -59,4 +60,31 @@ console.log('============================');
 })();
 
 console.log('============================');
+
+(function testOpt1FlipperReleaseAndRestartHit() {
+  var src = fs.readFileSync(require('path').join(__dirname, '../game.js'), 'utf8');
+  var html = fs.readFileSync(require('path').join(__dirname, '../index.html'), 'utf8');
+  assert(src.indexOf("addEventListener('pointerup'") !== -1, 'pointerup listener');
+  assert(src.indexOf("addEventListener('pointercancel'") !== -1, 'pointercancel listener');
+  assert(src.indexOf("addEventListener('pointerleave'") !== -1, 'pointerleave listener');
+  assert(src.indexOf("addEventListener('lostpointercapture'") !== -1, 'lostpointercapture listener');
+  assert(src.indexOf('visibilitychange') !== -1, 'visibilitychange release');
+  assert(src.indexOf('function releasePointerHolds') !== -1, 'releasePointerHolds helper');
+  assert(src.indexOf('releasePointerHolds();') !== -1, 'restart clears holds');
+  assert(src.indexOf('setLeftFlipper(false)') !== -1, 'restart resets left CSS');
+  assert(src.indexOf('setRightFlipper(false)') !== -1, 'restart resets right CSS');
+  assert(src.indexOf('function isGameOverRestartHit') !== -1, 'restart hit helper');
+  assert(src.indexOf('gameOverUi.addEventListener') !== -1, 'whole game-over card clickable');
+  assert(html.indexOf('cursor: pointer;') !== -1, 'restart label is a hit target');
+  assert(html.indexOf('?v=opt1') !== -1 && html.indexOf('?v=lay2') === -1, 'cache bust opt1');
+  function isGameOverRestartHit(x, y, w, h) {
+    if (y >= 72 && y <= h - 28) return true;
+    var ty = h * 0.38 + 44;
+    return Math.abs(y - ty) < 40 && Math.abs(x - w * 0.5) < 220;
+  }
+  assert(isGameOverRestartHit(300, 980 * 0.38 + 44, 600, 980), 'drawn label is a hit');
+  assert(isGameOverRestartHit(300, 200, 600, 980), 'game-over card is a hit');
+  console.log('PASS: opt1 flipper release + game-over reset + restart hit');
+})();
+
 console.log('All P2 polish tests passed.');

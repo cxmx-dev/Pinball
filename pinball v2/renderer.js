@@ -235,6 +235,10 @@
     drawRoundedRect(ctx, 0, 0, tw, th, 12);
     ctx.stroke();
 
+    ctx.save();
+    drawRoundedRect(ctx, 0, 0, tw, th, 12);
+    ctx.clip();
+
     drawLaunchLaneChannel(ctx, state);
     drawLaunchLaneDashes(ctx, state);
     drawGlassSheen(ctx, tw, th);
@@ -263,6 +267,7 @@
       drawPlunger(ctx, state);
     }
 
+    ctx.restore();
     ctx.restore();
     return { ox: ox, oy: oy };
   }
@@ -2046,6 +2051,9 @@
 
     drawCabinet(ctx, canvas.width, canvas.height);
     var offset = drawPlayfield(ctx, state);
+    ctx.save();
+    drawRoundedRect(ctx, offset.ox, offset.oy, state.tableW, state.tableH, 12);
+    ctx.clip();
     drawBall(ctx, state, offset);
     emitHitParticles(state, offset);
     drawScorePopup(ctx, state, offset);
@@ -2062,6 +2070,7 @@
       ctx.fill();
       ctx.restore();
     });
+    ctx.restore();
 
     drawPowerMeter(ctx, canvas, state);
     drawHUD(ctx, canvas, state);
