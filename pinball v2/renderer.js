@@ -232,7 +232,7 @@
       ctx.clip();
       ctx.save();
       ctx.beginPath();
-      var stillRight = Math.max(8, laneLeft - 6);
+      var stillRight = Math.max(8, Math.min(laneLeft - 6, 400));
       ctx.moveTo(0, 0);
       ctx.lineTo(stillRight, 0);
       ctx.lineTo(stillRight, th);

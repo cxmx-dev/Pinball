@@ -637,26 +637,23 @@
           { x1: 390, y1: 80, x2: 330, y2: 80 },
           { x1: 330, y1: 80, x2: 280, y2: 80 }
                 ],
-        // dump2: short Williams exit sausage butted under the inner elbow.
-        // Crown channel stays open (outer y=18, inner y=80, join 280,80).
-        // Window is lower/later so a FAST U rider hugging the outer rail misses it.
-        // Soft plunge that entered the elbow but cannot crest peels onto play.
-        // Stays right of UR saucer (410,148). Does not fill the elbow or crown.
+        // Thin dump corridor under the inner elbow, between LOCK saucer and
+        // shooter. Not a filled blob that swallows the saucer (360,128).
         failDump: {
           outer: [
             { x1: 434, y1: 100, x2: 432, y2: 118 },
-            { x1: 432, y1: 118, x2: 360, y2: 128 },
-            { x1: 360, y1: 128, x2: 348, y2: 190 },
-            { x1: 348, y1: 190, x2: 348, y2: 255 }
+            { x1: 432, y1: 118, x2: 432, y2: 170 },
+            { x1: 432, y1: 170, x2: 430, y2: 220 },
+            { x1: 430, y1: 220, x2: 428, y2: 255 }
           ],
           inner: [
             { x1: 456, y1: 102, x2: 454, y2: 150 },
-            { x1: 454, y1: 150, x2: 430, y2: 185 },
-            { x1: 430, y1: 185, x2: 404, y2: 225 },
-            { x1: 404, y1: 225, x2: 380, y2: 257 }
+            { x1: 454, y1: 150, x2: 452, y2: 200 },
+            { x1: 452, y1: 200, x2: 448, y2: 235 },
+            { x1: 448, y1: 235, x2: 444, y2: 258 }
           ],
           gate: [
-            { x1: 348, y1: 255, x2: 380, y2: 257 }
+            { x1: 428, y1: 255, x2: 444, y2: 258 }
           ]
         }
       },
@@ -2218,7 +2215,10 @@
   }
 
   function horseshoeFarmPocket(state, ball) {
-    return !!(ball && ball.x >= 170 && ball.x <= 310 && ball.y >= 6 && ball.y <= 110);
+    if (!ball || ball.y < 6 || ball.y > 110) return false;
+    if (ball.x >= 48 && ball.x <= 140) return true;
+    if (ball.x >= 170 && ball.x <= 310) return true;
+    return false;
   }
 
   function sausageFarmPocket(state, ball) {
@@ -2384,8 +2384,16 @@
       ball._horseStuckT = 0;
       return;
     }
-    if ((ball._horseStuckT || 0) < 0.35) return;
-    // dump5: nudge out of crown lodge. No 180 along-tube launch, no teleport.
+    if ((ball._horseStuckT || 0) < 0.28) return;
+    // Cyan crown (screenshot): drop onto the field. Center join keeps a light nudge.
+    if (ball.x < 140) {
+      state.activeHabitrail = null;
+      if (ball.y < 120) ball.y = Math.min(140, ball.y + 24);
+      ball.vy = Math.max(ball.vy, 140);
+      ball.vx = Math.max(ball.vx, 80);
+      ball._horseStuckT = 0;
+      return;
+    }
     if (ball.x < 420) {
       if (ball.vx < 28) ball.vx += 18;
       if (ball.vy < 12) ball.vy += 8;
@@ -2478,6 +2486,7 @@
     // Copper lodge box: do not snap the ball into the orange inner V.
     if (ball.x >= 368 && ball.x <= 480) return;
     if (ball.vy < 20) return;
+    if (vecLen(ball.vx, ball.vy) < 180) return;
     if (nearHorseshoeSpinner(state, ball)) return;
     var left = state.sideRoutes.leftRamp;
     var right = state.sideRoutes.rightRamp;
@@ -2532,8 +2541,25 @@
     }
     if (state.activeHabitrail === 'ramp-l' && left) peelHabitrailDump(state, left);
     if (state.activeHabitrail === 'ramp-r' && right) peelHabitrailDump(state, right);
+    if (state.activeHabitrail && ball.y >= 60 && ball.y <= 96 && ball.x >= 360 && ball.x <= 458) {
+      var psp = vecLen(ball.vx, ball.vy);
+      if (psp < 220 && ball.vy > -40 && ball.vx > -20) {
+        state.activeHabitrail = null;
+        if (ball.x > 400) ball.x = 400;
+        ball.vx = -Math.max(100, Math.abs(ball.vx) * 0.4);
+        ball.vy = Math.max(ball.vy, 120);
+        state._dumpPeel = 0.9;
+      }
+    }
     if (state.activeHabitrail && !inChannel && nearTravel && nearTravel.dist > ball.radius + 40) {
       state.activeHabitrail = null;
+    }
+    if (!state.activeHabitrail && ball.x > 420 && ball.x < 470 && ball.y > 96 && ball.y < 170 && ball.vy > 40) {
+      state._dumpPeel = Math.max(state._dumpPeel || 0, 0.9);
+    }
+    if (state._dumpPeel > 0) {
+      state._dumpPeel -= dt;
+      if (ball.x > 300 && ball.vy > 20) ball.vx = Math.min(ball.vx, -260);
     }
   }
 
