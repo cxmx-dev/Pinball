@@ -546,7 +546,7 @@
         if (kind === 'rail' && wall.arc) {
           var gmx = (wall.x1 + wall.x2) * 0.5;
           var gmy = (wall.y1 + wall.y2) * 0.5;
-          if (gmy < 100 && gmx > 70 && gmx < 500) return;
+          if (gmy < 120) return; // shoe3: kill leftover arch-end glow scraps at both corners
         }
         if (kind === 'habitrail') return; // smooth tube in drawSideRoutes — no brick glow seams
         if (wall.arc || kind === 'rail') {
@@ -578,7 +578,7 @@
       if (kind === 'rail' && wall.arc) {
         var mx = (wall.x1 + wall.x2) * 0.5;
         var my = (wall.y1 + wall.y2) * 0.5;
-        if (my < 100 && mx > 70 && mx < 500) return;
+        if (my < 120) return; // shoe3: no leftover arch-end rail stroke at the U corners
       }
       if (kind === 'rail' && wall.cyan && !wall.arc) {
         var rx1 = wall.x1, ry1 = wall.y1, rx2 = wall.x2, ry2 = wall.y2;
@@ -1058,7 +1058,7 @@
     return pts;
   }
 
-  /** shoe2: solid cyan / copper sausage hull (filled, neon rim). Physics polylines only. */
+  /** shoe3: solid sausage fill + one neon rim on the physics outer. Never stroke the closed hull (that was the x=280 brick seam). */
   function fillSausageHull(ctx, outerPts, innerPts, theme, simple, rimW) {
     if (!outerPts || !innerPts || outerPts.length < 2 || innerPts.length < 2) return;
     var outer = chaikinSmooth(outerPts, 2);
@@ -1074,6 +1074,7 @@
       if (hull[hi].y < minY) minY = hull[hi].y;
       if (hull[hi].y > maxY) maxY = hull[hi].y;
     }
+
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -1093,66 +1094,16 @@
     strokeExact(ctx, hull, true);
     ctx.fillStyle = g;
     ctx.fill();
-    if (!simple) applyShadow(ctx, cyan ? 'rgba(40, 200, 255, 0.28)' : 'rgba(255, 140, 40, 0.28)', 10);
     var width = rimW == null ? 5.5 : rimW;
     strokeExact(ctx, outer, false);
     ctx.strokeStyle = cyan ? 'rgba(80, 220, 255, 0.95)' : 'rgba(255, 168, 64, 0.95)';
     ctx.lineWidth = width;
     ctx.stroke();
     strokeExact(ctx, inner, false);
-    ctx.stroke();
-    if (!simple) {
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = cyan ? 'rgba(200, 245, 255, 0.55)' : 'rgba(255, 230, 170, 0.55)';
-      ctx.lineWidth = Math.max(2, width * 0.28);
-      strokeExact(ctx, outer, false);
-      ctx.stroke();
-      strokeExact(ctx, inner, false);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  /** Rounded tube mouth where the U dumps into the copper drop. No ellipse / scale. */
-  function drawCopperDropMouth(ctx, dropO, dropI, simple) {
-    if (!dropO || !dropI || !dropO.length || !dropI.length) return;
-    var a = dropO[0];
-    var b = dropI[0];
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    if (!simple) applyShadow(ctx, 'rgba(255, 140, 40, 0.35)', 12);
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.strokeStyle = 'rgba(255, 176, 64, 0.96)';
-    ctx.lineWidth = 16;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.strokeStyle = 'rgba(70, 24, 6, 0.88)';
-    ctx.lineWidth = 8;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.strokeStyle = 'rgba(255, 230, 170, 0.55)';
-    ctx.lineWidth = 2.4;
+    ctx.strokeStyle = cyan ? 'rgba(80, 220, 255, 0.95)' : 'rgba(255, 168, 64, 0.95)';
+    ctx.lineWidth = width;
     ctx.stroke();
     ctx.restore();
-  }
-
-  /** shoe2: solid cyan left U + solid copper right U and drop. Physics hulls only. */
-  function extendJoinX(pts, towardX) {
-    var out = [];
-    var i;
-    for (i = 0; i < (pts || []).length; i++) {
-      var p = pts[i];
-      out.push(Math.abs(p.x - 280) < 1.5 ? { x: towardX, y: p.y } : p);
-    }
-    return out;
   }
 
   function drawHorseshoeOrbit(ctx, left, right, pulse) {
@@ -1160,20 +1111,21 @@
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
     var tubeW = 5.5;
     var blend = 26;
+    var fullOuter = horseshoeOuterPoints(left, right);
+    var fullInner = horseshoeInnerPoints(left, right);
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    // Cyan sausage = left physics hull. Copper U = merge hull. Draw-only 8px join overlap.
-    fillSausageHull(ctx, extendJoinX(segsToPoints(left.segments), 280 + blend), extendJoinX(segsToPoints(left.guides), 280 + blend), 'cyan', simple, tubeW);
+    // One continuous U path. Copper under, cyan over, 26px color blend. No vertical join cut.
     if (right && right.mergeOuter && right.mergeInner) {
-      fillSausageHull(ctx, extendJoinX(segsToPoints(right.mergeOuter), 280 - blend), extendJoinX(segsToPoints(right.mergeInner), 280 - blend), 'copper', simple, tubeW);
-      var copperFallOuter = segsToPoints(clipSegsBelowY(right.segments, 88));
-      var copperFallInner = segsToPoints(right.guides);
-      if (copperFallOuter.length >= 2 && copperFallInner.length >= 2) {
-        fillSausageHull(ctx, copperFallOuter, copperFallInner, 'copper', simple, tubeW);
-        drawCopperDropMouth(ctx, copperFallOuter, copperFallInner, simple);
+      fillSausageHull(ctx, clipPtsAtJoinX(fullOuter, 280 - blend, false), clipPtsAtJoinX(fullInner, 280 - blend, false), 'copper', simple, tubeW);
+      var fallOuter = segsToPoints(clipSegsBelowY(right.segments, 110));
+      var fallInner = segsToPoints(clipSegsBelowY(right.guides, 100));
+      if (fallOuter.length >= 2 && fallInner.length >= 2) {
+        fillSausageHull(ctx, fallOuter, fallInner, 'copper', simple, tubeW);
       }
     }
+    fillSausageHull(ctx, clipPtsAtJoinX(fullOuter, 280 + blend, true), clipPtsAtJoinX(fullInner, 280 + blend, true), 'cyan', simple, tubeW);
     ctx.restore();
   }
 
