@@ -93,8 +93,16 @@
     setLegendOpen(!legendOpen);
   }
 
+  function isItchEmbed() {
+    try {
+      if (/itch\.io$/i.test(location.hostname)) return true;
+      if (window.parent && window.parent !== window && /itch\.io/i.test(document.referrer || '')) return true;
+    } catch (e) {}
+    return false;
+  }
+
   function resizeCanvas() {
-    var targetW = 520;
+    var targetW = 600;
     var targetH = 980;
     canvas.width = targetW;
     canvas.height = targetH;
@@ -102,10 +110,18 @@
     // (fitCanvas must honor this on PC too — see device.js touchChrome, not touch-only)
     var chrome = 150;
     if (Device && Device.fitCanvas) {
-      // Desktop: allow CSS grow past native 520x980 to fill the viewport.
+      // Desktop: allow CSS grow past native 600x980 to fill the viewport.
       // Phone/tablet: modest CSS upscale cap (maxScale ~1.25) so Android GPUs
       // are not asked to composite huge CSS-scaled bitmaps every frame.
       var fitOpts = { touchChrome: chrome, pad: 8 };
+      if (isItchEmbed()) {
+        document.documentElement.classList.add('embed-itch');
+        fitOpts.maxW = 1280;
+        fitOpts.maxH = 720;
+        fitOpts.allowUpscale = true;
+      } else {
+        document.documentElement.classList.remove('embed-itch');
+      }
       var q = Device.quality ? Device.quality() : null;
       if (q && q.tier === 'phone') {
         fitOpts.maxScale = q.maxScale != null ? q.maxScale : 1.25;

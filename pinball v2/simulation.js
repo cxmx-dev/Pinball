@@ -8,17 +8,17 @@
   var TABLE_PITCH_DEG = 7.0;
   var GRAVITY = 1400;
   var BALL_RADIUS = 12;
-  var TABLE_W = 480;
+  var TABLE_W = 560;
   var TABLE_H = 860;
   var ARCH_CX = TABLE_W * 0.5;
   var ARCH_CY = 76;
-  var ARCH_RX = 200;
+  var ARCH_RX = 244;
   var ARCH_RY = 50;
   var FLIPPER_INLANE_X = 88;
   var LEFT_INLANE_POST_TOP = 430;
   var FLIPPER_ROW_Y = TABLE_H - 108;
-  var FLIPPER_LEFT_PIVOT_X = Math.round(4.5 / 20.25 * TABLE_W);
-  var FLIPPER_RIGHT_PIVOT_X = Math.round(11.625 / 20.25 * TABLE_W);
+  var FLIPPER_LEFT_PIVOT_X = 124;
+  var FLIPPER_RIGHT_PIVOT_X = 318;
   var FLIPPER_PIVOT_SPACING = FLIPPER_RIGHT_PIVOT_X - FLIPPER_LEFT_PIVOT_X;
   var FLIPPER_LEN = 66; // hold-up still a hole (real cabinet); sweep at horizontal can catch center.
   var FLIPPER_W = 14;
@@ -100,7 +100,7 @@
   var LAUNCH_LANE_TOP = TABLE_H - 200;
   var LAUNCH_WIRE_Y1 = 103;
   var LAUNCH_WIRE_Y2 = 80;
-  var LAUNCH_WIRE_X2 = 360;
+  var LAUNCH_WIRE_X2 = 440;
   var WIRE_FORM_X1 = LAUNCH_LANE_LEFT;
   var WIRE_FORM_Y1 = LAUNCH_WIRE_Y1;
   var WIRE_FORM_X2 = LAUNCH_WIRE_X2;
@@ -126,9 +126,9 @@
   var EOB_DURATION = 1.65;
   var DROP_BANK_SIZE = 4;
   var SIDE_ROUTE_COOLDOWN = 0.35;
-  var BOINGER_X = 318;
+  var BOINGER_X = 398;
   var BOINGER_Y = 686;
-  var BOINGER_B_X = 318;
+  var BOINGER_B_X = 398;
   var BOINGER_B_Y = 740;
   var BOINGER_C_X = 72;
   var BOINGER_C_Y = 738;
@@ -189,7 +189,7 @@
     return {
       side: 'right',
       role: 'upper',
-      pivotX: 318,
+      pivotX: 358,
       pivotY: 372,
       restAngle: rest,
       activeAngle: active,
@@ -215,7 +215,7 @@
   function createBumpers() {
     return [
       // Skill / apex - 180 below the horseshoe join, out of the channel
-      { x: 240, y: 275, radius: 16, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0, hit: false },
+      { x: 280, y: 275, radius: 16, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0, hit: false },
       // Wings - mid-field under the lifted U, clear of slide mouths
       { x: 155, y: 308, radius: 22, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0, hit: false },
       { x: 298, y: 308, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0, hit: false },
@@ -255,9 +255,9 @@
       { side: 'left', face: 'top', x1: 48, y1: 578, x2: 64, y2: 598, score: 150, cooldown: 0 },
       { side: 'left', x1: 64, y1: 598, x2: 76, y2: 628, score: 150, cooldown: 0 },
       { side: 'left', x1: 76, y1: 628, x2: 80, y2: 652, score: 150, cooldown: 0 },
-      { side: 'right', x1: 348, y1: 580, x2: 338, y2: 622, score: 150, cooldown: 0 },
-      { side: 'right', x1: 338, y1: 622, x2: 334, y2: 662, score: 150, cooldown: 0 },
-      { side: 'right', face: 'top', x1: 370, y1: 558, x2: 358, y2: 570, score: 150, cooldown: 0 }
+      { side: 'right', x1: 428, y1: 580, x2: 418, y2: 622, score: 150, cooldown: 0 },
+      { side: 'right', x1: 418, y1: 622, x2: 414, y2: 662, score: 150, cooldown: 0 },
+      { side: 'right', face: 'top', x1: 450, y1: 558, x2: 438, y2: 570, score: 150, cooldown: 0 }
     ];
   }
 
@@ -545,7 +545,8 @@
           { x1: 132, y1: 28, x2: 160, y2: 14 },
           { x1: 160, y1: 14, x2: 190, y2: 8 },
           { x1: 190, y1: 8, x2: 216, y2: 7 },
-          { x1: 216, y1: 7, x2: 240, y2: 8 }
+          { x1: 216, y1: 7, x2: 248, y2: 7 },
+          { x1: 248, y1: 7, x2: 280, y2: 8 }
         ],
         guides: [
           { x1: 116, y1: 340, x2: 92, y2: 276 },
@@ -557,64 +558,63 @@
           { x1: 160, y1: 102, x2: 180, y2: 90 },
           { x1: 180, y1: 90, x2: 200, y2: 82 },
           { x1: 200, y1: 82, x2: 220, y2: 70 },
-          { x1: 220, y1: 70, x2: 240, y2: 68 },
-          { x1: 240, y1: 68, x2: 280, y2: 70 },
-          { x1: 280, y1: 70, x2: 300, y2: 70 }
+          { x1: 220, y1: 70, x2: 250, y2: 68 },
+          { x1: 250, y1: 68, x2: 280, y2: 68 }
         ]
       },
       rightRamp: {
         id: 'ramp-r',
         score: 750,
         cooldown: 0,
-        entry: { x: 350, y: 335, w: 32, h: 26 },
-        exit: { x: 350, y: 335 },
+        entry: { x: 430, y: 335, w: 32, h: 26 },
+        exit: { x: 430, y: 335 },
         boost: 0,
         segments: [
-          { x1: 328, y1: 14, x2: 330, y2: 16 },
-          { x1: 330, y1: 16, x2: 342, y2: 22 },
-          { x1: 342, y1: 22, x2: 354, y2: 30 },
-          { x1: 354, y1: 30, x2: 365, y2: 42 },
-          { x1: 365, y1: 42, x2: 375, y2: 54 },
-          { x1: 375, y1: 54, x2: 382, y2: 66 },
-          { x1: 382, y1: 66, x2: 387, y2: 77 },
-          { x1: 387, y1: 77, x2: 390, y2: 88 },
-          { x1: 390, y1: 88, x2: 390, y2: 159 },
-          { x1: 390, y1: 159, x2: 390, y2: 216 },
-          { x1: 390, y1: 216, x2: 388, y2: 286 },
-          { x1: 388, y1: 286, x2: 364, y2: 345 }
+          { x1: 408, y1: 14, x2: 410, y2: 16 },
+          { x1: 410, y1: 16, x2: 422, y2: 22 },
+          { x1: 422, y1: 22, x2: 434, y2: 30 },
+          { x1: 434, y1: 30, x2: 445, y2: 42 },
+          { x1: 445, y1: 42, x2: 455, y2: 54 },
+          { x1: 455, y1: 54, x2: 462, y2: 66 },
+          { x1: 462, y1: 66, x2: 467, y2: 77 },
+          { x1: 467, y1: 77, x2: 470, y2: 88 },
+          { x1: 470, y1: 88, x2: 470, y2: 159 },
+          { x1: 470, y1: 159, x2: 470, y2: 216 },
+          { x1: 470, y1: 216, x2: 468, y2: 286 },
+          { x1: 468, y1: 286, x2: 444, y2: 345 }
         ],
         guides: [
-          { x1: 344, y1: 73, x2: 352, y2: 100 },
-          { x1: 352, y1: 100, x2: 358, y2: 124 },
-          { x1: 358, y1: 124, x2: 364, y2: 159 },
-          { x1: 364, y1: 159, x2: 364, y2: 216 },
-          { x1: 364, y1: 216, x2: 362, y2: 286 },
-          { x1: 362, y1: 286, x2: 328, y2: 342 }
+          { x1: 424, y1: 73, x2: 432, y2: 100 },
+          { x1: 432, y1: 100, x2: 438, y2: 124 },
+          { x1: 438, y1: 124, x2: 444, y2: 159 },
+          { x1: 444, y1: 159, x2: 444, y2: 216 },
+          { x1: 444, y1: 216, x2: 442, y2: 286 },
+          { x1: 442, y1: 286, x2: 408, y2: 342 }
         ],
         // orbit1: smooth outer, no 1-seg V. Channel >=44 vs merge3 inner.
         mergeOuter: [
-          { x1: 444, y1: 103, x2: 444, y2: 78 },
-          { x1: 444, y1: 78, x2: 444, y2: 48 },
-          { x1: 444, y1: 48, x2: 438, y2: 24 },
-          { x1: 438, y1: 24, x2: 424, y2: 12 },
-          { x1: 424, y1: 12, x2: 404, y2: 8 },
-          { x1: 404, y1: 8, x2: 376, y2: 7 },
-          { x1: 376, y1: 7, x2: 344, y2: 7 },
-          { x1: 344, y1: 7, x2: 308, y2: 7 },
-          { x1: 308, y1: 7, x2: 276, y2: 8 },
-          { x1: 276, y1: 8, x2: 256, y2: 8 },
-          { x1: 256, y1: 8, x2: 240, y2: 8 }
+          { x1: 524, y1: 103, x2: 524, y2: 78 },
+          { x1: 524, y1: 78, x2: 524, y2: 48 },
+          { x1: 524, y1: 48, x2: 518, y2: 24 },
+          { x1: 518, y1: 24, x2: 504, y2: 12 },
+          { x1: 504, y1: 12, x2: 484, y2: 8 },
+          { x1: 484, y1: 8, x2: 456, y2: 7 },
+          { x1: 456, y1: 7, x2: 424, y2: 7 },
+          { x1: 424, y1: 7, x2: 388, y2: 7 },
+          { x1: 388, y1: 7, x2: 348, y2: 7 },
+          { x1: 348, y1: 7, x2: 312, y2: 8 },
+          { x1: 312, y1: 8, x2: 280, y2: 8 }
         ],
         // merge3: rounded inner floor. No left-pointing beak. Channel >= 36px.
         mergeInner: [
-          { x1: 390, y1: 88, x2: 378, y2: 80 },
-          { x1: 378, y1: 80, x2: 362, y2: 76 },
-          { x1: 362, y1: 76, x2: 344, y2: 73 },
-          { x1: 344, y1: 73, x2: 324, y2: 70 },
-          { x1: 324, y1: 70, x2: 300, y2: 70 },
-          { x1: 300, y1: 70, x2: 280, y2: 72 },
-          { x1: 280, y1: 72, x2: 260, y2: 70 },
-          { x1: 260, y1: 70, x2: 240, y2: 68 }
+          { x1: 470, y1: 88, x2: 458, y2: 80 },
+          { x1: 458, y1: 80, x2: 442, y2: 76 },
+          { x1: 442, y1: 76, x2: 424, y2: 73 },
+          { x1: 424, y1: 73, x2: 404, y2: 70 },
+          { x1: 404, y1: 70, x2: 372, y2: 69 },
+          { x1: 372, y1: 69, x2: 336, y2: 68 },
+          { x1: 336, y1: 68, x2: 308, y2: 68 },
+          { x1: 308, y1: 68, x2: 280, y2: 68 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 345,
@@ -645,24 +645,24 @@
         id: 'fill-r',
         theme: 'cyan',
         segments: [
-          { x1: 392, y1: 538, x2: 392, y2: 590 },
-          { x1: 392, y1: 590, x2: 392, y2: 640 },
-          { x1: 392, y1: 640, x2: 392, y2: 690 },
-          { x1: 392, y1: 690, x2: 392, y2: 720 },
-          { x1: 392, y1: 720, x2: 392, y2: 744 }
+          { x1: 472, y1: 538, x2: 472, y2: 590 },
+          { x1: 472, y1: 590, x2: 472, y2: 640 },
+          { x1: 472, y1: 640, x2: 472, y2: 690 },
+          { x1: 472, y1: 690, x2: 472, y2: 720 },
+          { x1: 472, y1: 720, x2: 472, y2: 744 }
         ],
         guides: [
-          { x1: 392, y1: 538, x2: 382, y2: 546 },
-          { x1: 382, y1: 546, x2: 370, y2: 558 },
-          { x1: 370, y1: 558, x2: 358, y2: 570 },
-          { x1: 358, y1: 570, x2: 348, y2: 580 },
-          { x1: 348, y1: 580, x2: 338, y2: 622 },
-          { x1: 338, y1: 622, x2: 334, y2: 662 },
-          { x1: 334, y1: 662, x2: 340, y2: 698 },
-          { x1: 340, y1: 698, x2: 348, y2: 714 },
-          { x1: 348, y1: 714, x2: 362, y2: 728 },
-          { x1: 362, y1: 728, x2: 378, y2: 738 },
-          { x1: 378, y1: 738, x2: 392, y2: 744 }
+          { x1: 472, y1: 538, x2: 462, y2: 546 },
+          { x1: 462, y1: 546, x2: 450, y2: 558 },
+          { x1: 450, y1: 558, x2: 438, y2: 570 },
+          { x1: 438, y1: 570, x2: 428, y2: 580 },
+          { x1: 428, y1: 580, x2: 418, y2: 622 },
+          { x1: 418, y1: 622, x2: 414, y2: 662 },
+          { x1: 414, y1: 662, x2: 420, y2: 698 },
+          { x1: 420, y1: 698, x2: 428, y2: 714 },
+          { x1: 428, y1: 714, x2: 442, y2: 728 },
+          { x1: 442, y1: 728, x2: 458, y2: 738 },
+          { x1: 458, y1: 738, x2: 472, y2: 744 }
         ]
       }
     };
@@ -741,8 +741,8 @@
     pushMerge(routes.rightRamp.mergeOuter, 'habitrail');
     pushMerge(routes.rightRamp.mergeInner, 'habitrail');
     // merge3 closer: vertical launch join then rounded into the floor. No bird-beak.
-    walls.push({ x1: 392, y1: 103, x2: 392, y2: 94, kind: 'habitrail', merge: true });
-    walls.push({ x1: 392, y1: 94, x2: 390, y2: 88, kind: 'habitrail', merge: true });
+    walls.push({ x1: LAUNCH_LANE_LEFT, y1: 103, x2: LAUNCH_LANE_LEFT, y2: 94, kind: 'habitrail', merge: true });
+    walls.push({ x1: LAUNCH_LANE_LEFT, y1: 94, x2: LAUNCH_LANE_LEFT - 2, y2: 88, kind: 'habitrail', merge: true });
     function pushFiller(fill) {
       if (!fill) return;
       pushPath(fill.segments, 'filler');
@@ -834,7 +834,7 @@
   function createSaucer2() {
     // Upper-right pocket just below the copper ramp (not in the shooter).
     return {
-      x: 330,
+      x: 410,
       y: 148,
       radius: 15,
       score: 1500,
@@ -1160,9 +1160,9 @@
       chrome: true
     });
     walls.push({
-      x1: 302,
+      x1: 382,
       y1: 716,
-      x2: 318,
+      x2: 398,
       y2: 718,
       kind: 'cage',
       id: 'cage-r',
@@ -1572,7 +1572,7 @@
     state.launchTick = 0;
     if (state.launchRailT == null) state.launchRailT = 0;
     // Ride the right horseshoe / copper outer. Never dump into the open U at 280,52.
-    var targetX = 330;
+    var targetX = 410;
     var targetY = 40;
     state.activeHabitrail = 'ramp-r';
     var tx = targetX - ball.x;
@@ -1611,16 +1611,22 @@
     // Teleport guard: only refuse the wire snap from cyan / lower playfield.
     // Do not mark exited while the snap is still on the merge (x~329-397) —
     // medium plunge tests assert x < 352 at the moment the flag flips.
-    if (ball.x < 280) {
+    if (ball.x < 400) {
       state.exitedLaunchLane = true;
       state.skillShotWindow = true;
       state.launchTick = 0;
       state.launchRailT = null;
       return;
     }
+    // On the merge / U floor the ball has left the vertical shooter.
+    if (ball.y < 100 && ball.x < LAUNCH_LANE_LEFT - 10 && ball.x > 100) {
+      state.exitedLaunchLane = true;
+      state.skillShotWindow = true;
+      if (!state.activeHabitrail) state.activeHabitrail = 'ramp-r';
+    }
     if (ball.y > 140 && ball.x < LAUNCH_LANE_LEFT) {
       state.exitedLaunchLane = true;
-      if (ball.x < 350) state.launchRailT = null;
+      if (ball.x < 430) state.launchRailT = null;
       if (ball.y > 200) state.activeHabitrail = null;
       return;
     }
@@ -1664,7 +1670,7 @@
     }
     var cur = vecLen(ball.vx, ball.vy);
     var assist = Math.max(cur, 360 + boost * 220);
-    var mx = 372 - ball.x;
+    var mx = (LAUNCH_LANE_LEFT - 20) - ball.x;
     var my = 80 - ball.y;
     var md = vecLen(mx, my);
     if (md > 1e-6) {
@@ -1672,11 +1678,11 @@
       ball.vx += ((mx / md) * assist - ball.vx) * blend;
       ball.vy += ((my / md) * assist - ball.vy) * blend;
     }
-    if (ball.x > 386 && ball.y < 80) {
+    if (ball.x > LAUNCH_LANE_LEFT - 6 && ball.y < 80) {
       if (ball.vy < 0) ball.vy *= 0.25;
       ball.vy += 240 * dt;
     }
-    if (ball.x < 386 && ball.y >= 66 && ball.y <= 102) {
+    if (ball.x < LAUNCH_LANE_LEFT - 6 && ball.y >= 66 && ball.y <= 102) {
       releaseFromWireform(state, assist);
     }
   }
@@ -2089,9 +2095,9 @@
   function sausageCuspBox(ball) {
     if (!ball) return false;
     // cyan1 leftover: right top cusp (playfield side of launch rail)
-    if (ball.x >= 360 && ball.x <= 400 && ball.y >= 520 && ball.y <= 560) return true;
+    if (ball.x >= 440 && ball.x <= 480 && ball.y >= 520 && ball.y <= 560) return true;
     // orbit1: right sausage tip vs cage / inlane join
-    if (ball.x >= 328 && ball.x <= 372 && ball.y >= 698 && ball.y <= 740) return true;
+    if (ball.x >= 408 && ball.x <= 452 && ball.y >= 698 && ball.y <= 740) return true;
     // need1: left sausage tip vs cage / post (opened tip + old pocket)
     if (ball.x >= 36 && ball.x <= 88 && ball.y >= 676 && ball.y <= 740) return true;
     return false;
@@ -2234,7 +2240,7 @@
       ball._sausageNearY = ball.y;
     }
     var stuckLong = (ball._sausageStuck || 0) >= (leftTip ? 2 : 3);
-    var stuckTime = (ball._sausageStuckT || 0) >= (leftTip ? 0.12 : 0.2);
+    var stuckTime = (ball._sausageStuckT || 0) >= 0.2;
     if (sp >= (leftTip ? 200 : 160) && !stuckLong && !stuckTime) return;
     if (!sittingStill && !stuckLong && !stuckTime) return;
     peelSausageCusp(ball);
@@ -2295,7 +2301,7 @@
     if (!ball || state.activeHabitrail) return;
     if (ball.y < 24 || ball.y > 140) return;
     if (ball.vy >= -20) return;
-    if (ball.x < 120 || ball.x > 350) return;
+    if (ball.x < 120 || ball.x > 510) return;
     var left = state.sideRoutes.leftRamp;
     var right = state.sideRoutes.rightRamp;
     var nearInner = nearestPointOnSegments(ball.x, ball.y, topHorseshoeInnerSegs(left, right));
@@ -2314,9 +2320,9 @@
     if (skipBallAssist(state, state.ball)) return;
     if (!ball || !state.activeHabitrail) return;
     if (ball.y < 24 || ball.y > 140) return;
-    if (ball.x < 88 || ball.x > 368) return;
+    if (ball.x < 88 || ball.x > 448) return;
     // Copper lodge box: do not snap the ball into the orange inner V.
-    if (ball.x >= 288 && ball.x <= 400) return;
+    if (ball.x >= 368 && ball.x <= 480) return;
     if (ball.vy < 20) return;
     if (nearHorseshoeSpinner(state, ball)) return;
     var left = state.sideRoutes.leftRamp;
@@ -2339,7 +2345,7 @@
     if (skipBallAssist(state, state.ball)) return;
     if (!state.sideRoutes || !state.ball.inPlay || !state.exitedLaunchLane) return;
     var ball = state.ball;
-    if (state.launchRailT != null && (ball.x < 310 || ball.y > 140)) state.launchRailT = null;
+    if (state.launchRailT != null && (ball.x < 390 || ball.y > 140)) state.launchRailT = null;
     var left = state.sideRoutes.leftRamp;
     var right = state.sideRoutes.rightRamp;
     rejectPlayfieldTunnelIn(state);
@@ -2795,12 +2801,17 @@
       }
       // Raised merge sits over the right-orbit corner in 2D.
       // Plunge / merge riders must hit the floor; RTL climbers in the right slide must not.
+      if (wall.arc && ball.y < 88 && ball.x > 40 && ball.x < LAUNCH_LANE_LEFT - 4) {
+        // Horseshoe tubes are the orbit ceiling; the leftover ellipse must not
+        // hang a second roof in the channel.
+        return;
+      }
       if (wall.merge) {
         // merge3: plunge / launchRailT riders MUST hit the floor.
         // RTL climbers below the raised floor skip so they do not bounce from under.
-        if (state.activeHabitrail === 'ramp-l') return;
+        if (state.activeHabitrail === 'ramp-l' && ball.y > 90) return;
         // RTL in the right slide skips the raised underside. Once in the U, the floor holds.
-        if (state.activeHabitrail === 'ramp-r' && ball.x > 340 && ball.y > 78) return;
+        if (state.activeHabitrail === 'ramp-r' && ball.x > 420 && ball.y > 78) return;
         var ridingPlunge = state.launchRailT != null || (!state.exitedLaunchLane && isBallInLaunchLane(state));
         if (!ridingPlunge) {
           var underFloor = ball.y > 115 && state.exitedLaunchLane && !isBallInLaunchLane(state);
@@ -2811,7 +2822,7 @@
         var minX = Math.min(wall.x1, wall.x2);
         var maxX = Math.max(wall.x1, wall.x2);
         var minY = Math.min(wall.y1, wall.y2);
-        if (minX > 328 && maxX < 396 && minY < 90 && minX > 200) return;
+        if (minX > 408 && maxX < 476 && minY < 90 && minX > 280) return;
       }
       // Soft short deck stubs â€” less bounce so they don't steal lower play
       var rest = WALL_RESTITUTION;
@@ -2966,11 +2977,11 @@
    * tangent into the channel — nudge, no teleport, no rail snap.
    */
   function copperLodgeBox(ball) {
-    return !!(ball && ball.x >= 300 && ball.x <= 410 && ball.y >= 28 && ball.y <= 140);
+    return !!(ball && ball.x >= 430 && ball.x <= 524 && ball.y >= 50 && ball.y <= 110);
   }
 
   function copperDumpMouthBox(ball) {
-    return !!(ball && ball.x >= 320 && ball.x <= 380 && ball.y >= 320 && ball.y <= 390);
+    return !!(ball && ball.x >= 400 && ball.x <= 460 && ball.y >= 320 && ball.y <= 390);
   }
 
   function copperRubberMid(state) {
@@ -3084,8 +3095,11 @@
       ny = (ball.y - nearWall.y) / wallDist;
     }
     if (top) {
-      nx = -0.78;
-      ny = 0.22;
+      ball.x -= 10;
+      if (ball.y > 66) ball.y = 64;
+      ball.vx = -Math.max(Math.abs(ball.vx), 220);
+      ball.vy = -24;
+      return;
     }
     if (wedgedDump) {
       nx = -0.72;
@@ -3676,7 +3690,7 @@
       return;
     }
     if (onRightPlay && (absVx < 50 || speed < 130)) {
-      ball.x = (ball.y >= 175 && ball.y <= 325) ? (340 - r) : (LAUNCH_LANE_LEFT - r - 18);
+      ball.x = (ball.y >= 175 && ball.y <= 325) ? (420 - r) : (LAUNCH_LANE_LEFT - r - 18);
       ball.vx = -Math.max(Math.abs(ball.vx), 240);
       if (ball.vy > 120) ball.vy *= 0.55;
       return;

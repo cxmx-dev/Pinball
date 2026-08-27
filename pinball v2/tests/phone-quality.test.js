@@ -89,7 +89,7 @@ function renderOnce(deviceProfile) {
   var window = loadRendererWithDevice(deviceProfile);
   var tracking = createTrackingContext();
   var canvas = {
-    width: 520,
+    width: 600,
     height: 980,
     getContext: function () { return tracking.ctx; }
   };

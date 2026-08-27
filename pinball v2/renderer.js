@@ -541,7 +541,7 @@
         if (kind === 'rail' && wall.arc) {
           var gmx = (wall.x1 + wall.x2) * 0.5;
           var gmy = (wall.y1 + wall.y2) * 0.5;
-          if (gmy < 100 && gmx > 70 && gmx < 420) return;
+          if (gmy < 100 && gmx > 70 && gmx < 500) return;
         }
         if (kind === 'habitrail') return; // smooth tube in drawSideRoutes — no brick glow seams
         if (wall.arc || kind === 'rail') {
@@ -573,7 +573,7 @@
       if (kind === 'rail' && wall.arc) {
         var mx = (wall.x1 + wall.x2) * 0.5;
         var my = (wall.y1 + wall.y2) * 0.5;
-        if (my < 100 && mx > 70 && mx < 420) return;
+        if (my < 100 && mx > 70 && mx < 500) return;
       }
       if (kind === 'rail' && wall.cyan && !wall.arc) {
         var rx1 = wall.x1, ry1 = wall.y1, rx2 = wall.x2, ry2 = wall.y2;
@@ -981,7 +981,7 @@
   }
 
   function horseshoeInnerPoints(left, right) {
-    var cyan = clipPtsAtJoinX(segsToPoints(left && left.guides), 240, true);
+    var cyan = clipPtsAtJoinX(segsToPoints(left && left.guides), 280, true);
     var copper = segsToPoints(right && right.mergeInner);
     var pts = cyan.slice();
     if (copper.length < 2) return pts;
@@ -996,7 +996,7 @@
     var outer = horseshoeOuterPoints(left, right);
     var inner = horseshoeInnerPoints(left, right);
     if (outer.length < 4 || inner.length < 4) return;
-    var closer = [{ x: 392, y: 103 }, { x: 392, y: 94 }, { x: 390, y: 88 }];
+    var closer = [{ x: 472, y: 103 }, { x: 472, y: 94 }, { x: 470, y: 88 }];
     var hull = outer.concat(closer).concat(inner.slice().reverse());
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
     var strokeHull = simple ? strokeExact : strokeSmooth;
@@ -1006,7 +1006,7 @@
     strokeHull(ctx, hull, true);
     ctx.fillStyle = '#081218';
     ctx.fill();
-    var g = ctx.createLinearGradient(36, 8, 444, 8);
+    var g = ctx.createLinearGradient(36, 8, 524, 8);
     g.addColorStop(0, 'rgba(120, 230, 255, 1)');
     g.addColorStop(0.36, 'rgba(24, 150, 200, 1)');
     g.addColorStop(0.46, 'rgba(70, 170, 170, 1)');
@@ -1047,10 +1047,10 @@
       smooth: !simple
     };
     var blend = 26;
-    strokeTubePath(ctx, clipPtsAtJoinX(outer, 240 + blend, true), cyanTube);
-    strokeTubePath(ctx, clipPtsAtJoinX(outer, 240 - blend, false), copperTube);
-    strokeTubePath(ctx, clipPtsAtJoinX(inner, 240 + blend, true), cyanGuide);
-    strokeTubePath(ctx, clipPtsAtJoinX(inner, 240 - blend, false), copperGuide);
+    strokeTubePath(ctx, clipPtsAtJoinX(outer, 280 + blend, true), cyanTube);
+    strokeTubePath(ctx, clipPtsAtJoinX(outer, 280 - blend, false), copperTube);
+    strokeTubePath(ctx, clipPtsAtJoinX(inner, 280 + blend, true), cyanGuide);
+    strokeTubePath(ctx, clipPtsAtJoinX(inner, 280 - blend, false), copperGuide);
     ctx.restore();
   }
 
@@ -1075,9 +1075,9 @@
           var smaxX = Math.max(segs[i].x1, segs[i].x2);
           var sminY = Math.min(segs[i].y1, segs[i].y2);
           var smaxY = Math.max(segs[i].y1, segs[i].y2);
-          var inSeamBand = smaxX >= 300 && sminX <= 400 && smaxY >= 70 && sminY <= 103;
+          var inSeamBand = smaxX >= 460 && sminX <= 560 && smaxY >= 70 && sminY <= 103;
           var flatSeam = sdy <= 14 || (sdx > 1 && sdy / sdx <= 0.55);
-          if (segs[i].x2 <= 330 || (inSeamBand && flatSeam)) continue;
+          if (segs[i].x2 <= 490 || (inSeamBand && flatSeam)) continue;
         }
         pts.push({ x: segs[i].x2, y: segs[i].y2 });
       }

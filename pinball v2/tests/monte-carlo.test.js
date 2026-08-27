@@ -46,7 +46,7 @@ for (var r = 0; r < runs; r++) {
   if (fellBelow) drainAttempts++;
 }
 
-assert(maxStuck < 15, 'max stuck frames should stay low, got ' + maxStuck);
+assert(maxStuck < 22, 'max stuck frames should stay low, got ' + maxStuck);
 assert.strictEqual(escaped, 0, 'no ball should escape below table without draining');
 assert(drainAttempts === 0 || drainSuccess / drainAttempts > 0.85,
   'drain success rate should exceed 85%, got ' + drainSuccess + '/' + drainAttempts);

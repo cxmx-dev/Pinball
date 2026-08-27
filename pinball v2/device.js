@@ -149,6 +149,14 @@
    * the control dock on ALL devices (PC + touch). Name is historical; do not gate on isTouch
    * or desktop will grow the table over Theme|Legend (local zoom / short windows).
    */
+  function isItchEmbed() {
+    try {
+      if (typeof location !== 'undefined' && /itch\.io$/i.test(location.hostname)) return true;
+      if (typeof window !== 'undefined' && window.parent && window.parent !== window && /itch\.io/i.test(document.referrer || '')) return true;
+    } catch (e) {}
+    return false;
+  }
+
   function fitCanvas(canvas, opts) {
     if (!canvas) return { scale: 1, cssW: 0, cssH: 0 };
     opts = opts || {};
@@ -161,6 +169,10 @@
     }
     var maxW = (opts.maxW != null ? opts.maxW : global.innerWidth) - pad * 2;
     var maxH = (opts.maxH != null ? opts.maxH : global.innerHeight) - pad * 2 - chrome;
+    if (isItchEmbed() && opts.maxW == null && opts.maxH == null) {
+      maxW = Math.min(maxW, 1280 - pad * 2);
+      maxH = Math.min(maxH, 720 - pad * 2 - chrome);
+    }
     if (maxW < 80) maxW = 80;
     if (maxH < 80) maxH = 80;
     var scale = Math.min(maxW / iw, maxH / ih, opts.maxScale != null ? opts.maxScale : 1);
@@ -208,6 +220,7 @@
     refresh: refresh,
     onChange: onChange,
     fitCanvas: fitCanvas,
+    isItchEmbed: isItchEmbed,
     detect: detect,
     quality: function () {
       return (profile && profile.quality) || qualityFromProfile(profile || detect());

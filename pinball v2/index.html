@@ -49,6 +49,22 @@
       max-height: 100%;
       z-index: 2;
     }
+    html.device-desktop:not(.embed-itch) #stage {
+      max-height: 96vh;
+      height: min(96vh, 1400px);
+      width: min(calc(min(96vh, 1400px) * 560 / 860), 96vw);
+    }
+    html.device-desktop:not(.embed-itch) #pinball-canvas {
+      max-height: min(96vh, 1320px);
+      width: auto;
+      height: auto;
+      aspect-ratio: 600 / 980;
+    }
+    html.embed-itch #stage,
+    html.embed-itch #pinball-canvas {
+      max-width: 1280px;
+      max-height: 720px;
+    }
     #game-wrap {
       position: relative;
       filter: drop-shadow(0 0 48px rgba(0, 220, 255, 0.22))
@@ -615,7 +631,7 @@
   </div>
   <div id="stage">
     <div id="game-wrap">
-      <canvas id="pinball-canvas" width="520" height="980"></canvas>
+      <canvas id="pinball-canvas" width="600" height="980"></canvas>
       <button type="button" id="btn-tilt" data-action="tilt" title="Tilt (NumPad 7)">Tilt</button>
     </div>
     <div id="touch-ui" aria-label="Touch controls">
@@ -728,13 +744,13 @@
     </div>
   </aside>
 
-  <script src="device.js?v=need1"></script>
-  <script src="simulation.js?v=need1"></script>
-  <script src="highscores.js?v=need1"></script>
-  <script src="assets.js?v=need1"></script>
-  <script src="renderer.js?v=need1"></script>
-  <script src="audio.js?v=need1"></script>
-  <script src="gamepad.js?v=need1"></script>
-  <script src="game.js?v=need1"></script>
+  <script src="device.js?v=wideT"></script>
+  <script src="simulation.js?v=wideT"></script>
+  <script src="highscores.js?v=wideT"></script>
+  <script src="assets.js?v=wideT"></script>
+  <script src="renderer.js?v=wideT"></script>
+  <script src="audio.js?v=wideT"></script>
+  <script src="gamepad.js?v=wideT"></script>
+  <script src="game.js?v=wideT"></script>
 </body>
 </html>
