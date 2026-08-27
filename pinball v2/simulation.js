@@ -588,11 +588,11 @@
           { x1: 82, y1: 200, x2: 98, y2: 161 },
           { x1: 98, y1: 161, x2: 90, y2: 100 },
           { x1: 90, y1: 100, x2: 82, y2: 62 },
-          { x1: 82, y1: 62, x2: 120, y2: 72 },
-          { x1: 120, y1: 72, x2: 180, y2: 82 },
-          { x1: 180, y1: 82, x2: 230, y2: 92 },
-          { x1: 230, y1: 92, x2: 260, y2: 98 },
-          { x1: 260, y1: 98, x2: 280, y2: 100 }
+          { x1: 82, y1: 62, x2: 110, y2: 64 },
+          { x1: 110, y1: 64, x2: 178, y2: 70 },
+          { x1: 178, y1: 70, x2: 220, y2: 74 },
+          { x1: 220, y1: 74, x2: 255, y2: 78 },
+          { x1: 255, y1: 78, x2: 280, y2: 80 }
         ]
       },
       rightRamp: {
@@ -636,16 +636,16 @@
           { x1: 420, y1: 18, x2: 348, y2: 18 },
           { x1: 348, y1: 18, x2: 280, y2: 18 }
         ],
-        // opt2: inner crown dropped/sloped so a r=12 ball cannot rest on a shelf. Join (280,100).
+        // opt2: inner crown dropped/sloped so a r=12 ball cannot rest on a shelf. Join (280,80).
         mergeInner: [
           { x1: 470, y1: 88, x2: 458, y2: 80 },
           { x1: 458, y1: 80, x2: 442, y2: 76 },
           { x1: 442, y1: 76, x2: 424, y2: 73 },
           { x1: 424, y1: 73, x2: 404, y2: 70 },
           { x1: 404, y1: 70, x2: 372, y2: 69 },
-          { x1: 372, y1: 69, x2: 336, y2: 82 },
-          { x1: 336, y1: 82, x2: 308, y2: 94 },
-          { x1: 308, y1: 94, x2: 280, y2: 100 }
+          { x1: 372, y1: 69, x2: 336, y2: 74 },
+          { x1: 336, y1: 74, x2: 308, y2: 78 },
+          { x1: 308, y1: 78, x2: 280, y2: 80 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 345,
@@ -1982,7 +1982,7 @@
   function lodgeFarming(state, ball) {
     if (!ball) return false;
     if (sausageFarmPocket(state, ball)) return true;
-    if (horseshoeFarmPocket(state, ball) && vecLen(ball.vx, ball.vy) < 40) return true;
+    if (horseshoeFarmPocket(state, ball) && vecLen(ball.vx, ball.vy) < 70) return true;
     if (state && ballInsideTriangle(ball, state.pulseTriangle)) return true;
     if ((ball._copperStuck || 0) >= 4) return true;
     if ((ball._sausageStuck || 0) >= 4) return true;
