@@ -226,6 +226,17 @@
       drawRoundedRect(ctx, 0, 0, tw, th, 12);
       ctx.clip();
       Assets.drawPlayfieldLayer(ctx, tw, th);
+      // Theme still paints a magenta strip along the shooter seam. Cover it
+      // so only the copper lane + playfield dots show; physics is the lane wall.
+      var laneLeft = root.PinballSim && root.PinballSim.LAUNCH_LANE_LEFT != null
+        ? root.PinballSim.LAUNCH_LANE_LEFT
+        : tw - 88;
+      var cover = ctx.createLinearGradient(laneLeft - 22, 0, laneLeft, 0);
+      cover.addColorStop(0, 'rgba(12, 22, 40, 0)');
+      cover.addColorStop(0.45, 'rgba(10, 18, 32, 0.92)');
+      cover.addColorStop(1, 'rgba(8, 14, 26, 1)');
+      ctx.fillStyle = cover;
+      ctx.fillRect(laneLeft - 22, 0, tw - (laneLeft - 22), th);
       ctx.restore();
     }
 

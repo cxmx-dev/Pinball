@@ -2835,11 +2835,33 @@
   }
 
   function peelOutOfShooterLane(ball, intoU) {
-    // dump5: no x/y teleport, no vx=-200 hidden kick. Lane walls stay one-way.
     var r = ball.radius || BALL_RADIUS;
-    if (ball.x + r > LAUNCH_LANE_LEFT && ball.x < LAUNCH_LANE_LEFT + r + 2 && ball.vx > 0) {
-      ball.vx *= -0.12;
+    if (ball.x + r <= LAUNCH_LANE_LEFT) return;
+    // Hall leak (screenshot ball in the copper dashes): kick to playfield.
+    // Merge-mouth overlap stays a vx reject so U riders can crest.
+    if (intoU || ball.y < 120) {
+      if (ball.x + r > LAUNCH_LANE_LEFT && ball.x < LAUNCH_LANE_LEFT + r + 2 && ball.vx > 0) {
+        ball.vx *= -0.12;
+      }
+      return;
     }
+    if (ball.y > FLIPPER_ROW_Y - 12) {
+      ball.x = Math.min(ball.x, LAUNCH_LANE_LEFT - r - 2);
+      if (ball.vx > 0) ball.vx *= -0.25;
+      return;
+    }
+    if (ball.x < LAUNCH_LANE_LEFT + 8) {
+      if (ball.vx > 0) ball.vx *= -0.12;
+      return;
+    }
+    // Stuck in the copper dashes (screenshot). Fast travel keeps rolling.
+    if (vecLen(ball.vx, ball.vy) > 140) {
+      if (ball.vx > 0) ball.vx *= -0.12;
+      return;
+    }
+    ball.x = LAUNCH_LANE_LEFT - r - 3;
+    ball.vx = -Math.max(Math.abs(ball.vx), 170);
+    if (ball.vy < 50) ball.vy = 80;
   }
 
   function sealSausageRailJoin(state, ball) {
@@ -2973,14 +2995,16 @@
       if (wall.failMouth) {
         // dump5: falling / dying copper elbow peels onto the dump sausage.
         // Fast outer-hug and RTL/LTR climbers keep the inner rail.
+        // Inner-crown sit is y=80 - r ≈ 68; window used to start at 70 and
+        // glued a mid-hard plunge (~1100) on the U forever.
         var spM = vecLen(ball.vx, ball.vy);
         var huggingOuter = ball.y < 50 && spM > 300;
         var climbing = ball.vy < -80 && spM > 200;
         var inPeel = ball.x >= 360 && ball.x <= 466 && ball.y >= 88 && ball.y <= 255 && ball.vy > -40;
-        var floorSit = ball.x >= 388 && ball.x <= 458 && ball.y >= 70 && ball.y <= 92 && spM < 200;
+        var floorSit = ball.x >= 360 && ball.x <= 458 && ball.y >= 60 && ball.y <= 96 && spM < 220;
         if ((inPeel || floorSit) && !climbing && !huggingOuter) return;
       }
-      if (wall.merge && ball.x >= 388 && ball.x <= 458 && ball.y >= 70 && ball.y <= 92 && vecLen(ball.vx, ball.vy) < 200 && ball.vy > -40) return;
+      if (wall.merge && ball.x >= 360 && ball.x <= 458 && ball.y >= 60 && ball.y <= 96 && vecLen(ball.vx, ball.vy) < 220 && ball.vy > -40) return;
       // dump5: (424,73)-(428,86) lip is a dump mouth, not an RTL backboard.
       var elbowLip = (wall.kind === 'habitrail' || wall.kind === 'guide') &&
         Math.min(wall.x1, wall.x2) >= 420 && Math.max(wall.x1, wall.x2) <= 432 &&
