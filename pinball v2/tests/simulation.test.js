@@ -3262,7 +3262,7 @@ console.log('All tests passed.');
   assert(renSrcPop.indexOf('segments: (ramp.segments') === -1, 'no Pioneer on rightRamp');
   assert(renSrcPop.indexOf('drawPioneerRamp(ctx, { segments: ramp.mergeOuter') === -1, 'no Pioneer on mergeOuter');
   var idxSrc = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxSrc.indexOf('?v=dump1') !== -1, 'cache bust dump1');
+  assert(idxSrc.indexOf('?v=dump2') !== -1, 'cache bust dump2');
   assert(renSrcPop.indexOf('{ x: 472, y: 103 }') === -1, 'leftover closer-cap draw is gone');
   var segs = fresh().sideRoutes.rightRamp.segments;
   assert(!segs.some(function (sg) { return sg.x1 === 408 && sg.y1 === 14; }), 'copper join curve 408,14 pinch deleted (PHYSICS=DRAW)');
@@ -3647,11 +3647,11 @@ console.log('All tests passed.');
   assert(ren.indexOf('var JOIN_X = 280') !== -1, 'one hull + vertical split at JOIN_X');
   assert(ren.indexOf('fillRect(JOIN_X - 6, 0, 12, 860)') !== -1, '12px horizontal seam at x=280');
   assert(ren.indexOf('function drawCopperDropMouth') === -1, 'shoe3: drop-mouth scrap stroke deleted');
-  assert(ren.indexOf('fillSausageHull(ctx, dropO, dropI') !== -1, 'drop mouth is sausage hull');
-  assert(ren.indexOf('clipSegsBelowY(right.mergeInner, 88)') !== -1, 'drop mouth clips below plunge y=88');
+  assert(ren.indexOf('fillSausageHull(ctx, dropO, dropI') === -1, 'no drop-fill blob over the crown');
+  assert(ren.indexOf('clipSegsBelowY(right.mergeInner, 88)') === -1, 'no clipSegsBelowY copper drop fill');
   assert(ren.indexOf('strokeTubePath(ctx, drop') === -1, 'no leftover drop tube strokes');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxHtml.indexOf('?v=dump1') !== -1, 'live cache tag dump1');
+  assert(idxHtml.indexOf('?v=dump2') !== -1, 'live cache tag dump2');
   assert.strictEqual(sim.GRAVITY, 1180);
   assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
   assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
@@ -3662,11 +3662,11 @@ console.log('All tests passed.');
   assert.strictEqual((ren.match(/function drawHorseshoeOrbit/g) || []).length, 1, 'exactly one drawHorseshoeOrbit');
   assert(ren.indexOf('function fillSausageHull') !== -1, 'solid sausage hull helper');
   assert(ren.indexOf('function drawCopperDropMouth') === -1, 'shoe3: drop-mouth scrap stroke deleted');
-  assert(ren.indexOf('fillSausageHull(ctx, dropO, dropI') !== -1, 'drop mouth is sausage hull');
-  assert(ren.indexOf('clipSegsBelowY(right.mergeInner, 88)') !== -1, 'drop mouth clips below plunge y=88');
+  assert(ren.indexOf('fillSausageHull(ctx, dropO, dropI') === -1, 'no drop-fill blob over the crown');
+  assert(ren.indexOf('clipSegsBelowY(right.mergeInner, 88)') === -1, 'no clipSegsBelowY copper drop fill');
   assert(ren.indexOf('strokeTubePath(ctx, drop') === -1, 'no leftover drop tube strokes');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxHtml.indexOf('?v=dump1') !== -1, 'live cache tag dump1');
+  assert(idxHtml.indexOf('?v=dump2') !== -1, 'live cache tag dump2');
   assert.strictEqual(sim.GRAVITY, 1180);
   assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
   assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
@@ -3797,7 +3797,7 @@ console.log('All tests passed.');
   var path = require('path');
   var ren = fs.readFileSync(path.join(__dirname, '..', 'renderer.js'), 'utf8');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxHtml.indexOf('?v=dump1') !== -1, 'cache tag dump1');
+  assert(idxHtml.indexOf('?v=dump2') !== -1, 'cache tag dump2');
   assert(ren.indexOf('var blend = 26') === -1, 'no 26px two-hull blend');
   assert(ren.indexOf('clipPtsAtJoinX(fullOuter') === -1, 'no two-hull clipPtsAtJoinX pair');
   assert(ren.indexOf('var JOIN_X = 280') !== -1, 'JOIN_X vertical fills');
@@ -3843,14 +3843,15 @@ console.log('All tests passed.');
   console.log('PASS: shoe6 flat inner crown y=80, 62px channel, JOIN_X draw');
 })();
 
-(function testDump1FailRampFromOrangeSausage() {
+(function testDump2RestoreLeftUMerge() {
   var fs = require('fs');
   var path = require('path');
   var right0 = fresh().sideRoutes.rightRamp;
   assert(right0.failDump && right0.failDump.outer && right0.failDump.inner && right0.failDump.gate, 'failDump sausage polylines exist');
   var d0 = right0.failDump.outer[0];
-  assert(d0.x1 >= 420 && d0.x1 <= 460 && d0.y1 >= 80 && d0.y1 <= 170, 'dump mouth on NE inner elbow');
-  assert(Math.abs(d0.x2 - d0.x1) <= 8 && d0.y2 > d0.y1 + 16, 'first dump chord drops vertically');
+  assert(d0.x1 >= 428 && d0.x1 <= 448 && d0.y1 >= 96 && d0.y1 <= 110, 'dump mouth under inner elbow, not on the crown');
+  assert(d0.y2 > d0.y1 + 16 && Math.abs(d0.x2 - d0.x1) <= 10, 'first dump chord drops down the inner wall');
+  assert(!right0.failDump.outer.some(function (s) { return s.y1 < 96 || s.y2 < 96; }), 'dump never covers the crown channel y<96');
   var saucer = { x: 410, y: 148, r: 15 };
   function segDist(s, p) {
     var ax = s.x2 - s.x1, ay = s.y2 - s.y1;
@@ -3866,62 +3867,83 @@ console.log('All tests passed.');
   });
   assert(right0.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'plunge mouth (470,88) kept');
   assert(right0.mergeInner.some(function (s) { return s.y1 === 80 && s.y2 === 80 && Math.min(s.x1, s.x2) <= 280 && Math.max(s.x1, s.x2) >= 330; }), 'crown floor x=280-400 stays');
+  assert(right0.mergeOuter.some(function (s) { return s.x1 === 478 && s.y1 === 18 || s.x2 === 280 && s.y2 === 18; }), 'crown outer y=18 kept');
   var walls = fresh().walls.filter(function (w) { return w.dumpRamp || w.failMouth || w.dumpGate; });
   assert(walls.some(function (w) { return w.dumpRamp; }), 'dump ramp walls exist');
   assert(walls.some(function (w) { return w.failMouth; }), 'elbow dump mouth is a trapdoor wall');
   assert(walls.some(function (w) { return w.dumpGate; }), 'one-way dump gate exists');
+  var upperGuideSolid = (right0.guides || []).some(function (s) {
+    return s.x1 === 424 && s.y1 === 73 && s.x2 === 428 && s.y2 === 86;
+  });
+  assert(upperGuideSolid, 'U inner rail (424,73)-(428,86) restored');
+  var failMouthWalls = walls.filter(function (w) { return w.failMouth; });
+  assert(failMouthWalls.every(function (w) { return (w.y1 + w.y2) * 0.5 > 86; }), 'failMouth window is later than the U inner rail');
 
-  var full = fresh();
-  sim.launchBall(full, 1400);
-  var u = false;
-  var i;
-  for (i = 0; i < 240; i++) {
-    sim.tick(full, 1 / 60);
-    var b = full.ball;
-    if (full.exitedLaunchLane && b.y < 110 && b.x > 140 && b.x < 440) u = true;
-    if (full.exitedLaunchLane && b.y > 420) break;
+  function rideInfo(st) {
+    var b = st.ball;
+    return { x: b.x, y: b.y, vx: b.vx, vy: b.vy, rem: st.ballsRemaining, exited: st.exitedLaunchLane };
   }
-  assert(full.exitedLaunchLane && u, '1400 still rides U (x=' + full.ball.x.toFixed(1) + ' y=' + full.ball.y.toFixed(1) + ')');
-  assert.strictEqual(full.ballsRemaining, 3, '1400 must not drain');
-
-  function runSoft(power) {
+  function ranU(trace) {
+    return trace.some(function (p) { return p.exited && p.y < 110 && p.x < 280; }) ||
+      trace.some(function (p) { return p.exited && p.y < 90 && p.x < 400 && p.x > 140; });
+  }
+  function dumpedToPlay(trace) {
+    return trace.some(function (p) {
+      return p.exited && p.x < 472 - 24 && p.y > 120 && p.y < 420 && p.x > 200;
+    });
+  }
+  function hallReturnAfterEnter(trace) {
+    var entered = false;
+    var i;
+    for (i = 0; i < trace.length; i++) {
+      var p = trace[i];
+      if (p.x < 500 && p.x > 400 && p.y < 180) entered = true;
+      if (entered && p.x > 472 && p.y > 200) return true;
+    }
+    return false;
+  }
+  function runPower(power) {
     var st = fresh();
     sim.launchBall(st, power);
-    var entered = false;
-    var hallReturn = false;
-    var dumped = false;
+    var trace = [];
     var j;
     for (j = 0; j < 320; j++) {
       sim.tick(st, 1 / 60);
-      var bb = st.ball;
-      if (!bb || !bb.inPlay) break;
-      if (bb.x < 500 && bb.x > 400 && bb.y < 180) entered = true;
-      if (entered && bb.x > sim.LAUNCH_LANE_LEFT && bb.y > 200) hallReturn = true;
-      if (entered && bb.x < sim.LAUNCH_LANE_LEFT - 24 && bb.y > 90 && bb.y < 420) dumped = true;
-      if (dumped && bb.y > 300) break;
+      var p = rideInfo(st);
+      trace.push(p);
+      if (!st.ball || !st.ball.inPlay) break;
       if (st.phase === 'ready' && j > 30) break;
+      if (p.y > 500 && p.exited) break;
     }
+    var last = trace[trace.length - 1] || rideInfo(st);
     return {
-      entered: entered,
-      hallReturn: hallReturn,
-      dumped: dumped,
-      x: st.ball.x,
-      y: st.ball.y,
+      u: ranU(trace),
+      dumped: dumpedToPlay(trace),
+      hallReturn: hallReturnAfterEnter(trace),
+      x: last.x,
+      y: last.y,
+      rem: last.rem,
       inPlay: !!(st.ball && st.ball.inPlay),
-      rem: st.ballsRemaining
+      hitDumpSpot: trace.some(function (p) { return Math.abs(p.x - 361) < 18 && Math.abs(p.y - 238) < 18; })
     };
   }
-  var soft = runSoft(700);
-  assert(soft.entered, '700 enters copper elbow');
+
+  var full = runPower(1400);
+  assert(full.u, '1400 rides the U (x=' + full.x.toFixed(1) + ' y=' + full.y.toFixed(1) + ')');
+  assert(!full.hitDumpSpot, '1400 must not dump to (361,238)');
+  assert(full.rem === 3, '1400 must not drain');
+
+  var mid = runPower(900);
+  assert(mid.u, '900 crests and rides the U (x=' + mid.x.toFixed(1) + ' y=' + mid.y.toFixed(1) + ')');
+  assert(!mid.hitDumpSpot, '900 must not dump to play');
+  assert(mid.rem === 3, '900 must not drain');
+
+  var soft = runPower(700);
   assert(!soft.hallReturn, '700 must not reverse down the shooter hall (x=' + soft.x.toFixed(1) + ' y=' + soft.y.toFixed(1) + ')');
   assert(soft.dumped && soft.inPlay, '700 dumps onto playfield x=' + soft.x.toFixed(1) + ' y=' + soft.y.toFixed(1));
-  assert(soft.x < sim.LAUNCH_LANE_LEFT - 20, 'dump x well left of hall');
+  assert(soft.x < 472 - 20, 'dump x well left of hall');
   assert(soft.y > 90, 'dump y below the crown');
   assert(soft.rem === 3, '700 dump is not a drain');
-
-  var mid = runSoft(900);
-  assert(mid.entered && !mid.hallReturn, '900 enters and does not hall-return');
-  assert(mid.dumped && mid.x < 430 && mid.y > 90 && mid.inPlay, '900 dumps to play x=' + mid.x.toFixed(1) + ' y=' + mid.y.toFixed(1));
 
   var field = fresh();
   field.ball.inPlay = true;
@@ -3933,6 +3955,7 @@ console.log('All tests passed.');
   field.ball.vx = 240;
   field.ball.vy = -300;
   var reentered = false;
+  var i;
   for (i = 0; i < 180; i++) {
     sim.stepPhysics(field, 1 / 60);
     var fb = field.ball;
@@ -3943,12 +3966,21 @@ console.log('All tests passed.');
   assert(field.ball.y > 80, 'field ball stays below the crown');
 
   var idx = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idx.indexOf('?v=dump1') !== -1, 'cache tag dump1');
-  assert(idx.indexOf('?v=shoe6') === -1, 'old shoe6 cache tag gone');
+  assert(idx.indexOf('?v=dump2') !== -1, 'cache tag dump2');
+  assert(idx.indexOf('?v=dump1') === -1, 'old dump1 cache tag gone');
   var renSrc = fs.readFileSync(path.join(__dirname, '..', 'renderer.js'), 'utf8');
   assert(renSrc.indexOf('right.failDump') !== -1, 'renderer draws copper dump sausage');
+  assert(renSrc.indexOf('clipSegsBelowY(right.mergeOuter, 88)') === -1, 'no leftover copper drop fill');
+  assert(renSrc.indexOf('fillSausageHull(ctx, dropO, dropI') === -1, 'no drop hull blob');
+  var horse = renSrc.indexOf('function drawHorseshoeOrbit');
+  var horseEnd = renSrc.indexOf('function drawCopperMergeShoulder');
+  assert(horse !== -1 && horseEnd > horse, 'horseshoe draw span');
+  var horseSrc = renSrc.slice(horse, horseEnd);
+  assert(horseSrc.indexOf('strokeRect') === -1, 'no AABB strokeRect in horseshoe path');
+  assert(horseSrc.indexOf('rgba(255,255,255') === -1 && horseSrc.indexOf('rgba(255, 255, 255') === -1, 'no white debug stroke in horseshoe path');
   assert.strictEqual(sim.GRAVITY, 1180);
   assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
+  assert.strictEqual(sim.TABLE_W, 560);
 
-  console.log('PASS: dump1 fail ramp (700 x=' + soft.x.toFixed(1) + ' y=' + soft.y.toFixed(1) + ' 1400 U)');
+  console.log('PASS: dump2 restore U (1400 x=' + full.x.toFixed(1) + ' y=' + full.y.toFixed(1) + ' 900 U 700 dump x=' + soft.x.toFixed(1) + ')');
 })();

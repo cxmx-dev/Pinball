@@ -1164,13 +1164,8 @@
     ctx.stroke();
     ctx.restore();
 
-    if (right && right.mergeOuter && right.mergeInner) {
-      var dropO = segsToPoints(clipSegsBelowY(right.mergeOuter, 88));
-      var dropI = segsToPoints(clipSegsBelowY(right.mergeInner, 88));
-      if (dropO.length >= 2 && dropI.length >= 2) {
-        fillSausageHull(ctx, dropO, dropI, 'copper', simple, tubeW);
-      }
-    }
+    // dump2: no clipSegsBelowY copper drop fill — that sealed the left merge
+    // into a melted orange blob. Fail dump is a short exit sausage only.
     if (right && right.failDump && right.failDump.outer && right.failDump.inner) {
       var dumpO = segsToPoints(right.failDump.outer);
       var dumpI = segsToPoints(right.failDump.inner);

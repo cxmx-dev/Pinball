@@ -610,7 +610,8 @@
           { x1: 468, y1: 286, x2: 444, y2: 345 }
         ],
         guides: [
-          { x1: 424, y1: 73, x2: 432, y2: 100 },
+          { x1: 424, y1: 73, x2: 428, y2: 86 },
+          { x1: 428, y1: 86, x2: 432, y2: 100 },
           { x1: 432, y1: 100, x2: 438, y2: 124 },
           { x1: 438, y1: 124, x2: 444, y2: 159 },
           { x1: 444, y1: 159, x2: 444, y2: 216 },
@@ -636,23 +637,24 @@
           { x1: 390, y1: 80, x2: 330, y2: 80 },
           { x1: 330, y1: 80, x2: 280, y2: 80 }
                 ],
-        // dump1: Williams fail-ramp. Inner NE elbow window dumps down-left.
-        // Drop vertically on the right of UR saucer (410,148) then turn left
-        // onto the upper-right playfield toward yellow 300 (343,295).
-        // Crown floor x=280-400 stays closed.
+        // dump2: short Williams exit sausage butted under the inner elbow.
+        // Crown channel stays open (outer y=18, inner y=80, join 280,80).
+        // Window is lower/later so a FAST U rider hugging the outer rail misses it.
+        // Soft plunge that entered the elbow but cannot crest peels onto play.
+        // Stays right of UR saucer (410,148). Does not fill the elbow or crown.
         failDump: {
           outer: [
-            { x1: 432, y1: 158, x2: 428, y2: 186 },
-            { x1: 428, y1: 186, x2: 400, y2: 212 },
-            { x1: 400, y1: 212, x2: 368, y2: 234 }
+            { x1: 434, y1: 100, x2: 432, y2: 148 },
+            { x1: 432, y1: 148, x2: 424, y2: 176 },
+            { x1: 424, y1: 176, x2: 396, y2: 200 }
           ],
           inner: [
-            { x1: 452, y1: 160, x2: 450, y2: 190 },
-            { x1: 450, y1: 190, x2: 422, y2: 216 },
-            { x1: 422, y1: 216, x2: 392, y2: 238 }
+            { x1: 452, y1: 102, x2: 450, y2: 152 },
+            { x1: 450, y1: 152, x2: 442, y2: 180 },
+            { x1: 442, y1: 180, x2: 418, y2: 204 }
           ],
           gate: [
-            { x1: 368, y1: 234, x2: 392, y2: 238 }
+            { x1: 396, y1: 200, x2: 418, y2: 204 }
           ]
         }
       },
@@ -761,7 +763,8 @@
     function isElbowDumpMouthSeg(seg) {
       var mx = (seg.x1 + seg.x2) * 0.5;
       var my = (seg.y1 + seg.y2) * 0.5;
-      return mx > 400 && mx < 460 && my > 70 && my < 162;
+      // dump2: window starts at the mouth. Keep (424,73)-(428,86) solid for U riders.
+      return mx > 400 && mx < 460 && my > 88 && my < 162;
     }
     function pushRightGuides(segs) {
       if (!segs) return;
@@ -1655,10 +1658,10 @@
     state.skillShotWindow = true;
     state.launchTick = 0;
     if (state.launchRailT == null) state.launchRailT = 0;
-    var dumpSlide = (state.activeLaunchPower || 0) < 950;
-    var targetX = dumpSlide ? 430 : 410;
-    var targetY = dumpSlide ? 160 : 40;
-    state.activeHabitrail = 'ramp-r';
+    var dumpSlide = (state.activeLaunchPower || 0) < 880;
+    var targetX = dumpSlide ? 436 : 410;
+    var targetY = dumpSlide ? 150 : 40;
+    state.activeHabitrail = dumpSlide ? null : 'ramp-r';
     var tx = targetX - ball.x;
     var ty = targetY - ball.y;
     var dist = vecLen(tx, ty);
@@ -1676,8 +1679,8 @@
   }
 
   var MIN_RAIL_LAUNCH_U = 0.12;
-  var RIDE_MERGE_U = 0.42;
-  var RIDE_FLOOR_U = 0.78;
+  var RIDE_MERGE_U = 0.38;
+  var RIDE_FLOOR_U = 0.55;
 
   function launchRailBoost(state) {
     var power = state.activeLaunchPower || 0;
@@ -1716,9 +1719,13 @@
     }
     // On the merge / U floor the ball has left the vertical shooter.
     if (ball.y < 100 && ball.x < LAUNCH_LANE_LEFT - 10 && ball.x > 100) {
-      state.exitedLaunchLane = true;
-      state.skillShotWindow = true;
-      if (!state.activeHabitrail) state.activeHabitrail = 'ramp-r';
+      // dump2: only a cresting plunge may silent-exit onto the U.
+      // A short plunge that reached the mouth must hit releaseFromWireform.
+      if (canRideFloor) {
+        state.exitedLaunchLane = true;
+        state.skillShotWindow = true;
+        if (!state.activeHabitrail) state.activeHabitrail = 'ramp-r';
+      }
     }
     if (ball.y > 140 && ball.x < LAUNCH_LANE_LEFT) {
       state.exitedLaunchLane = true;
@@ -1772,15 +1779,16 @@
     }
 
     if (!canRideFloor) {
-      // Mid charge: dump onto the right copper slide, not the U floor.
-      if (ball.vx > -140) ball.vx = -140;
-      if (ball.y < 150) ball.vy = Math.max(ball.vy, 90);
-      if (ball.x > LAUNCH_LANE_LEFT - 4 && ball.y > 100 && ball.y < 220) {
-        ball.x = LAUNCH_LANE_LEFT - r - 8;
-        if (ball.vx > -80) ball.vx = -160;
-        state.exitedLaunchLane = true;
-        state.skillShotWindow = true;
-        state.launchRailT = null;
+      // dump2: two-phase fail. Cross the mouth at y~88, then peel down.
+      // Never drop below the opening while still inside the hall.
+      var stillInHall = ball.x > LAUNCH_LANE_LEFT - 4;
+      if (stillInHall && ball.y < 120) {
+        if (ball.vx > -170) ball.vx = -170;
+        if (ball.y > 92) ball.vy = Math.min(ball.vy, -50);
+        if (ball.y < 80) ball.vy = Math.max(ball.vy, 24);
+      } else if (!stillInHall && ball.x > 400 && ball.y < 180) {
+        if (ball.vx > -80) ball.vx = -80;
+        if (ball.vy < 70) ball.vy = 90;
       }
     }
 
@@ -1791,8 +1799,8 @@
     }
     var cur = vecLen(ball.vx, ball.vy);
     var assist = canRideFloor ? Math.max(cur, 360 + boost * 220) : Math.max(cur * 0.55, 160 + boost * 90);
-    var mx = (canRideFloor ? (LAUNCH_LANE_LEFT - 20) : 438) - ball.x;
-    var my = (canRideFloor ? 80 : 158) - ball.y;
+    var mx = (canRideFloor ? (LAUNCH_LANE_LEFT - 20) : 444) - ball.x;
+    var my = (canRideFloor ? 80 : 134) - ball.y;
     var md = vecLen(mx, my);
     if (md > 1e-6) {
       var blend = Math.min(0.55, 9.5 * dt);
@@ -1802,6 +1810,10 @@
     if (ball.x > LAUNCH_LANE_LEFT - 6 && ball.y < 80) {
       if (ball.vy < 0) ball.vy *= 0.25;
       ball.vy += 240 * dt;
+    }
+    if (!canRideFloor && ball.x < LAUNCH_LANE_LEFT - 2 && ball.x > 400 && ball.y < 110) {
+      if (ball.vy < 70) ball.vy = 90;
+      if (ball.y < 86) ball.y = 92;
     }
     if (ball.x < LAUNCH_LANE_LEFT - 6 && ball.y >= 66 && ball.y <= 102) {
       releaseFromWireform(state, assist);
@@ -2975,12 +2987,12 @@
         return;
       }
       if (wall.failMouth) {
-        // Trapdoor: open for a dying ball already in the orange sausage.
-        // Closed for field balls and RTL climbers (they hug / bounce).
-        var insideElbow = ball.x >= 428 && ball.x <= 478 && ball.y >= 78 && ball.y <= 175;
+        // dump2 physical window: FAST ball hugging outer / moving left misses it.
+        // SLOW / reversing ball already below the crown falls through.
+        var insideWindow = ball.x >= 428 && ball.x <= 460 && ball.y >= 88 && ball.y <= 175;
+        var huggingOuter = ball.y < 86 && ball.vx < -40;
         var climbing = ball.vy < -80;
-        var fastU = ball.y < 86 && vecLen(ball.vx, ball.vy) > 260;
-        if (insideElbow && !climbing && !fastU) return;
+        if (insideWindow && !climbing && !huggingOuter) return;
       }
       if (wall.dumpRamp && !wall.dumpGate && ball.x > 446 && ball.y < 200) {
         // Dump sausage lives on the playfield side of the inner wall.
@@ -3170,9 +3182,9 @@
     return !!(ball && ball.x >= 400 && ball.x <= 460 && ball.y >= 320 && ball.y <= 390);
   }
 
-  /** dump1: NE elbow fail-ramp window. Not the lower 500-mouth box. */
+  /** dump2: lower inner-wall window only. A 1400 U rider (y~49) cannot match. */
   function copperElbowDumpBox(ball) {
-    return !!(ball && ball.x >= 420 && ball.x <= 490 && ball.y >= 82 && ball.y <= 170);
+    return !!(ball && ball.x >= 428 && ball.x <= 454 && ball.y >= 104 && ball.y <= 178);
   }
 
   function copperRubberMid(state) {

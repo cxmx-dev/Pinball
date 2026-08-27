@@ -76,7 +76,7 @@ console.log('============================');
   assert(src.indexOf('function isGameOverRestartHit') !== -1, 'restart hit helper');
   assert(src.indexOf('gameOverUi.addEventListener') !== -1, 'whole game-over card clickable');
   assert(html.indexOf('cursor: pointer;') !== -1, 'restart label is a hit target');
-  assert(html.indexOf('?v=dump1') !== -1 && html.indexOf('?v=shoe6') === -1 && html.indexOf('?v=opt1') === -1 && html.indexOf('?v=shoe2') === -1 && html.indexOf('?v=shoe5') === -1, 'cache bust dump1');
+  assert(html.indexOf('?v=dump2') !== -1 && html.indexOf('?v=shoe6') === -1 && html.indexOf('?v=opt1') === -1 && html.indexOf('?v=shoe2') === -1 && html.indexOf('?v=shoe5') === -1, 'cache bust dump2');
   function isGameOverRestartHit(x, y, w, h) {
     if (y >= 72 && y <= h - 28) return true;
     var ty = h * 0.38 + 44;
