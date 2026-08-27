@@ -1119,8 +1119,8 @@
     // One continuous U path. Copper under, cyan over, 26px color blend. No vertical join cut.
     if (right && right.mergeOuter && right.mergeInner) {
       fillSausageHull(ctx, clipPtsAtJoinX(fullOuter, 280 - blend, false), clipPtsAtJoinX(fullInner, 280 - blend, false), 'copper', simple, tubeW);
-      var fallOuter = segsToPoints(clipSegsBelowY(right.segments, 110));
-      var fallInner = segsToPoints(clipSegsBelowY(right.guides, 100));
+      var fallOuter = segsToPoints(clipSegsBelowY(right.segments, 88));
+      var fallInner = segsToPoints(clipSegsBelowY(right.guides, 88));
       if (fallOuter.length >= 2 && fallInner.length >= 2) {
         fillSausageHull(ctx, fallOuter, fallInner, 'copper', simple, tubeW);
       }
