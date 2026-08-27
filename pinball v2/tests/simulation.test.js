@@ -3577,12 +3577,38 @@ console.log('All tests passed.');
     sim.tick(pinch, 1 / 60);
     t += 1 / 60;
     var sp = Math.hypot(pinch.ball.vx, pinch.ball.vy);
-    var inPinch = pinch.ball.x >= 180 && pinch.ball.x <= 300 && pinch.ball.y >= 8 && pinch.ball.y <= 100 && sp < 40;
+    var inPinch = pinch.ball.x >= 170 && pinch.ball.x <= 310 && pinch.ball.y >= 6 && pinch.ball.y <= 110 && sp < 40;
     if (!inPinch && sp >= 40) { moved = true; break; }
   }
   var endSp = Math.hypot(pinch.ball.vx, pinch.ball.vy);
   assert(moved || endSp >= 40 || pinch.ball.x > 300 || pinch.ball.y > 100, 'crown shelf ball must be moving/out within 1s (x=' + pinch.ball.x.toFixed(1) + ' y=' + pinch.ball.y.toFixed(1) + ' sp=' + endSp.toFixed(1) + ')');
   assert(pinch.ball.x < sim.LAUNCH_LANE_LEFT - 4, 'eject must not dump into the shooter');
+
+  var high = fresh();
+  high.phase = 'playing';
+  high.ball.inPlay = true;
+  high.exitedLaunchLane = true;
+  high.ball.x = 250;
+  high.ball.y = 30;
+  high.ball.vx = 0;
+  high.ball.vy = 0;
+  t = 0;
+  var highMoved = false;
+  while (t < 1) {
+    sim.tick(high, 1 / 60);
+    t += 1 / 60;
+    var hsp = Math.hypot(high.ball.vx, high.ball.vy);
+    var highPinch = high.ball.x >= 170 && high.ball.x <= 310 && high.ball.y >= 6 && high.ball.y <= 110 && hsp < 40;
+    if (!highPinch && hsp >= 40) { highMoved = true; break; }
+  }
+  var highSp = Math.hypot(high.ball.vx, high.ball.vy);
+  assert(highMoved || highSp >= 40 || high.ball.x > 310 || high.ball.y > 110, 'crown high ball must be moving/out within 1s (x=' + high.ball.x.toFixed(1) + ' y=' + high.ball.y.toFixed(1) + ' sp=' + highSp.toFixed(1) + ')');
+  assert(high.ball.x < sim.LAUNCH_LANE_LEFT - 4, 'high eject must not dump into the shooter');
+
+  var ltr = runOrbit(placeInLeftMouth, 'LTR', 1120);
+  assert(ltr.crossedApex && ltr.farSide && !ltr.droppedThrough, 'LTR must still complete after opt2');
+  var rtl = runOrbit(placeInRightMouth, 'RTL', 1120);
+  assert(rtl.crossedApex && rtl.farSide && !rtl.droppedThrough, 'RTL must still complete after opt2');
 
   var plunge = fresh();
   sim.launchBall(plunge, 1400);

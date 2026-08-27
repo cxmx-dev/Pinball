@@ -2338,28 +2338,20 @@
       return;
     }
     if ((ball._horseStuckT || 0) < 0.2) return;
-    var left = state.sideRoutes && state.sideRoutes.leftRamp;
-    var right = state.sideRoutes && state.sideRoutes.rightRamp;
-    var travel = horseshoeTravelSegs(left, right);
-    var near = nearestPointOnSegments(ball.x, ball.y, travel);
+    // Along the tube toward the copper dump (+x, slight +y). Not through the inner rail, not into the shooter.
     var tx = 0.96;
     var ty = 0.18;
-    if (near && near.seg) {
-      tx = near.seg.x2 - near.seg.x1;
-      ty = near.seg.y2 - near.seg.y1;
-      var slen = vecLen(tx, ty) || 1;
-      tx /= slen;
-      ty /= slen;
-      if (tx < 0) { tx = -tx; ty = -ty; }
+    if (ball.x > 430) {
+      tx = 0.2;
+      ty = 0.4;
     }
-    if (tx < 0.4) { tx = 0.96; ty = 0.18; }
-    var inners = topHorseshoeInnerSegs(left, right);
-    var nearInner = nearestPointOnSegments(ball.x, ball.y, inners);
-    if (nearInner && ball.y >= nearInner.y - 2 && ty > 0.25) ty = 0.08;
-    if (ball.x > 470) tx = Math.min(tx, 0.15);
-    var keep = Math.max(sp, 170);
-    ball.vx = ball.vx * 0.18 + tx * keep * 0.82;
-    ball.vy = ball.vy * 0.18 + ty * keep * 0.82;
+    var keep = Math.max(sp, 180);
+    ball.vx = ball.vx * 0.15 + tx * keep * 0.85;
+    ball.vy = ball.vy * 0.15 + ty * keep * 0.85;
+    if (ball.x > LAUNCH_LANE_LEFT - 24) {
+      ball.vx = Math.min(ball.vx, 30);
+    }
+    if (ball.vy > 90) ball.vy = 90;
     ball._horseStuckT = 0;
   }
 
