@@ -1568,14 +1568,14 @@
     var power = clamp(state.launchPower || 0, 0, 1);
     var charging = !!state.launchCharging;
     var follow = state.plungerFollowFrames || 0;
-    var followMax = 3;
+    var followMax = (Sim.PLUNGER_FOLLOW_FRAMES != null ? Sim.PLUNGER_FOLLOW_FRAMES : 3);
     var headR = 8;
     var tipW = 19;
     var tipH = 11;
     var headRestY = restY + Sim.BALL_RADIUS + headR + 2;
     var headY = headRestY;
     if (follow > 0) {
-      headY = headRestY - 20 * (follow / followMax);
+      headY = headRestY - 28 * (follow / followMax);
     } else {
       headY = headRestY + power * 48;
     }

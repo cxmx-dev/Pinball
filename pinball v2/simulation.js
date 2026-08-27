@@ -5,8 +5,10 @@
 (function (root) {
   'use strict';
 
-  var TABLE_PITCH_DEG = 7.0;
-  var GRAVITY = 1400;
+  var TABLE_PITCH_DEG = 6.8;
+  var GRAVITY_1G = 9800;
+  // Along-table px/s^2 for a steel ball on TABLE_PITCH_DEG (1g * sin(6.8 deg) ~ 1160, tuned 1180).
+  var GRAVITY = 1180;
   var BALL_RADIUS = 12;
   var TABLE_W = 560;
   var TABLE_H = 860;
@@ -43,8 +45,8 @@
   var DECK_DRAIN_SPEED = 220;
   var WALL_RESTITUTION = 0.72;
   /** Habitrail/guide bounce â€” livelier than cabinet rails so channels do not crawl. */
-  var HABITRAIL_RESTITUTION = 0.48;
-  var GUIDE_RESTITUTION = 0.45;
+  var HABITRAIL_RESTITUTION = 0.52;
+  var GUIDE_RESTITUTION = 0.48;
   /** Min along-rail speed (px/s) while ball is inside a habitrail channel. */
   var HABITRAIL_MIN_SPEED = 0;
   /** Continuous along-path assist while riding a habitrail (px/s^2). */
@@ -62,17 +64,17 @@
   /** Soft ball speed ceiling (px/s). */
   var MAX_BALL_SPEED = 1600;
   /** Base linear damp per physics step (~16ms); rises with speed. */
-  var BALL_DRAG_BASE = 0.00070;
-  var BALL_DRAG_SPEED = 0.00128;
+  var BALL_DRAG_BASE = 0.00058;
+  var BALL_DRAG_SPEED = 0.00105;
   var MAX_LAUNCH_POWER = 1400;
   var MIN_LAUNCH_POWER = 200;
   var LAUNCH_CHARGE_RATE = 1.1;
   /** Meterâ†’power ease exponent (1 = linear). */
-  var LAUNCH_METER_EASE = 1.25;
+  var LAUNCH_METER_EASE = 1.0;
   /** Frames of plunger follow thrust while still in shooter lane. */
   var PLUNGER_FOLLOW_FRAMES = 3;
   /** Max |vx| English from launch charge (aim skill). */
-  var LAUNCH_ENGLISH_MAX = 12;
+  var LAUNCH_ENGLISH_MAX = 0;
   var DRAIN_SLOT_TOP = TABLE_H - 14;
   var DRAIN_SLOT_H = 12;
   var DRAIN_Y = DRAIN_SLOT_TOP - BALL_RADIUS;
@@ -1571,9 +1573,9 @@
     state.skillShotWindow = true;
     state.launchTick = 0;
     if (state.launchRailT == null) state.launchRailT = 0;
-    // Ride the right horseshoe / copper outer. Never dump into the open U at 280,52.
-    var targetX = 410;
-    var targetY = 40;
+    var dumpSlide = (state.activeLaunchPower || 0) < 950;
+    var targetX = dumpSlide ? 430 : 410;
+    var targetY = dumpSlide ? 160 : 40;
     state.activeHabitrail = 'ramp-r';
     var tx = targetX - ball.x;
     var ty = targetY - ball.y;
@@ -1591,11 +1593,20 @@
     }
   }
 
-  var MIN_RAIL_LAUNCH_POWER = 380;
+  var MIN_RAIL_LAUNCH_U = 0.12;
+  var RIDE_MERGE_U = 0.42;
+  var RIDE_FLOOR_U = 0.78;
 
   function launchRailBoost(state) {
     var power = state.activeLaunchPower || 0;
     return clamp(power / 820, 0, 1.15);
+  }
+
+  function launchChargeU(state) {
+    if (state && state.launchChargeU != null) return clamp(state.launchChargeU, 0, 1);
+    var p = state && state.activeLaunchPower;
+    if (p == null) return 0;
+    return clamp((p - MIN_LAUNCH_POWER) / (MAX_LAUNCH_POWER - MIN_LAUNCH_POWER), 0, 1);
   }
 
   function guideShooterLane(state, dt) {
@@ -1603,8 +1614,11 @@
     var ball = state.ball;
     var r = ball.radius;
     if (ball.y <= LAUNCH_WIRE_Y2 - 24) return;
-    var boost = launchRailBoost(state);
-    var canRideRail = state.activeLaunchPower >= MIN_RAIL_LAUNCH_POWER;
+    var u = launchChargeU(state);
+    var boost = u;
+    var inLaneBoost = u >= MIN_RAIL_LAUNCH_U;
+    var canRideRail = u >= RIDE_MERGE_U;
+    var canRideFloor = u >= RIDE_FLOOR_U;
 
     if (ball.vy > 160 && ball.y > PLUNGER_REST_Y - 50) return;
 
@@ -1654,14 +1668,39 @@
       if (ball.vx < -8) ball.vx = -8;
       var laneCenter = (LAUNCH_LANE_LEFT + LAUNCH_LANE_RIGHT) * 0.5;
       ball.vx += (laneCenter - ball.x) * 5.5 * dt;
-      if (canRideRail) {
-        var minRise = 760 * boost;
+      if (inLaneBoost) {
+        var minRise = 420 + u * 500;
         if (ball.vy > -minRise) ball.vy = -minRise;
       }
       return;
     }
 
-    if (!canRideRail) return;
+    if (!canRideRail) {
+      // Tap / low charge: pop out of the shooter onto the playfield, then die before the U.
+      if (atMerge || ball.y <= LAUNCH_WIRE_Y1 + 40) {
+        state.exitedLaunchLane = true;
+        state.skillShotWindow = true;
+        state.launchRailT = null;
+        state.activeHabitrail = "ramp-r";
+        if (ball.x > 456) ball.x = 452;
+        if (ball.vx > -40) ball.vx = -60;
+        ball.vy = Math.max(ball.vy, 140);
+      }
+      return;
+    }
+
+    if (!canRideFloor) {
+      // Mid charge: dump onto the right copper slide, not the U floor.
+      if (ball.vx > -140) ball.vx = -140;
+      if (ball.y < 150) ball.vy = Math.max(ball.vy, 90);
+      if (ball.x > LAUNCH_LANE_LEFT - 4 && ball.y > 100 && ball.y < 220) {
+        ball.x = LAUNCH_LANE_LEFT - r - 8;
+        if (ball.vx > -80) ball.vx = -160;
+        state.exitedLaunchLane = true;
+        state.skillShotWindow = true;
+        state.launchRailT = null;
+      }
+    }
 
     // Roll onto the merge. No ball.x/y rewrite onto the short wire.
     if (ball.x + r > LAUNCH_LANE_RIGHT) {
@@ -1669,9 +1708,9 @@
       if (ball.vx > 0) ball.vx *= -0.08;
     }
     var cur = vecLen(ball.vx, ball.vy);
-    var assist = Math.max(cur, 360 + boost * 220);
-    var mx = (LAUNCH_LANE_LEFT - 20) - ball.x;
-    var my = 80 - ball.y;
+    var assist = canRideFloor ? Math.max(cur, 360 + boost * 220) : Math.max(cur * 0.55, 160 + boost * 90);
+    var mx = (canRideFloor ? (LAUNCH_LANE_LEFT - 20) : 438) - ball.x;
+    var my = (canRideFloor ? 80 : 158) - ball.y;
     var md = vecLen(mx, my);
     if (md > 1e-6) {
       var blend = Math.min(0.55, 9.5 * dt);
@@ -2671,7 +2710,10 @@
   function isFreshShooterTravel(state) {
     // Only a plunged ball that has not yet exited may travel the lane
     // (up into the merge, or back down a failed plunge to the berth).
-    return !!(state && state.ball && state.ball.inPlay && !state.exitedLaunchLane && isBallInLaunchLane(state));
+    if (!state || !state.ball || !state.ball.inPlay || !isBallInLaunchLane(state)) return false;
+    if (!state.exitedLaunchLane) return true;
+    var u = launchChargeU(state);
+    return u > 0 && u < RIDE_MERGE_U;
   }
 
   function peelOutOfShooterLane(ball, intoU) {
@@ -3095,6 +3137,7 @@
       ny = (ball.y - nearWall.y) / wallDist;
     }
     if (top) {
+      if (sp > 90 && ball.vx > 40) return;
       ball.x -= 10;
       if (ball.y > 66) ball.y = 64;
       ball.vx = -Math.max(Math.abs(ball.vx), 220);
@@ -4215,7 +4258,7 @@
 
   function easeLaunchMeter(meter) {
     var m = clamp(meter, 0, 1);
-    // pow ease keeps full-meter = max power; softens mid-charge feel.
+    // Linear when EASE=1: the bar fill IS the speed fraction.
     return Math.pow(m, LAUNCH_METER_EASE);
   }
 
@@ -4230,6 +4273,9 @@
     if (power != null && power > 1) {
       p = clamp(power, MIN_LAUNCH_POWER, MAX_LAUNCH_POWER);
       chargeU = (p - MIN_LAUNCH_POWER) / (MAX_LAUNCH_POWER - MIN_LAUNCH_POWER);
+    } else if (power != null) {
+      chargeU = easeLaunchMeter(power);
+      p = MIN_LAUNCH_POWER + chargeU * (MAX_LAUNCH_POWER - MIN_LAUNCH_POWER);
     } else {
       chargeU = easeLaunchMeter(state.launchPower);
       p = MIN_LAUNCH_POWER + chargeU * (MAX_LAUNCH_POWER - MIN_LAUNCH_POWER);
@@ -4238,14 +4284,15 @@
     state.ball._exited = false;
     state.ball.x = LAUNCH_LANE_X;
     state.ball.y = PLUNGER_REST_Y;
-    // Tiny lateral English from charge â€” aim skill without shoving into flippers.
-    state.ball.vx = 5 + (chargeU - 0.5) * 2 * LAUNCH_ENGLISH_MAX;
+    // Gauge is speed only — no hidden English off the bar.
+    state.ball.vx = 0;
     state.ball.vy = -p;
     state.exitedLaunchLane = false;
     state.skillShotWindow = false;
     state.launchTick = 0;
     state.launchRailT = null;
     state.activeLaunchPower = p;
+    state.launchChargeU = chargeU;
     state.plungerFollowFrames = PLUNGER_FOLLOW_FRAMES;
     state.plungerFollowPower = p;
     state.phase = 'playing';
@@ -4384,6 +4431,7 @@
 
   var api = {
     GRAVITY: GRAVITY,
+    GRAVITY_1G: GRAVITY_1G,
     TABLE_PITCH_DEG: TABLE_PITCH_DEG,
     ARCH_CX: ARCH_CX,
     ARCH_CY: ARCH_CY,
@@ -4409,6 +4457,7 @@
     LAUNCH_LANE_LEFT: LAUNCH_LANE_LEFT,
     LAUNCH_LANE_RIGHT: LAUNCH_LANE_RIGHT,
     PLUNGER_REST_Y: PLUNGER_REST_Y,
+    PLUNGER_FOLLOW_FRAMES: PLUNGER_FOLLOW_FRAMES,
     LAUNCH_LANE_TOP: LAUNCH_LANE_TOP,
     LAUNCH_WIRE_Y1: LAUNCH_WIRE_Y1,
     LAUNCH_WIRE_Y2: LAUNCH_WIRE_Y2,
@@ -4449,7 +4498,11 @@
     SKILL_SHOT_NEAR_BONUS: SKILL_SHOT_NEAR_BONUS,
     LAUNCH_DASH_FULL_BONUS: LAUNCH_DASH_FULL_BONUS,
     MAX_TILT_WARNINGS: MAX_TILT_WARNINGS,
+    LAUNCH_ENGLISH_MAX: LAUNCH_ENGLISH_MAX,
     meterToLaunchPower: meterToLaunchPower,
+    easeLaunchMeter: easeLaunchMeter,
+    launchChargeU: launchChargeU,
+    LAUNCH_METER_EASE: LAUNCH_METER_EASE,
     canChargePlunger: canChargePlunger,
     ensureBallAtPlunger: ensureBallAtPlunger,
     createInitialState: createInitialState,
