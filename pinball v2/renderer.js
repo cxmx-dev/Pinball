@@ -903,6 +903,26 @@
   }
 
   /** Habitrail as SDF-3-guided hull (style only — physics unchanged). theme: 'copper' (default) or 'cyan'. */
+
+  /** shoe1: fair the DRAW polyline (physics walls stay live segments). */
+  function chaikinSmooth(pts, iterations) {
+    if (!pts || pts.length < 3) return pts || [];
+    var out = pts;
+    var n = iterations == null ? 2 : iterations;
+    var k, i, next;
+    for (k = 0; k < n; k++) {
+      next = [{ x: out[0].x, y: out[0].y }];
+      for (i = 0; i < out.length - 1; i++) {
+        var a = out[i], b = out[i + 1];
+        next.push({ x: a.x * 0.75 + b.x * 0.25, y: a.y * 0.75 + b.y * 0.25 });
+        next.push({ x: a.x * 0.25 + b.x * 0.75, y: a.y * 0.25 + b.y * 0.75 });
+      }
+      next.push({ x: out[out.length - 1].x, y: out[out.length - 1].y });
+      out = next;
+    }
+    return out;
+  }
+
   function drawPioneerRamp(ctx, ramp, pulse, theme) {
     if (!ramp || !ramp.segments) return;
     var cyan = theme === 'cyan';
@@ -911,6 +931,10 @@
     if (outer.length < 2 || inner.length < 2) return;
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
     var filler = ramp.id === 'fill-l' || ramp.id === 'fill-r';
+    if (!filler) {
+      // shoe1: Pioneer is lower sausages only. Horseshoe is two neon tubes.
+      return;
+    }
     // Draw hull = physics outline. No inset (that made a skeleton off the rail).
 
     var hull = outer.concat(inner);
@@ -1021,80 +1045,62 @@
   }
 
   function horseshoeInnerPoints(left, right) {
-    var cyan = clipPtsAtJoinX(segsToPoints(left && left.guides), 280, true);
+    var pts = segsToPoints(left && left.guides);
     var copper = segsToPoints(right && right.mergeInner);
-    var pts = cyan.slice();
-    if (copper.length < 2) return pts;
+    if (!pts.length || copper.length < 2) return pts;
     var i;
     for (i = copper.length - 2; i >= 0; i--) pts.push(copper[i]);
     return pts;
   }
 
-  /** One horseshoe tube: shared crown + shared floor, cyan fades into copper. */
+  /** shoe1: two matching neon tubes. No hull fill, no Pioneer lobe. */
   function drawHorseshoeOrbit(ctx, left, right, pulse) {
-    if (!left || !right || !right.mergeOuter || !right.mergeInner) return;
-    var outer = horseshoeOuterPoints(left, right);
-    var inner = horseshoeInnerPoints(left, right);
-    if (outer.length < 4 || inner.length < 4) return;
-    // pop1: PHYSICS=DRAW hull clipped at the orange ramp (x=470) so the top tube
-    // meets the copper slide with no leftover closer-cap / 1px V over the shooter.
-    var outerDraw = clipPtsAtJoinX(outer, 470, true);
-    var innerDraw = clipPtsAtJoinX(inner, 470, true);
-    var hull = outerDraw.concat(innerDraw.slice().reverse());
+    if (!left) return;
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    strokeExact(ctx, hull, true);
-    ctx.fillStyle = '#071018';
-    ctx.fill();
-    if (!simple) applyShadow(ctx, 'rgba(40, 160, 200, 0.16)', 8);
+    var tubeW = 5.5;
     var cyanTube = {
       core: 'rgba(80, 230, 255, 0.95)',
       glow: 'rgba(40, 180, 255, 0.45)',
       hi: 'rgba(220, 250, 255, 0.7)',
-      width: 6,
+      width: tubeW,
       smooth: !simple
     };
     var copperTube = {
       core: 'rgba(255, 190, 90, 0.92)',
       glow: 'rgba(255, 150, 40, 0.42)',
       hi: 'rgba(255, 245, 210, 0.65)',
-      width: 6,
+      width: tubeW,
       smooth: !simple
     };
-    var cyanGuide = {
-      core: 'rgba(160, 240, 255, 0.6)',
-      glow: 'rgba(40, 180, 255, 0.22)',
-      hi: 'rgba(255,255,255,0.4)',
-      width: 3.5,
-      smooth: !simple
-    };
-    var copperGuide = {
-      core: 'rgba(255, 220, 140, 0.55)',
-      glow: 'rgba(255, 180, 60, 0.22)',
-      hi: 'rgba(255, 230, 170, 0.45)',
-      width: 3.5,
-      smooth: !simple
-    };
-    var blend = 18;
-    strokeTubePath(ctx, clipPtsAtJoinX(outer, 280 + blend, true), cyanTube);
-    strokeTubePath(ctx, clipPtsAtJoinX(outer, 280 - blend, false), copperTube);
-    strokeTubePath(ctx, clipPtsAtJoinX(inner, 280 + blend, true), cyanGuide);
-    strokeTubePath(ctx, clipPtsAtJoinX(inner, 280 - blend, false), copperGuide);
-    // PHYSICS=DRAW: the copper join curve (rightRamp.segments y<88) is the
-    // top-line-to-orange-ramp tube. Do not leave it as a leftover invisible wall.
-    var joinCurve = segsToPoints((right.segments || []).filter(function (sg) {
-      return Math.min(sg.y1, sg.y2) < 87;
-    }));
-    if (joinCurve.length >= 2) strokeTubePath(ctx, joinCurve, copperTube);
+    var JOIN_X = 280;
+    var blend = 26;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (right && right.mergeOuter && right.mergeInner) {
+      var outer = chaikinSmooth(horseshoeOuterPoints(left, right), 2);
+      var inner = chaikinSmooth(horseshoeInnerPoints(left, right), 2);
+      if (outer.length >= 4 && inner.length >= 4) {
+        // Copper under, cyan over: 26px overlap at x=280 is a color blend, not a brick seam.
+        strokeTubePath(ctx, clipPtsAtJoinX(outer, JOIN_X - blend, false), copperTube);
+        strokeTubePath(ctx, clipPtsAtJoinX(inner, JOIN_X - blend, false), copperTube);
+        strokeTubePath(ctx, clipPtsAtJoinX(outer, JOIN_X + blend, true), cyanTube);
+        strokeTubePath(ctx, clipPtsAtJoinX(inner, JOIN_X + blend, true), cyanTube);
+      }
+      var dropO = chaikinSmooth(segsToPoints(clipSegsBelowY(right.segments, 88)), 2);
+      var dropI = chaikinSmooth(segsToPoints(right.guides), 2);
+      if (dropO.length >= 2) strokeTubePath(ctx, dropO, copperTube);
+      if (dropI.length >= 2) strokeTubePath(ctx, dropI, copperTube);
+    } else {
+      strokeTubePath(ctx, chaikinSmooth(segsToPoints(left.segments), 2), cyanTube);
+      strokeTubePath(ctx, chaikinSmooth(segsToPoints(left.guides), 2), cyanTube);
+    }
     ctx.restore();
   }
 
   function drawCopperMergeShoulder(ctx, ramp, pulse) {
-    // top2: copper sausage is a real lobe (mergeOuter + mergeInner), not a triangular funnel.
-    if (!ramp || !ramp.mergeOuter || !ramp.mergeInner) return;
-    drawPioneerRamp(ctx, { segments: ramp.mergeOuter, guides: ramp.mergeInner }, pulse);
+    // shoe1: no Pioneer lobe on mergeOuter / mergeInner. Tubes live in drawHorseshoeOrbit.
+    return;
   }
 
   function drawMergeJoinRims(ctx, outerSegs, innerSegs) {
@@ -1171,18 +1177,8 @@
 
     var left = state.sideRoutes.leftRamp;
     var ramp = state.sideRoutes.rightRamp;
-    if (left && ramp) {
-      // need1: one horseshoe hull (shared crown + floor). No vertical seam, no overlapping fills.
+    if (left) {
       drawHorseshoeOrbit(ctx, left, ramp, pulse);
-    } else if (left) {
-      drawPioneerRamp(ctx, { segments: left.segments, guides: left.guides }, pulse, 'cyan');
-    }
-    if (ramp) {
-      // Copper slide hull is the vertical arm only (y>=88). Top lobe is the horseshoe.
-      drawPioneerRamp(ctx, {
-        segments: (ramp.segments || []).filter(function (s) { return Math.min(s.y1, s.y2) >= 87; }),
-        guides: clipSegsBelowY(ramp.guides, 88)
-      }, pulse);
     }
   }
 
