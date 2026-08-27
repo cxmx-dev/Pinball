@@ -3848,6 +3848,22 @@ console.log('All tests passed.');
   var path = require('path');
   var right0 = fresh().sideRoutes.rightRamp;
   assert(right0.failDump && right0.failDump.outer && right0.failDump.inner && right0.failDump.gate, 'failDump sausage polylines exist');
+  var d0 = right0.failDump.outer[0];
+  assert(d0.x1 >= 420 && d0.x1 <= 460 && d0.y1 >= 80 && d0.y1 <= 170, 'dump mouth on NE inner elbow');
+  assert(Math.abs(d0.x2 - d0.x1) <= 8 && d0.y2 > d0.y1 + 16, 'first dump chord drops vertically');
+  var saucer = { x: 410, y: 148, r: 15 };
+  function segDist(s, p) {
+    var ax = s.x2 - s.x1, ay = s.y2 - s.y1;
+    var lenSq = ax * ax + ay * ay;
+    var t = lenSq < 1e-6 ? 0 : Math.max(0, Math.min(1, ((p.x - s.x1) * ax + (p.y - s.y1) * ay) / lenSq));
+    var px = s.x1 + ax * t, py = s.y1 + ay * t;
+    return Math.sqrt((p.x - px) * (p.x - px) + (p.y - py) * (p.y - py));
+  }
+  var dumpSegs = right0.failDump.outer.concat(right0.failDump.inner).concat(right0.failDump.gate);
+  dumpSegs.forEach(function (s) {
+    var d = segDist(s, saucer);
+    assert(d >= saucer.r + 6, 'dump wall clears UR saucer dist=' + d.toFixed(1));
+  });
   assert(right0.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'plunge mouth (470,88) kept');
   assert(right0.mergeInner.some(function (s) { return s.y1 === 80 && s.y2 === 80 && Math.min(s.x1, s.x2) <= 280 && Math.max(s.x1, s.x2) >= 330; }), 'crown floor x=280-400 stays');
   var walls = fresh().walls.filter(function (w) { return w.dumpRamp || w.failMouth || w.dumpGate; });

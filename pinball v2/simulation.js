@@ -636,22 +636,23 @@
           { x1: 390, y1: 80, x2: 330, y2: 80 },
           { x1: 330, y1: 80, x2: 280, y2: 80 }
                 ],
-        // dump1: Williams fail-ramp. Inner NE elbow window dumps down-left
-        // under the UR saucer (410,148) onto the upper-right playfield
-        // toward yellow 300 (343,295). Crown floor x=280-400 stays closed.
+        // dump1: Williams fail-ramp. Inner NE elbow window dumps down-left.
+        // Drop vertically on the right of UR saucer (410,148) then turn left
+        // onto the upper-right playfield toward yellow 300 (343,295).
+        // Crown floor x=280-400 stays closed.
         failDump: {
           outer: [
-            { x1: 428, y1: 100, x2: 392, y2: 118 },
-            { x1: 392, y1: 118, x2: 360, y2: 160 },
-            { x1: 360, y1: 160, x2: 338, y2: 204 }
+            { x1: 432, y1: 158, x2: 428, y2: 186 },
+            { x1: 428, y1: 186, x2: 400, y2: 212 },
+            { x1: 400, y1: 212, x2: 368, y2: 234 }
           ],
           inner: [
-            { x1: 444, y1: 160, x2: 416, y2: 198 },
-            { x1: 416, y1: 198, x2: 384, y2: 232 },
-            { x1: 384, y1: 232, x2: 356, y2: 260 }
+            { x1: 452, y1: 160, x2: 450, y2: 190 },
+            { x1: 450, y1: 190, x2: 422, y2: 216 },
+            { x1: 422, y1: 216, x2: 392, y2: 238 }
           ],
           gate: [
-            { x1: 338, y1: 204, x2: 356, y2: 260 }
+            { x1: 368, y1: 234, x2: 392, y2: 238 }
           ]
         }
       },
