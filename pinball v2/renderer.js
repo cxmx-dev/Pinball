@@ -1023,40 +1023,55 @@
     ctx.restore();
   }
 
-  function clipSegsBelowY(segs, y0) {
-    var out = [];
-    var i;
-    for (i = 0; i < (segs || []).length; i++) {
-      var seg = segs[i];
-      var y1 = seg.y1, y2 = seg.y2;
-      if (y1 >= y0 && y2 >= y0) {
-        out.push(seg);
-      } else if (y1 < y0 && y2 >= y0) {
-        var t = (y0 - y1) / (y2 - y1);
-        out.push({ x1: seg.x1 + (seg.x2 - seg.x1) * t, y1: y0, x2: seg.x2, y2: y2 });
-      } else if (y2 < y0 && y1 >= y0) {
-        var t2 = (y0 - y1) / (y2 - y1);
-        out.push({ x1: seg.x1, y1: y1, x2: seg.x1 + (seg.x2 - seg.x1) * t2, y2: y0 });
-      }
+    /** Join left + copper polylines into one continuous path. Orient copper
+   *  so it continues from the left tip; skip only the shared join dup.
+   *  Never drop the crown. */
+  function appendOriented(pts, extra) {
+    if (!extra || extra.length < 1) return pts;
+    if (!pts.length) {
+      for (var a = 0; a < extra.length; a++) pts.push(extra[a]);
+      return pts;
     }
-    return out;
+    var last = pts[pts.length - 1];
+    var d0 = Math.hypot(extra[0].x - last.x, extra[0].y - last.y);
+    var d1 = Math.hypot(extra[extra.length - 1].x - last.x, extra[extra.length - 1].y - last.y);
+    var seq = extra;
+    if (d1 + 0.5 < d0) {
+      seq = [];
+      var r;
+      for (r = extra.length - 1; r >= 0; r--) seq.push(extra[r]);
+    }
+    var i = 0;
+    if (Math.hypot(seq[0].x - last.x, seq[0].y - last.y) < 0.85) i = 1;
+    for (; i < seq.length; i++) pts.push(seq[i]);
+    return pts;
   }
 
   function horseshoeOuterPoints(left, right) {
     var pts = segsToPoints(left && left.segments);
-    var copper = segsToPoints(right && right.mergeOuter);
-    if (!pts.length || copper.length < 2) return pts;
-    var i;
-    for (i = copper.length - 2; i >= 0; i--) pts.push(copper[i]);
+    appendOriented(pts, segsToPoints(right && right.mergeOuter));
     return pts;
   }
 
   function horseshoeInnerPoints(left, right) {
     var pts = segsToPoints(left && left.guides);
-    var copper = segsToPoints(right && right.mergeInner);
-    if (!pts.length || copper.length < 2) return pts;
-    var i;
-    for (i = copper.length - 2; i >= 0; i--) pts.push(copper[i]);
+    appendOriented(pts, segsToPoints(right && right.mergeInner));
+    // dump3: same copper piece continues into the hall. right.failDump is a
+    // mouth cut on the inner wall (Williams peel), not a second floating hull.
+    var dump = right && right.failDump;
+    if (dump && dump.outer && dump.outer.length) {
+      pts.push({ x: 472, y: 100 });
+      var dumpO = segsToPoints(dump.outer);
+      var hi;
+      for (hi = 0; hi < dumpO.length; hi++) pts.push(dumpO[hi]);
+      if (dump.gate && dump.gate.length) {
+        pts.push({ x: dump.gate[0].x2, y: dump.gate[0].y2 });
+      }
+      pts.push({ x: 472, y: 220 });
+    } else {
+      pts.push({ x: 472, y: 100 });
+    }
+    pts.push({ x: 472, y: 286 });
     return pts;
   }
 
@@ -1114,6 +1129,9 @@
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
     var tubeW = 5.5;
     var JOIN_X = 280;
+    var TABLE_W = 560;
+    var TABLE_H = 860;
+    // Call site must pass rightRamp so mergeOuter/mergeInner continue the crown.
     var fullOuter = horseshoeOuterPoints(left, right);
     var fullInner = horseshoeInnerPoints(left, right);
     if (!fullOuter || fullOuter.length < 2 || !fullInner || fullInner.length < 2) return;
@@ -1124,6 +1142,19 @@
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    // One manufactured U: fill the closed hull first so a clip miss cannot
+    // drop the copper half (dump2 clip + fillRect(JOIN_X,0,560,860) left a
+    // cyan end-cap wall at x=280 and only the failDump orange stub).
+    strokeExact(ctx, hull, true);
+    var split = ctx.createLinearGradient(0, 0, TABLE_W, 0);
+    split.addColorStop(0, 'rgba(18, 150, 200, 1)');
+    split.addColorStop((JOIN_X - 5) / TABLE_W, 'rgba(18, 150, 200, 1)');
+    split.addColorStop((JOIN_X + 5) / TABLE_W, 'rgba(214, 88, 20, 1)');
+    split.addColorStop(1, 'rgba(214, 88, 20, 1)');
+    ctx.fillStyle = split;
+    ctx.fill();
+
+    // Tube shading. JOIN_X is a color split only — not a geometric wall.
     strokeExact(ctx, hull, true);
     ctx.clip();
 
@@ -1132,20 +1163,20 @@
     cyanFill.addColorStop(0.55, 'rgba(18, 150, 200, 1)');
     cyanFill.addColorStop(1, 'rgba(6, 70, 100, 1)');
     ctx.fillStyle = cyanFill;
-    ctx.fillRect(0, 0, JOIN_X, 860);
+    ctx.fillRect(0, 0, JOIN_X, TABLE_H);
 
     var copperFill = ctx.createLinearGradient(JOIN_X, 0, JOIN_X, 140);
     copperFill.addColorStop(0, 'rgba(255, 176, 64, 1)');
     copperFill.addColorStop(0.55, 'rgba(214, 88, 20, 1)');
     copperFill.addColorStop(1, 'rgba(120, 44, 8, 1)');
     ctx.fillStyle = copperFill;
-    ctx.fillRect(JOIN_X, 0, 560, 860);
+    ctx.fillRect(JOIN_X, 0, TABLE_W - JOIN_X, TABLE_H);
 
-    var seam = ctx.createLinearGradient(JOIN_X - 6, 0, JOIN_X + 6, 0);
+    var seam = ctx.createLinearGradient(JOIN_X - 5, 0, JOIN_X + 5, 0);
     seam.addColorStop(0, 'rgba(90, 224, 255, 1)');
     seam.addColorStop(1, 'rgba(255, 176, 64, 1)');
     ctx.fillStyle = seam;
-    ctx.fillRect(JOIN_X - 6, 0, 12, 860);
+    ctx.fillRect(JOIN_X - 5, 0, 10, TABLE_H);
     ctx.restore();
 
     ctx.save();
@@ -1164,15 +1195,8 @@
     ctx.stroke();
     ctx.restore();
 
-    // dump2: no clipSegsBelowY copper drop fill — that sealed the left merge
-    // into a melted orange blob. Fail dump is a short exit sausage only.
-    if (right && right.failDump && right.failDump.outer && right.failDump.inner) {
-      var dumpO = segsToPoints(right.failDump.outer);
-      var dumpI = segsToPoints(right.failDump.inner);
-      if (dumpO.length >= 2 && dumpI.length >= 2) {
-        fillSausageHull(ctx, dumpO, dumpI, 'copper', simple, tubeW);
-      }
-    }
+    // dump3: dump mouth is folded into horseshoeInnerPoints (one copper hull).
+    // Do not fill a second failDump sausage - that was the floating orange stub.
   }
 
   function drawCopperMergeShoulder(ctx, ramp, pulse) {
@@ -2173,7 +2197,7 @@
     frameQuality = null;
   }
 
-  var api = { render: render, addParticles: addParticles, themeTitle: themeTitle, getQuality: getQuality };
+  var api = { render: render, addParticles: addParticles, themeTitle: themeTitle, getQuality: getQuality, horseshoeOuterPoints: horseshoeOuterPoints, horseshoeInnerPoints: horseshoeInnerPoints };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;

@@ -3262,7 +3262,7 @@ console.log('All tests passed.');
   assert(renSrcPop.indexOf('segments: (ramp.segments') === -1, 'no Pioneer on rightRamp');
   assert(renSrcPop.indexOf('drawPioneerRamp(ctx, { segments: ramp.mergeOuter') === -1, 'no Pioneer on mergeOuter');
   var idxSrc = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxSrc.indexOf('?v=dump2') !== -1, 'cache bust dump2');
+  assert(idxSrc.indexOf('?v=dump3') !== -1, 'cache bust dump3');
   assert(renSrcPop.indexOf('{ x: 472, y: 103 }') === -1, 'leftover closer-cap draw is gone');
   var segs = fresh().sideRoutes.rightRamp.segments;
   assert(!segs.some(function (sg) { return sg.x1 === 408 && sg.y1 === 14; }), 'copper join curve 408,14 pinch deleted (PHYSICS=DRAW)');
@@ -3639,19 +3639,19 @@ console.log('All tests passed.');
   assert(ren.indexOf('clipPtsAtJoinX(fullOuter, 280 - blend, false)') === -1, 'no copper two-hull clip');
   assert(ren.indexOf('clipPtsAtJoinX(fullOuter, 280 + blend, true)') === -1, 'no cyan two-hull clip');
   assert(ren.indexOf('var JOIN_X = 280') !== -1, 'one hull + vertical split at JOIN_X');
-  assert(ren.indexOf('fillRect(JOIN_X - 6, 0, 12, 860)') !== -1, '12px horizontal seam at x=280');
+  assert(ren.indexOf('fillRect(JOIN_X - 5, 0, 10, TABLE_H)') !== -1, '10px horizontal seam at x=280');
   assert(ren.indexOf('function extendJoinX') === -1, 'no extendJoinX brick-cut');
   assert(ren.indexOf('if (gmy < 120) return') !== -1, 'arch-end glow scraps deleted');
   assert(ren.indexOf('clipPtsAtJoinX(fullOuter, 280 - blend, false)') === -1, 'no copper two-hull clip');
   assert(ren.indexOf('clipPtsAtJoinX(fullOuter, 280 + blend, true)') === -1, 'no cyan two-hull clip');
   assert(ren.indexOf('var JOIN_X = 280') !== -1, 'one hull + vertical split at JOIN_X');
-  assert(ren.indexOf('fillRect(JOIN_X - 6, 0, 12, 860)') !== -1, '12px horizontal seam at x=280');
+  assert(ren.indexOf('fillRect(JOIN_X - 5, 0, 10, TABLE_H)') !== -1, '10px horizontal seam at x=280');
   assert(ren.indexOf('function drawCopperDropMouth') === -1, 'shoe3: drop-mouth scrap stroke deleted');
   assert(ren.indexOf('fillSausageHull(ctx, dropO, dropI') === -1, 'no drop-fill blob over the crown');
   assert(ren.indexOf('clipSegsBelowY(right.mergeInner, 88)') === -1, 'no clipSegsBelowY copper drop fill');
   assert(ren.indexOf('strokeTubePath(ctx, drop') === -1, 'no leftover drop tube strokes');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxHtml.indexOf('?v=dump2') !== -1, 'live cache tag dump2');
+  assert(idxHtml.indexOf('?v=dump3') !== -1, 'live cache tag dump3');
   assert.strictEqual(sim.GRAVITY, 1180);
   assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
   assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
@@ -3666,7 +3666,7 @@ console.log('All tests passed.');
   assert(ren.indexOf('clipSegsBelowY(right.mergeInner, 88)') === -1, 'no clipSegsBelowY copper drop fill');
   assert(ren.indexOf('strokeTubePath(ctx, drop') === -1, 'no leftover drop tube strokes');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxHtml.indexOf('?v=dump2') !== -1, 'live cache tag dump2');
+  assert(idxHtml.indexOf('?v=dump3') !== -1, 'live cache tag dump3');
   assert.strictEqual(sim.GRAVITY, 1180);
   assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
   assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
@@ -3763,7 +3763,7 @@ console.log('All tests passed.');
   assert(rightR.mergeOuter.some(function (s) { return s.x1 === 502 && s.y1 === 26 && s.x2 === 478 && s.y2 === 18; }), 'NE outer (502,26)-(478,18)');
   assert(ren.indexOf('clipSegsBelowY(right.segments, 88)') === -1, 'no right-ramp stick scrap');
   assert(ren.indexOf('clipSegsBelowY(right.mergeOuter, 64)') === -1, 'no overlapping elbow hull smear');
-  assert(ren.indexOf('createLinearGradient(JOIN_X - 6, 0, JOIN_X + 6, 0)') !== -1, '12px horizontal seam gradient');
+  assert(ren.indexOf('createLinearGradient(JOIN_X - 5, 0, JOIN_X + 5, 0)') !== -1, '10px horizontal seam gradient');
   assert(ren.indexOf('var seen = false;') !== -1, 'clip waits until keep-side is entered');
   function yOnInnerCrown(segs, atX) {
     var k, y = null;
@@ -3797,13 +3797,13 @@ console.log('All tests passed.');
   var path = require('path');
   var ren = fs.readFileSync(path.join(__dirname, '..', 'renderer.js'), 'utf8');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxHtml.indexOf('?v=dump2') !== -1, 'cache tag dump2');
+  assert(idxHtml.indexOf('?v=dump3') !== -1, 'cache tag dump3');
   assert(ren.indexOf('var blend = 26') === -1, 'no 26px two-hull blend');
   assert(ren.indexOf('clipPtsAtJoinX(fullOuter') === -1, 'no two-hull clipPtsAtJoinX pair');
   assert(ren.indexOf('var JOIN_X = 280') !== -1, 'JOIN_X vertical fills');
-  assert(ren.indexOf('ctx.fillRect(0, 0, JOIN_X, 860)') !== -1, 'cyan left of 280');
-  assert(ren.indexOf('ctx.fillRect(JOIN_X, 0, 560, 860)') !== -1, 'copper right of 280');
-  assert(ren.indexOf('ctx.fillRect(JOIN_X - 6, 0, 12, 860)') !== -1, '12px seam');
+  assert(ren.indexOf('ctx.fillRect(0, 0, JOIN_X, TABLE_H)') !== -1, 'cyan left of 280');
+  assert(ren.indexOf('TABLE_W - JOIN_X') !== -1, 'copper right of 280');
+  assert(ren.indexOf('ctx.fillRect(JOIN_X - 5, 0, 10, TABLE_H)') !== -1, '10px seam');
   var state = fresh();
   var left = state.sideRoutes.leftRamp;
   var right = state.sideRoutes.rightRamp;
@@ -3843,7 +3843,7 @@ console.log('All tests passed.');
   console.log('PASS: shoe6 flat inner crown y=80, 62px channel, JOIN_X draw');
 })();
 
-(function testDump2RestoreLeftUMerge() {
+(function testDump3RestoreLeftUMerge() {
   var fs = require('fs');
   var path = require('path');
   var right0 = fresh().sideRoutes.rightRamp;
@@ -3868,6 +3868,17 @@ console.log('All tests passed.');
   assert(right0.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'plunge mouth (470,88) kept');
   assert(right0.mergeInner.some(function (s) { return s.y1 === 80 && s.y2 === 80 && Math.min(s.x1, s.x2) <= 280 && Math.max(s.x1, s.x2) >= 330; }), 'crown floor x=280-400 stays');
   assert(right0.mergeOuter.some(function (s) { return s.x1 === 478 && s.y1 === 18 || s.x2 === 280 && s.y2 === 18; }), 'crown outer y=18 kept');
+  function isChain(segs) {
+    var k;
+    for (k = 1; k < segs.length; k++) {
+      if (Math.abs(segs[k].x1 - segs[k - 1].x2) > 0.51 || Math.abs(segs[k].y1 - segs[k - 1].y2) > 0.51) return false;
+    }
+    return true;
+  }
+  assert(isChain(right0.mergeOuter), 'copper outer is one polyline');
+  assert(right0.mergeOuter.some(function (s) { return s.x1 === 524 && s.x2 === 524 && Math.max(s.y1, s.y2) >= 280; }), 'outer follows x=524 well below 200');
+  assert(right0.mergeOuter.some(function (s) { return (s.y1 === 18 || s.y2 === 18) && (s.x1 === 280 || s.x2 === 280); }), 'outer still reaches crown join 280,18');
+  assert(right0.mergeOuter.some(function (s) { return s.x1 === 524 && s.y1 === 64 && s.x2 === 518 && s.y2 === 42; }), 'elbow still rounds into the crown');
   var walls = fresh().walls.filter(function (w) { return w.dumpRamp || w.failMouth || w.dumpGate; });
   assert(walls.some(function (w) { return w.dumpRamp; }), 'dump ramp walls exist');
   assert(walls.some(function (w) { return w.failMouth; }), 'elbow dump mouth is a trapdoor wall');
@@ -3966,10 +3977,12 @@ console.log('All tests passed.');
   assert(field.ball.y > 80, 'field ball stays below the crown');
 
   var idx = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idx.indexOf('?v=dump2') !== -1, 'cache tag dump2');
+  assert(idx.indexOf('?v=dump3') !== -1, 'cache tag dump3');
   assert(idx.indexOf('?v=dump1') === -1, 'old dump1 cache tag gone');
   var renSrc = fs.readFileSync(path.join(__dirname, '..', 'renderer.js'), 'utf8');
-  assert(renSrc.indexOf('right.failDump') !== -1, 'renderer draws copper dump sausage');
+  assert(renSrc.indexOf('right.failDump') !== -1, 'dump mouth folded into copper hull');
+  assert(renSrc.indexOf("fillSausageHull(ctx, dumpO, dumpI") === -1, 'no orphan failDump sausage hull');
+  assert(renSrc.indexOf('function clipSegsBelowY') === -1, 'clipSegsBelowY scrap deleted');
   assert(renSrc.indexOf('clipSegsBelowY(right.mergeOuter, 88)') === -1, 'no leftover copper drop fill');
   assert(renSrc.indexOf('fillSausageHull(ctx, dropO, dropI') === -1, 'no drop hull blob');
   var horse = renSrc.indexOf('function drawHorseshoeOrbit');
@@ -3982,5 +3995,46 @@ console.log('All tests passed.');
   assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
   assert.strictEqual(sim.TABLE_W, 560);
 
-  console.log('PASS: dump2 restore U (1400 x=' + full.x.toFixed(1) + ' y=' + full.y.toFixed(1) + ' 900 U 700 dump x=' + soft.x.toFixed(1) + ')');
+  console.log('PASS: dump3 restore U (1400 x=' + full.x.toFixed(1) + ' y=' + full.y.toFixed(1) + ' 900 U 700 dump x=' + soft.x.toFixed(1) + ')');
 })();
+(function testDump3ContinuousUCrownHull() {
+  var Render = require('../renderer.js');
+  var st = fresh();
+  var left = st.sideRoutes.leftRamp;
+  var right = st.sideRoutes.rightRamp;
+  assert(right && right.mergeOuter && right.mergeOuter.length >= 2, 'draw call site has rightRamp.mergeOuter');
+  assert(right && right.mergeInner && right.mergeInner.length >= 2, 'draw call site has rightRamp.mergeInner');
+  var outer = Render.horseshoeOuterPoints(left, right);
+  var inner = Render.horseshoeInnerPoints(left, right);
+  assert(outer && outer.length >= 8 && inner && inner.length >= 8, 'hull polylines exist');
+  var oMin = Infinity, oMax = -Infinity, i;
+  for (i = 0; i < outer.length; i++) {
+    if (outer[i].x < oMin) oMin = outer[i].x;
+    if (outer[i].x > oMax) oMax = outer[i].x;
+  }
+  assert(oMin <= 62 && oMax >= 476, 'horseshoe draw hull spans x ~60 to ~478 (got ' + oMin.toFixed(1) + '-' + oMax.toFixed(1) + ')');
+  var crownMin = Infinity, crownMax = -Infinity;
+  for (i = 0; i < outer.length; i++) {
+    if (outer[i].y > 22) continue;
+    if (outer[i].x < crownMin) crownMin = outer[i].x;
+    if (outer[i].x > crownMax) crownMax = outer[i].x;
+  }
+  assert(crownMin <= 62 && crownMax >= 476, 'crown outer y~18 spans ~60-478 (got ' + crownMin + '-' + crownMax + ')');
+  assert(outer.some(function (p) { return p.x > 300 && p.y <= 22; }), 'copper crown exists right of join (not left-only)');
+  assert(inner.some(function (p) { return p.x >= 450; }), 'inner hull reaches plunge mouth');
+  assert(outer.some(function (p) { return Math.abs(p.x - 524) < 1.5 && p.y > 200; }), 'draw outer continues down hall x=524 y>200');
+  assert(inner.some(function (p) { return Math.abs(p.x - 472) < 1.5 && p.y > 200; }), 'inner hall y well below 200');
+  assert(inner.some(function (p) { return p.x < 410 && p.y > 160 && p.y < 220; }), 'dump mouth peels onto the field in the same hull');
+  var fs = require('fs');
+  var path = require('path');
+  var renSrc = fs.readFileSync(path.join(__dirname, '..', 'renderer.js'), 'utf8');
+  assert(renSrc.indexOf('function appendOriented') !== -1, 'oriented hull join helper');
+  assert(renSrc.indexOf('fillRect(JOIN_X, 0, 560, 860)') === -1, 'no oversized copper fillRect width 560');
+  assert(renSrc.indexOf('TABLE_W - JOIN_X') !== -1, 'copper fillRect uses table-right width');
+  assert(renSrc.indexOf('fillRect(JOIN_X - 5, 0, 10, TABLE_H)') !== -1, '10px color seam');
+  var idx = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  assert(idx.indexOf('?v=dump3') !== -1, 'cache tag dump3');
+  assert(idx.indexOf('?v=dump2') === -1, 'old dump2 cache tag gone');
+  console.log('PASS: dump3 hull spans crown ' + crownMin.toFixed(0) + '-' + crownMax.toFixed(0));
+})();
+
