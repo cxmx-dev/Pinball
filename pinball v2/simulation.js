@@ -1,5 +1,5 @@
 /**
- * Pure pinball simulation â€” no DOM, no rendering.
+ * Pure pinball simulation Ã¢â‚¬â€ no DOM, no rendering.
  * Loadable in browser (window.PinballSim) and Node (module.exports).
  */
 (function (root) {
@@ -28,7 +28,7 @@
   var FLIPPER_SPEED = 14;
   /** Powered bat slap only while |omega| exceeds this (rad/s). */
   var FLIPPER_OMEGA_DEAD = 2;
-  /** Scales tip velocity â†’ ball Î”v while sweeping. */
+  /** Scales tip velocity Ã¢â€ â€™ ball ÃŽâ€v while sweeping. */
   var FLIPPER_IMPULSE_GAIN = 0.85;
   /** Double-tap charges that bat 2x for CHARGE_SEC; glow starts at 4 Hz and eases down. */
   var FLIPPER_TAP_MULT = 2;
@@ -44,7 +44,7 @@
   var FLIPPER_RESTITUTION_PASSIVE = 0.45;
   var DECK_DRAIN_SPEED = 220;
   var WALL_RESTITUTION = 0.72;
-  /** Habitrail/guide bounce â€” livelier than cabinet rails so channels do not crawl. */
+  /** Habitrail/guide bounce Ã¢â‚¬â€ livelier than cabinet rails so channels do not crawl. */
   var HABITRAIL_RESTITUTION = 0.52;
   var GUIDE_RESTITUTION = 0.48;
   /** Min along-rail speed (px/s) while ball is inside a habitrail channel. */
@@ -74,7 +74,7 @@
   var MAX_LAUNCH_POWER = 1400;
   var MIN_LAUNCH_POWER = 200;
   var LAUNCH_CHARGE_RATE = 1.1;
-  /** Meterâ†’power ease exponent (1 = linear). */
+  /** MeterÃ¢â€ â€™power ease exponent (1 = linear). */
   var LAUNCH_METER_EASE = 1.0;
   /** Frames of plunger follow thrust while still in shooter lane. */
   var PLUNGER_FOLLOW_FRAMES = 3;
@@ -118,7 +118,7 @@
   var MAX_MULTIPLIER = 5;
   var SKILL_SHOT_CENTER_BONUS = 2500;
   var SKILL_SHOT_NEAR_BONUS = 1000;
-  /** @deprecated alias â€” center grade (tests / exports) */
+  /** @deprecated alias Ã¢â‚¬â€ center grade (tests / exports) */
   var SKILL_SHOT_BONUS = SKILL_SHOT_CENTER_BONUS;
   var LAUNCH_DASH_FULL_BONUS = 800;
   var LAUNCH_DASH_HOLD_SEC = 1.5;
@@ -256,7 +256,7 @@
     ];
   }
 
-  /** Rubber on sausage climb/upward face only — last-resort save, never downhill or triangle. */
+  /** Rubber on sausage climb/upward face only â€” last-resort save, never downhill or triangle. */
   function createSlingshots() {
     return [
       { side: 'left', face: 'top', x1: 48, y1: 578, x2: 64, y2: 598, score: 150, cooldown: 0 },
@@ -534,11 +534,11 @@
   }
 
   function createTargets() {
-    // Grey standup rectangles removed — leftover mid-left/mid-right clutter.
+    // Grey standup rectangles removed â€” leftover mid-left/mid-right clutter.
     return [];
   }
 
-  /** Horizontal drop bank mid-table â€” complete all â†’ rush mode */
+  /** Horizontal drop bank mid-table Ã¢â‚¬â€ complete all Ã¢â€ â€™ rush mode */
   function createDropTargets() {
     return [];
   }
@@ -644,17 +644,19 @@
         // Stays right of UR saucer (410,148). Does not fill the elbow or crown.
         failDump: {
           outer: [
-            { x1: 434, y1: 100, x2: 432, y2: 148 },
-            { x1: 432, y1: 148, x2: 424, y2: 176 },
-            { x1: 424, y1: 176, x2: 396, y2: 200 }
+            { x1: 434, y1: 100, x2: 432, y2: 118 },
+            { x1: 432, y1: 118, x2: 360, y2: 128 },
+            { x1: 360, y1: 128, x2: 348, y2: 190 },
+            { x1: 348, y1: 190, x2: 348, y2: 255 }
           ],
           inner: [
-            { x1: 452, y1: 102, x2: 450, y2: 152 },
-            { x1: 450, y1: 152, x2: 442, y2: 180 },
-            { x1: 442, y1: 180, x2: 418, y2: 204 }
+            { x1: 456, y1: 102, x2: 454, y2: 150 },
+            { x1: 454, y1: 150, x2: 430, y2: 185 },
+            { x1: 430, y1: 185, x2: 404, y2: 225 },
+            { x1: 404, y1: 225, x2: 380, y2: 257 }
           ],
           gate: [
-            { x1: 396, y1: 200, x2: 418, y2: 204 }
+            { x1: 348, y1: 255, x2: 380, y2: 257 }
           ]
         }
       },
@@ -763,8 +765,8 @@
     function isElbowDumpMouthSeg(seg) {
       var mx = (seg.x1 + seg.x2) * 0.5;
       var my = (seg.y1 + seg.y2) * 0.5;
-      // dump2: window starts at the mouth. Keep (424,73)-(428,86) solid for U riders.
-      return mx > 400 && mx < 460 && my > 88 && my < 162;
+      // dump5: window covers the peel. Keep (424,73)-(428,86) solid for U riders.
+      return mx > 400 && mx < 460 && my > 88 && my < 250;
     }
     function pushRightGuides(segs) {
       if (!segs) return;
@@ -863,14 +865,14 @@
       { id: 'lane-l', x1: 64, y1: 180, x2: 64, y2: 280, width: 18, score: 500, lit: false, occupied: false },
       // Playfield side of launch wall (not inside shooter lane)
       { id: 'lane-r', x1: LAUNCH_LANE_LEFT - 28, y1: 190, x2: LAUNCH_LANE_LEFT - 28, y2: 290, width: 18, score: 500, lit: false, occupied: false },
-      // Mid-field rollover â€” shot path without bumper party
+      // Mid-field rollover Ã¢â‚¬â€ shot path without bumper party
       { id: 'lane-mid', x1: 195, y1: 412, x2: 285, y2: 412, width: 16, score: 600, lit: false, occupied: false }
     ];
   }
 
   /**
    * Vertical dash lights centered in the launch/shooter lane.
-   * Light when the ball travels over each segment (bottom â†’ top on launch).
+   * Light when the ball travels over each segment (bottom Ã¢â€ â€™ top on launch).
    * Index 0 = nearest plunger; last = nearest wireform.
    */
   function createLaunchLaneDashes() {
@@ -1105,7 +1107,7 @@
     };
   }
 
-  /** Ellipse arc as wall segments (canvas y+ down). a0â†’a1 radians. */
+  /** Ellipse arc as wall segments (canvas y+ down). a0Ã¢â€ â€™a1 radians. */
   function ellipseArcSegments(cx, cy, rx, ry, a0, a1, n, kind) {
     var segs = [];
     var i;
@@ -1140,7 +1142,7 @@
   }
 
   function createSpinner() {
-    // Open inner field below the U â€” clear of lower apex (240,310) and left habitrail exit (~150,136)
+    // Open inner field below the U Ã¢â‚¬â€ clear of lower apex (240,310) and left habitrail exit (~150,136)
     return { x: 200, y: 210, radius: 15, angle: 0, score: 200, spinVel: 0, hitCooldown: 0 };
   }
 
@@ -1176,8 +1178,8 @@
     var chuteBottom = TABLE_H - 16;
     var walls = [];
 
-    // Rounded top arch (ball rides underside â€” green path annotation)
-    // Ellipse upper half: PI â†’ 2PI (left â†’ top center â†’ right)
+    // Rounded top arch (ball rides underside Ã¢â‚¬â€ green path annotation)
+    // Ellipse upper half: PI Ã¢â€ â€™ 2PI (left Ã¢â€ â€™ top center Ã¢â€ â€™ right)
     var archCx = ARCH_CX;
     var archCy = ARCH_CY;
     var archRx = ARCH_RX;
@@ -1199,7 +1201,7 @@
 
     // Merge lane (wireform + copper hull) replaces the old upper-right rail bulge.
 
-    // Tiny deck stubs under pivots only â€” longer stubs shelved balls in the inlanes
+    // Tiny deck stubs under pivots only Ã¢â‚¬â€ longer stubs shelved balls in the inlanes
     var leftPivot = FLIPPER_LEFT_PIVOT_X;
     var rightPivot = FLIPPER_RIGHT_PIVOT_X;
     walls.push({
@@ -1245,7 +1247,7 @@
       }
     }
 
-    // Chrome safety-cage bars — short steel outlane rails just above the
+    // Chrome safety-cage bars â€” short steel outlane rails just above the
     // flipper row, framing the timed cyan boingers (VOID PULSE annotation).
     // orbit1: cages still guard the lower boingers, but no longer form a V
     // with the sausage tips (gap >=28 or flush).
@@ -1462,12 +1464,12 @@
     state.skillShotBannerLife = 2.2;
     if (gradeInfo.grade === 'center') {
       state.multiplier = Math.min(MAX_MULTIPLIER, state.multiplier + 1);
-      // Explicit arm: CENTER skill shot only â€” one timed save, then drain sticks
+      // Explicit arm: CENTER skill shot only Ã¢â‚¬â€ one timed save, then drain sticks
       state.ballSaveArmed = true;
       state.ballSaveUsed = false;
       state.ballSaveTimer = BALL_SAVE_DURATION;
     }
-    // Near grade: points/banner only â€” does NOT arm ball-save
+    // Near grade: points/banner only Ã¢â‚¬â€ does NOT arm ball-save
     return true;
   }
 
@@ -1663,23 +1665,12 @@
     state.skillShotWindow = true;
     state.launchTick = 0;
     if (state.launchRailT == null) state.launchRailT = 0;
-    var dumpSlide = (state.activeLaunchPower || 0) < 880;
-    var targetX = dumpSlide ? 436 : 410;
-    var targetY = dumpSlide ? 150 : 40;
-    state.activeHabitrail = dumpSlide ? null : 'ramp-r';
-    var tx = targetX - ball.x;
-    var ty = targetY - ball.y;
-    var dist = vecLen(tx, ty);
-    var curSp = vecLen(ball.vx, ball.vy);
-    var exitSpeed = Math.max(curSp, speed, 380);
-    if (dist > 1e-6) {
-      var ax = tx / dist;
-      var ay = ty / dist;
-      ball.vx = ball.vx * 0.42 + ax * exitSpeed * 0.58;
-      ball.vy = ball.vy * 0.42 + ay * exitSpeed * 0.58;
+    // dump5: flags only. Keep current velocity. No aim at the UR hole.
+    var power = state.activeLaunchPower || 0;
+    if (power >= 860) {
+      if (!state.activeHabitrail) state.activeHabitrail = 'ramp-r';
     } else {
-      ball.vx = -Math.max(Math.abs(ball.vx), exitSpeed * 0.7);
-      ball.vy = Math.min(ball.vy, -exitSpeed * 0.35);
+      state.activeHabitrail = null;
     }
   }
 
@@ -1703,6 +1694,19 @@
     if (state.exitedLaunchLane) return;
     var ball = state.ball;
     var r = ball.radius;
+    // dump5: on the U / past the mouth, mark exited BEFORE the y<=56 return.
+    // Flags only. No ball.x/y rewrite.
+    if (ball.x < LAUNCH_LANE_LEFT - 8 && ball.y < 140) {
+      state.exitedLaunchLane = true;
+      state.skillShotWindow = true;
+      state.launchTick = 0;
+      state.launchRailT = null;
+      var gp = state.activeLaunchPower || 0;
+      if (gp >= 860) {
+        if (!state.activeHabitrail) state.activeHabitrail = 'ramp-r';
+      }
+      return;
+    }
     if (ball.y <= LAUNCH_WIRE_Y2 - 24) return;
     var u = launchChargeU(state);
     var boost = u;
@@ -1713,7 +1717,7 @@
     if (ball.vy > 160 && ball.y > PLUNGER_REST_Y - 50) return;
 
     // Teleport guard: only refuse the wire snap from cyan / lower playfield.
-    // Do not mark exited while the snap is still on the merge (x~329-397) —
+    // Do not mark exited while the snap is still on the merge (x~329-397) â€”
     // medium plunge tests assert x < 352 at the moment the flag flips.
     if (ball.x < 400) {
       state.exitedLaunchLane = true;
@@ -1763,65 +1767,35 @@
       var laneCenter = (LAUNCH_LANE_LEFT + LAUNCH_LANE_RIGHT) * 0.5;
       ball.vx += (laneCenter - ball.x) * 5.5 * dt;
       if (inLaneBoost) {
-        var minRise = 420 + u * 500;
+        var minRise = 420 + u * 500; if (u < RIDE_FLOOR_U) minRise = Math.min(minRise, 590);
         if (ball.vy > -minRise) ball.vy = -minRise;
       }
       return;
     }
 
     if (!canRideRail) {
-      // Tap / low charge: pop out of the shooter onto the playfield, then die before the U.
-      if (atMerge || ball.y <= LAUNCH_WIRE_Y1 + 40) {
+      // Tap / low charge: roll with walls. Mark exited after leaving the hall.
+      if (atMerge || ball.x < LAUNCH_LANE_LEFT - 12 || (ball.y > 140 && ball.x < LAUNCH_LANE_LEFT)) {
         state.exitedLaunchLane = true;
         state.skillShotWindow = true;
         state.launchRailT = null;
-        state.activeHabitrail = "ramp-r";
-        if (ball.x > 456) ball.x = 452;
-        if (ball.vx > -40) ball.vx = -60;
-        ball.vy = Math.max(ball.vy, 140);
+        state.activeHabitrail = null;
       }
-      return;
+      // Fall through to the merge wall clamp so a tap can follow the wire left.
     }
 
-    if (!canRideFloor) {
-      // dump2: two-phase fail. Cross the mouth at y~88, then peel down.
-      // Never drop below the opening while still inside the hall.
-      var stillInHall = ball.x > LAUNCH_LANE_LEFT - 4;
-      if (stillInHall && ball.y < 120) {
-        if (ball.vx > -170) ball.vx = -170;
-        if (ball.y > 92) ball.vy = Math.min(ball.vy, -50);
-        if (ball.y < 80) ball.vy = Math.max(ball.vy, 24);
-      } else if (!stillInHall && ball.x > 400 && ball.y < 180) {
-        if (ball.vx > -80) ball.vx = -80;
-        if (ball.vy < 70) ball.vy = 90;
-      }
-    }
-
-    // Roll onto the merge. No ball.x/y rewrite onto the short wire.
+    // dump5: no two-phase fail, no blend toward the hole, no ball.y=92.
+    // Ball rolls with current velocity. Lane right wall only.
     if (ball.x + r > LAUNCH_LANE_RIGHT) {
       ball.x = LAUNCH_LANE_RIGHT - r;
       if (ball.vx > 0) ball.vx *= -0.08;
     }
-    var cur = vecLen(ball.vx, ball.vy);
-    var assist = canRideFloor ? Math.max(cur, 360 + boost * 220) : Math.max(cur * 0.55, 160 + boost * 90);
-    var mx = (canRideFloor ? (LAUNCH_LANE_LEFT - 20) : 444) - ball.x;
-    var my = (canRideFloor ? 80 : 134) - ball.y;
-    var md = vecLen(mx, my);
-    if (md > 1e-6) {
-      var blend = Math.min(0.55, 9.5 * dt);
-      ball.vx += ((mx / md) * assist - ball.vx) * blend;
-      ball.vy += ((my / md) * assist - ball.vy) * blend;
-    }
-    if (ball.x > LAUNCH_LANE_LEFT - 6 && ball.y < 80) {
-      if (ball.vy < 0) ball.vy *= 0.25;
-      ball.vy += 240 * dt;
-    }
-    if (!canRideFloor && ball.x < LAUNCH_LANE_LEFT - 2 && ball.x > 400 && ball.y < 110) {
-      if (ball.vy < 70) ball.vy = 90;
-      if (ball.y < 86) ball.y = 92;
-    }
-    if (ball.x < LAUNCH_LANE_LEFT - 6 && ball.y >= 66 && ball.y <= 102) {
-      releaseFromWireform(state, assist);
+    if (canRideFloor && ball.x < LAUNCH_LANE_LEFT - 12 && ball.y >= 66 && ball.y <= 102) {
+      releaseFromWireform(state, vecLen(ball.vx, ball.vy));
+    } else if (!canRideFloor && ball.y < 95 && ball.x < 480) {
+      state.exitedLaunchLane = true;
+      state.skillShotWindow = true;
+      state.launchRailT = null;
     }
   }
 
@@ -1951,7 +1925,7 @@
     var ball = state.ball;
     if (!pointInRouteEntry(ball, route.entry)) return false;
     if (ball.vy > -20) return false;
-    // Already in/near the tube — do not steal bumper / mid-field shots.
+    // Already in/near the tube â€” do not steal bumper / mid-field shots.
     if (routeChannelDist(ball, route) > ball.radius + 16) return false;
     route.cooldown = SIDE_ROUTE_COOLDOWN * 1.6;
     state.activeHabitrail = route.id;
@@ -1961,7 +1935,7 @@
     }
     awardScore(state, route.score, 'route', route.id, ball.x, ball.y);
     if (route.id === 'ramp-l') {
-      // Credit lock at the cyan mouth. Ball keeps rolling — no saucer teleport.
+      // Credit lock at the cyan mouth. Ball keeps rolling â€” no saucer teleport.
       awardLock(state, { keepBall: true, x: route.entry.x, y: route.entry.y });
     }
     return true;
@@ -2002,7 +1976,7 @@
     var mouth = other && other.entry;
     if (!mouth || !pointInRouteEntry(ball, mouth)) return false;
     if (ball.y < 300) return false;
-    // Leaving the mouth — drop the rider flag only. No teleport / velocity rewrite.
+    // Leaving the mouth â€” drop the rider flag only. No teleport / velocity rewrite.
     state.activeHabitrail = null;
     if (state.sideRoutes && state.sideRoutes.leftRamp) {
       state.sideRoutes.leftRamp.cooldown = Math.max(state.sideRoutes.leftRamp.cooldown || 0, SIDE_ROUTE_COOLDOWN);
@@ -2178,7 +2152,7 @@
     return best;
   }
 
-﻿  function fillerHullPoints(fill) {
+  function fillerHullPoints(fill) {
     var pts = [];
     function pushPt(x, y) {
       var n = pts.length;
@@ -2238,7 +2212,7 @@
     if (ball.x >= 440 && ball.x <= 480 && ball.y >= 520 && ball.y <= 560) return true;
     // orbit1: right sausage tip vs cage / inlane join
     if (ball.x >= 408 && ball.x <= 452 && ball.y >= 698 && ball.y <= 740) return true;
-    // opt1: left sausage tip only — not the outlane slot along x=36-80
+    // opt1: left sausage tip only â€” not the outlane slot along x=36-80
     if (ball.x >= 96 && ball.x <= 132 && ball.y >= 688 && ball.y <= 746) return true;
     return false;
   }
@@ -2330,7 +2304,7 @@
       if (skipBallAssist(state, ball)) continue;
       if (!ball || !ball.inPlay) continue;
       // merge3: solid hull. Eject every frame if inside either sausage.
-      // Do not skip near LAUNCH_LANE_LEFT — that join is where balls tunnel.
+      // Do not skip near LAUNCH_LANE_LEFT â€” that join is where balls tunnel.
       ejectOneFromFiller(ball, routes.rightFiller);
       ejectOneFromFiller(ball, routes.leftFiller);
     }
@@ -2410,22 +2384,20 @@
       ball._horseStuckT = 0;
       return;
     }
-    if ((ball._horseStuckT || 0) < 0.2) return;
-    // Along the tube toward the copper dump (+x, slight +y). Not through the inner rail, not into the shooter.
-    var tx = 0.96;
-    var ty = 0.18;
-    if (ball.x > 430) {
-      tx = 0.2;
-      ty = 0.4;
+    if ((ball._horseStuckT || 0) < 0.35) return;
+    // dump5: nudge out of crown lodge. No 180 along-tube launch, no teleport.
+    if (ball.x < 420) {
+      if (ball.vx < 28) ball.vx += 18;
+      if (ball.vy < 12) ball.vy += 8;
+    } else if (ball.vy < 24) {
+      ball.vy += 16;
     }
-    var keep = Math.max(sp, 180);
-    ball.vx = ball.vx * 0.15 + tx * keep * 0.85;
-    ball.vy = ball.vy * 0.15 + ty * keep * 0.85;
-    if (ball.x > LAUNCH_LANE_LEFT - 24) {
-      ball.vx = Math.min(ball.vx, 30);
+    var sp2 = vecLen(ball.vx, ball.vy);
+    if (sp2 > 55) {
+      ball.vx *= 55 / sp2;
+      ball.vy *= 55 / sp2;
     }
-    if (ball.vy > 90) ball.vy = 90;
-    ball._horseStuckT = 0;
+    ball._horseStuckT = 0.15;
   }
 
   function unstickHorseshoeCrown(state, dt) {
@@ -2476,7 +2448,7 @@
     return !!(sp && vecLen(ball.x - sp.x, ball.y - sp.y) < sp.radius + ball.radius + 18);
   }
 
-  /** Playfield ball that tunneled up through the inner U — bounce it back down. */
+  /** Playfield ball that tunneled up through the inner U â€” bounce it back down. */
   function rejectPlayfieldTunnelIn(state) {
     var ball = state.ball;
     if (skipBallAssist(state, state.ball)) return;
@@ -2518,7 +2490,10 @@
     if (nearOuter) nearDist = Math.min(nearDist, nearOuter.dist);
     if (nearInner.dist > 16) return;
     if (ball.y <= nearInner.y + 2) return;
-    ball.y = nearInner.y - 1;
+    // dump5: leak-contain only. Max 8px, no rail teleport.
+    var wantY = nearInner.y - 1;
+    if (ball.y - wantY > 8) ball.y -= 8;
+    else ball.y = wantY;
     if (ball.vy > 0) ball.vy *= 0.25;
   }
 
@@ -2670,8 +2645,8 @@
   }
 
   /**
-   * Light dashes when the ball rolls over them (bottom â†’ top).
-   * After all are on for 3s, reverse top â†’ bottom with a slow pulse-fade off.
+   * Light dashes when the ball rolls over them (bottom Ã¢â€ â€™ top).
+   * After all are on for 3s, reverse top Ã¢â€ â€™ bottom with a slow pulse-fade off.
    */
   function updateLaunchLaneDashes(state, dt) {
     var dashes = state.launchLaneDashes;
@@ -2683,7 +2658,7 @@
       if (dashes[i].flash > 0) dashes[i].flash = Math.max(0, dashes[i].flash - dt);
     }
 
-    // Reverse extinguish: top (last lit) â†’ plunger (first), staggered pulse-fade
+    // Reverse extinguish: top (last lit) Ã¢â€ â€™ plunger (first), staggered pulse-fade
     if (state.launchDashReversing) {
       var ri = state.launchDashReverseI;
       if (ri < 0) {
@@ -2851,20 +2826,20 @@
   }
 
   function isFreshShooterTravel(state) {
-    // Only a plunged ball that has not yet exited may travel the lane
-    // (up into the merge, or back down a failed plunge to the berth).
-    if (!state || !state.ball || !state.ball.inPlay || !isBallInLaunchLane(state)) return false;
-    if (!state.exitedLaunchLane) return true;
-    var u = launchChargeU(state);
-    return u > 0 && u < RIDE_MERGE_U;
+    // Plunge that has not exited is still a shooter ball, even above the wire.
+    // dump5: y<=56 used to flip this off and trigger peelOutOfShooterLane (x=454 snap).
+    if (!state || !state.ball || !state.ball.inPlay) return false;
+    if (state.exitedLaunchLane) return false;
+    if (state.ball.x + (state.ball.radius || BALL_RADIUS) <= LAUNCH_LANE_LEFT - 20) return false;
+    return true;
   }
 
   function peelOutOfShooterLane(ball, intoU) {
+    // dump5: no x/y teleport, no vx=-200 hidden kick. Lane walls stay one-way.
     var r = ball.radius || BALL_RADIUS;
-    ball.x = LAUNCH_LANE_LEFT - r - 6;
-    if (ball.vx > -40) ball.vx = -Math.max(Math.abs(ball.vx), 200);
-    if (intoU) ball.vy = Math.min(ball.vy, -140);
-    else if (ball.vy < -40) ball.vy *= 0.35;
+    if (ball.x + r > LAUNCH_LANE_LEFT && ball.x < LAUNCH_LANE_LEFT + r + 2 && ball.vx > 0) {
+      ball.vx *= -0.12;
+    }
   }
 
   function sealSausageRailJoin(state, ball) {
@@ -2915,9 +2890,6 @@
     // Already falling down the lane from the merge: peel to playfield
     // before the sausage (do not drop to y=538+ inside the lane).
     if (ball.x > LAUNCH_LANE_LEFT && belowJoin) {
-      if (ball.y >= 528 && ball.y <= 744 && ball.y < FLIPPER_ROW_Y - 80) {
-        ball.y = 520;
-      }
       peelOutOfShooterLane(ball, false);
       return;
     }
@@ -2968,9 +2940,16 @@
     var r = ball.radius;
 
     state.walls.forEach(function (wall) {
-      if (!state.exitedLaunchLane && (wall.wireform || wall.kind === 'lane')) {
+      if (wall.kind === 'lane') {
         var playfieldSide = ball.x + r < LAUNCH_LANE_LEFT + 1 && ball.y > LAUNCH_WIRE_Y1 + 8;
-        if (!(wall.kind === 'lane' && playfieldSide)) return;
+        if (!state.exitedLaunchLane && !playfieldSide) return;
+      }
+      // Plunge still in the hall skips the short wire so it can reach the outer U.
+      // RTL / copper U riders KEEP the wire and roll along it (dump4 geometry).
+      if (wall.wireform || wall.kind === 'rail') {
+        var fullPlunge = !state.exitedLaunchLane && launchChargeU(state) >= RIDE_FLOOR_U;
+        var uRider = !!(state.activeHabitrail && ball.y < 92);
+        if (fullPlunge || uRider) return;
       }
       if (wall.kind === 'tri-solid') return; // rubber + solid live in resolvePulseTriangle
       if (wall.kind === 'filler' && ball.y < 500 && (state.activeHabitrail ||
@@ -2992,22 +2971,33 @@
         return;
       }
       if (wall.failMouth) {
-        // dump2 physical window: FAST ball hugging outer / moving left misses it.
-        // SLOW / reversing ball already below the crown falls through.
-        var insideWindow = ball.x >= 428 && ball.x <= 460 && ball.y >= 88 && ball.y <= 175;
-        var huggingOuter = ball.y < 86 && ball.vx < -40;
-        var climbing = ball.vy < -80;
-        if (insideWindow && !climbing && !huggingOuter) return;
+        // dump5: falling / dying copper elbow peels onto the dump sausage.
+        // Fast outer-hug and RTL/LTR climbers keep the inner rail.
+        var spM = vecLen(ball.vx, ball.vy);
+        var huggingOuter = ball.y < 50 && spM > 300;
+        var climbing = ball.vy < -80 && spM > 200;
+        var inPeel = ball.x >= 360 && ball.x <= 466 && ball.y >= 88 && ball.y <= 255 && ball.vy > -40;
+        var floorSit = ball.x >= 388 && ball.x <= 458 && ball.y >= 70 && ball.y <= 92 && spM < 200;
+        if ((inPeel || floorSit) && !climbing && !huggingOuter) return;
       }
-      if (wall.dumpRamp && !wall.dumpGate && ball.x > 446 && ball.y < 200) {
-        // Dump sausage lives on the playfield side of the inner wall.
-        return;
+      // dump5: (424,73)-(428,86) lip is a dump mouth, not an RTL backboard.
+      var elbowLip = (wall.kind === 'habitrail' || wall.kind === 'guide') &&
+        Math.min(wall.x1, wall.x2) >= 420 && Math.max(wall.x1, wall.x2) <= 432 &&
+        Math.min(wall.y1, wall.y2) >= 70 && Math.max(wall.y1, wall.y2) <= 90;
+      if (elbowLip && ball.y < 78 && ball.x <= 440 && vecLen(ball.vx, ball.vy) > 280) return;
+      if (wall.dumpRamp && !wall.dumpGate) {
+        // dump5: peel is under the elbow. U riders and climbing RTL/LTR
+        // must not hit dump scrap in the tube. Slow fail uses the walls.
+        var spD = vecLen(ball.vx, ball.vy);
+        var climbing = !!state.activeHabitrail && ball.vy < -80 && spD > 180;
+        if (climbing) return;
+        if (ball.y < 112) return;
       }
       if (wall.dumpGate) {
-        var fromSausage = (ball.x > 400 && ball.y < 210) ||
-          (state.activeHabitrail === 'ramp-r' && ball.y < 280) ||
-          !state.exitedLaunchLane;
-        if (fromSausage) return;
+        // One-way: peel down onto the field. Field balls cannot climb back in.
+        var peeling = ball.vy > -10 && ball.vx < 80;
+        var fromTube = !state.exitedLaunchLane;
+        if (peeling || fromTube) return;
       }
       if (wall.merge) {
         // merge3: plunge / launchRailT riders MUST hit the floor.
@@ -3027,10 +3017,11 @@
         var minY = Math.min(wall.y1, wall.y2);
         if (minX > 408 && maxX < 476 && minY < 90 && minX > 280) return;
       }
-      // Soft short deck stubs â€” less bounce so they don't steal lower play
+      // Soft short deck stubs Ã¢â‚¬â€ less bounce so they don't steal lower play
       var rest = WALL_RESTITUTION;
       if (wall.kind === 'deck') rest = WALL_RESTITUTION * 0.55;
       else if (wall.kind === 'habitrail') rest = HABITRAIL_RESTITUTION;
+      else if (wall.kind === 'rail') rest = 0.02;
       else if (wall.kind === 'guide') rest = GUIDE_RESTITUTION;
       else if (wall.kind === 'filler') rest = GUIDE_RESTITUTION;
       segmentCollision(ball, wall.x1, wall.y1, wall.x2, wall.y2, rest, null);
@@ -3041,8 +3032,9 @@
       ball.vx = Math.abs(ball.vx) * WALL_RESTITUTION;
     }
     // Cabinet arch underside. Horseshoe riders sit in the U (outer y=32) under the
-    // real arch (y~26) — never apply the leftover y=48/52 ceiling that cut the channel.
+    // real arch (y~26) â€” never apply the leftover y=48/52 ceiling that cut the channel.
     var ridingHorse = !!(state.activeHabitrail ||
+      (ball.y < 90 && ball.x > 80 && ball.x < 520) ||
       (ball.y < 160 && (
         inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp) ||
         inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.rightRamp)
@@ -3172,12 +3164,12 @@
 
   /**
    * Free ball wedged in upper rail corners / wireform entry pocket.
-   * User-reported hang: top-right under arch (wireform Ã— top rail Ã— lane wall).
+   * User-reported hang: top-right under arch (wireform Ãƒâ€” top rail Ãƒâ€” lane wall).
    */
   /**
    * Copper U / merge pocket: ball lodges in the inner V where mergeInner
    * meets the right habitrail guide (around 322,74). Peel along the ramp
-   * tangent into the channel — nudge, no teleport, no rail snap.
+   * tangent into the channel â€” nudge, no teleport, no rail snap.
    */
   function copperLodgeBox(ball) {
     return !!(ball && ball.x >= 430 && ball.x <= 524 && ball.y >= 50 && ball.y <= 110);
@@ -3189,7 +3181,7 @@
 
   /** dump2: lower inner-wall window only. A 1400 U rider (y~49) cannot match. */
   function copperElbowDumpBox(ball) {
-    return !!(ball && ball.x >= 428 && ball.x <= 454 && ball.y >= 104 && ball.y <= 178);
+    return !!(ball && ball.x >= 330 && ball.x <= 440 && ball.y >= 100 && ball.y <= 270);
   }
 
   function copperRubberMid(state) {
@@ -3239,7 +3231,7 @@
     if (rideHab && vecLen(ball.vx, ball.vy) > 50) return;
     if (state.launchRailT != null && ball === state.ball && vecLen(ball.vx, ball.vy) > 180) return;
     var top = copperLodgeBox(ball) && !copperElbowDumpBox(ball);
-    var dump = copperDumpMouthBox(ball);
+    var dump = copperDumpMouthBox(ball) || copperElbowDumpBox(ball);
     if (!top && !dump) {
       ball._copperStuck = 0;
       return;
@@ -3281,7 +3273,8 @@
     var atVertex = wallDist < r + 8;
     var sp = vecLen(ball.vx, ball.vy);
     var sittingStill = (atVertex || inSlot || wedgedDump) && sp < 180;
-    var sitting = sittingStill || wedgedDump || inSlot;
+    var sittingDump = dump && sp < 45;
+    var sitting = sittingStill || wedgedDump || inSlot || sittingDump;
     if (!sitting) {
       ball._copperStuck = 0;
       return;
@@ -3304,15 +3297,19 @@
     }
     if (top) {
       if (sp > 90 && ball.vx > 40) return;
-      ball.x -= 10;
-      if (ball.y > 66) ball.y = 64;
-      ball.vx = -Math.max(Math.abs(ball.vx), 220);
-      ball.vy = -24;
+      // dump5: nudge into the channel. No y=64 teleport, no vx=220 launch.
+      if (ball.x > 500) ball.x -= 3;
+      if (ball.vy < 10) ball.vy += 12;
+      if (ball.vx > 20) ball.vx *= 0.7;
       return;
     }
-    if (wedgedDump) {
-      nx = -0.72;
-      ny = 0.7;
+    // Farm eject for the elbow / old stub pocket: nudge onto the ramp or field.
+    if (dump || wedgedDump) {
+      if (ball.x > 400) ball.x -= 3;
+      if (ball.y < 250) ball.y += 4;
+      if (ball.vy < 20) ball.vy += 14;
+      if (ball.vx > -10) ball.vx -= 8;
+      return;
     }
     var preferX = -0.86;
     peelCopperBall(ball, nx, ny, preferX);
@@ -3386,7 +3383,7 @@
       ball._topLeftStuck = 0;
     }
 
-    // Top-right outer corner (outer right rail, above play â€” rare)
+    // Top-right outer corner (outer right rail, above play Ã¢â‚¬â€ rare)
     var nearOuterRight = ball.x + r > TABLE_W - 36 - 10;
     if (nearOuterRight && ball.y < 140 && speed <= 70) {
       ball.x = Math.min(ball.x, LAUNCH_LANE_LEFT - r - 12);
@@ -3395,7 +3392,7 @@
       return;
     }
 
-    // Playfield side of launch lane wall (wide band â€” old 4px band was too thin)
+    // Playfield side of launch lane wall (wide band Ã¢â‚¬â€ old 4px band was too thin)
     var nearLaneWall =
       ball.x + r > LAUNCH_LANE_LEFT - 48 &&
       ball.x < LAUNCH_LANE_LEFT + r + 2;
@@ -3406,8 +3403,8 @@
       return;
     }
 
-    // Wireform Ã— top-rail wedge (skill-shot entry pocket â€” annotated stuck spot)
-    // Wire: (LAUNCH_LANE_LEFT, LAUNCH_WIRE_Y1) â†’ (LAUNCH_WIRE_X2, LAUNCH_WIRE_Y2)
+    // Wireform Ãƒâ€” top-rail wedge (skill-shot entry pocket Ã¢â‚¬â€ annotated stuck spot)
+    // Wire: (LAUNCH_LANE_LEFT, LAUNCH_WIRE_Y1) Ã¢â€ â€™ (LAUNCH_WIRE_X2, LAUNCH_WIRE_Y2)
     var wx1 = WIRE_FORM_X1;
     var wy1 = WIRE_FORM_Y1;
     var wx2 = WIRE_FORM_X2;
@@ -3557,7 +3554,7 @@
         var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, WALL_RESTITUTION);
         ball.vx = rv.vx;
         ball.vy = rv.vy;
-        // Flat standup tops are shelves — peel inward + down into play.
+        // Flat standup tops are shelves â€” peel inward + down into play.
         if (ballSpeed(ball) < 150 && n.y < -0.2) {
           var inwardT = target.x < TABLE_W * 0.5 ? 1 : -1;
           ball.x = target.x + inwardT * (halfW + ball.radius + 10);
@@ -3765,11 +3762,11 @@
     if (apronAssistsBlocked(state)) return;
     var ball = state.ball;
     var speed = ballSpeed(ball);
-    // Crawl / tip-trap rescue only — no rocket impulses (those caused apron jumps)
+    // Crawl / tip-trap rescue only â€” no rocket impulses (those caused apron jumps)
     if (speed > 120) return;
     if (ball.y < FLIPPER_ROW_Y - 16 || ball.y > FLIPPER_ROW_Y + 40) return;
     var zones = getDrainBounds(state);
-    // Already deep in a drain slot — let checkDrain finish the job
+    // Already deep in a drain slot â€” let checkDrain finish the job
     if (ball.y > FLIPPER_ROW_Y + 24 && isBallInDrainZone(ball, zones)) return;
 
     var leftFlip = null;
@@ -3779,7 +3776,7 @@
       if (state.flippers[fi].side === 'left' && state.flippers[fi].role !== 'upper') leftFlip = state.flippers[fi];
       if (state.flippers[fi].side === 'right' && state.flippers[fi].role !== 'upper') rightFlip = state.flippers[fi];
     }
-    // Between rest tips: do not peel — kill loft so gravity takes the center hole
+    // Between rest tips: do not peel â€” kill loft so gravity takes the center hole
     if (leftFlip && rightFlip) {
       var ltGap = flipperTip(leftFlip);
       var rtGap = flipperTip(rightFlip);
@@ -3976,7 +3973,7 @@
     if (ball.y < 470) return;
     var zones = getDrainBounds(state);
     var r = ball.radius;
-    // Return assist ABOVE flipper line only â€” never shelf-boost a true drain
+    // Return assist ABOVE flipper line only Ã¢â‚¬â€ never shelf-boost a true drain
     if (ball.y >= FLIPPER_ROW_Y - 8) return;
     if (
       ball.x + r < zones.leftOutlaneRight + 14 &&
@@ -4032,7 +4029,7 @@
     var nearFlipRow =
       ball.y > FLIPPER_ROW_Y - ball.radius - 8 && ball.y < FLIPPER_ROW_Y + ball.radius + 6;
     // On/near flipper row in an inlane: slide horizontally into the center hole.
-    // Never force +vy here â€” that fought deck bounce and pinned the ball.
+    // Never force +vy here Ã¢â‚¬â€ that fought deck bounce and pinned the ball.
     if (nearFlipRow && (inLeftInlane || inRightInlane) && speed < 160) {
       ball.vx += (centerX - ball.x) * 0.55;
       return;
@@ -4116,7 +4113,7 @@
   /**
    * Swept / sub-step capsule tests so a fast ball cannot tunnel a 14px bat
    * in one tick (game dt can be 1/30). Both faces; mains and upper.
-   * No extra geometry — hold-both still leaves the center hole.
+   * No extra geometry â€” hold-both still leaves the center hole.
    */
   function resolveFlipperCollisions(state, dt) {
     var ball = state.ball;
@@ -4167,7 +4164,7 @@
     speed = ballSpeed(ball);
     if (speed > MAX_BALL_SPEED) {
       var soft = MAX_BALL_SPEED / speed;
-      // Soft blend rather than a hard wall â€” still clamps runaway speeds.
+      // Soft blend rather than a hard wall Ã¢â‚¬â€ still clamps runaway speeds.
       var blend = 0.55 + 0.45 * soft;
       ball.vx *= blend;
       ball.vy *= blend;
@@ -4460,7 +4457,7 @@
       if (next && !f.active) {
         f.pressAge = 0;
         if (f.chargeLeft > 0) {
-          // Already flashing — flip only; do not re-arm or chain into a new charge.
+          // Already flashing â€” flip only; do not re-arm or chain into a new charge.
           f.sinceLastPress = 99;
         } else if ((f.sinceLastPress != null ? f.sinceLastPress : 99) <= FLIPPER_DBL_TAP_WINDOW) {
           f.chargeLeft = FLIPPER_CHARGE_SEC;
@@ -4484,7 +4481,7 @@
 
   function chargeLaunch(state, dt) {
     if (state.launchCharging && !state.ball.inPlay) {
-      // Hold at full power (1.0). Do NOT wrap â€” wrapping made the red max meter
+      // Hold at full power (1.0). Do NOT wrap Ã¢â‚¬â€ wrapping made the red max meter
       // drop to ~0 and launch weakly right when the bar looked full.
       state.launchPower = Math.min(1, state.launchPower + dt * LAUNCH_CHARGE_RATE);
     }
@@ -4519,7 +4516,7 @@
     state.ball._exited = false;
     state.ball.x = LAUNCH_LANE_X;
     state.ball.y = PLUNGER_REST_Y;
-    // Gauge is speed only — no hidden English off the bar.
+    // Gauge is speed only â€” no hidden English off the bar.
     state.ball.vx = 0;
     state.ball.vy = -p;
     state.exitedLaunchLane = false;

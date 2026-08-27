@@ -1056,17 +1056,6 @@
   function horseshoeInnerPoints(left, right) {
     var pts = segsToPoints(left && left.guides);
     appendOriented(pts, segsToPoints(right && right.mergeInner));
-    // dump4: failDump is a mouth cut on this same inner copper wall
-    // (shared with mergeInner). Loop returns to the plunge mouth so the
-    // U hull still closes at the elbow - no hall-to-y=286 habitrail.
-    var dump = right && right.failDump;
-    if (dump && dump.outer && dump.outer.length) {
-      var mouth = pts.length ? { x: pts[pts.length - 1].x, y: pts[pts.length - 1].y } : { x: 470, y: 88 };
-      appendOriented(pts, segsToPoints(dump.outer));
-      if (dump.gate && dump.gate.length) appendOriented(pts, segsToPoints(dump.gate));
-      if (dump.inner && dump.inner.length) appendOriented(pts, segsToPoints(dump.inner));
-      pts.push({ x: mouth.x, y: mouth.y });
-    }
     return pts;
   }
 
@@ -1189,8 +1178,18 @@
     ctx.stroke();
     ctx.restore();
 
-    // dump4: dump mouth is folded into horseshoeInnerPoints (one copper hull).
-    // Do not fill a second failDump sausage - that was the floating orange stub.
+    // dump5: off-ramp is a copper sausage peel sharing the inner elbow.
+    // Not a mouth-cut melted scrap and not a disconnected dumpO banana.
+    var dump = right && right.failDump;
+    if (dump && dump.outer && dump.inner) {
+      var peelO = segsToPoints(dump.outer);
+      var peelI = segsToPoints(dump.inner);
+      if (peelO.length >= 2 && peelI.length >= 2) {
+        peelO.unshift({ x: 448, y: 88 });
+        peelI.unshift({ x: 470, y: 88 });
+        fillSausageHull(ctx, peelO, peelI, 'copper', simple, tubeW);
+      }
+    }
   }
 
   function drawCopperMergeShoulder(ctx, ramp, pulse) {
