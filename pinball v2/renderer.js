@@ -219,24 +219,28 @@
     ctx.fillStyle = pfGrad;
     ctx.fill();
 
-    // Phase 1/4: Imagine playfield still + optional ambient under actors
+    // Phase 1/4: Imagine playfield still + optional ambient under actors.
+    // Clip out the shooter column — void-pulse still has a full-height magenta
+    // bar there that reads as a fake wall next to the copper lane.
     var Assets = getAssets();
+    var laneLeft = root.PinballSim && root.PinballSim.LAUNCH_LANE_LEFT != null
+      ? root.PinballSim.LAUNCH_LANE_LEFT
+      : tw - 88;
     if (Assets && Assets.drawPlayfieldLayer) {
       ctx.save();
       drawRoundedRect(ctx, 0, 0, tw, th, 12);
       ctx.clip();
+      ctx.save();
+      ctx.beginPath();
+      var stillRight = Math.max(8, laneLeft - 6);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(stillRight, 0);
+      ctx.lineTo(stillRight, th);
+      ctx.lineTo(0, th);
+      ctx.closePath();
+      ctx.clip();
       Assets.drawPlayfieldLayer(ctx, tw, th);
-      // Theme still paints a magenta strip along the shooter seam. Cover it
-      // so only the copper lane + playfield dots show; physics is the lane wall.
-      var laneLeft = root.PinballSim && root.PinballSim.LAUNCH_LANE_LEFT != null
-        ? root.PinballSim.LAUNCH_LANE_LEFT
-        : tw - 88;
-      var cover = ctx.createLinearGradient(laneLeft - 22, 0, laneLeft, 0);
-      cover.addColorStop(0, 'rgba(12, 22, 40, 0)');
-      cover.addColorStop(0.45, 'rgba(10, 18, 32, 0.92)');
-      cover.addColorStop(1, 'rgba(8, 14, 26, 1)');
-      ctx.fillStyle = cover;
-      ctx.fillRect(laneLeft - 22, 0, tw - (laneLeft - 22), th);
+      ctx.restore();
       ctx.restore();
     }
 
@@ -292,10 +296,10 @@
     laneGrad.addColorStop(0, 'rgba(42,18,8,0.92)');
     laneGrad.addColorStop(1, 'rgba(88,36,12,0.96)');
     ctx.fillStyle = laneGrad;
-    ctx.fillRect(laneLeft, joinY, tw - laneLeft - 4, th - 70 - joinY);
+    ctx.fillRect(laneLeft, joinY, tw - laneLeft, th - 70 - joinY);
     ctx.strokeStyle = 'rgba(255,160,64,0.28)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(laneLeft + 1, joinY, tw - laneLeft - 6, th - 72 - joinY);
+    ctx.strokeRect(laneLeft + 1, joinY, Math.max(4, tw - laneLeft - 2), th - 72 - joinY);
   }
 
   /**
