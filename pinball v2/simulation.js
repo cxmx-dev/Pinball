@@ -587,11 +587,11 @@
           { x1: 92, y1: 276, x2: 82, y2: 200 },
           { x1: 82, y1: 200, x2: 98, y2: 161 },
           { x1: 98, y1: 161, x2: 90, y2: 100 },
-          { x1: 90, y1: 100, x2: 86, y2: 70 },
-          { x1: 86, y1: 70, x2: 126, y2: 66 },
-          { x1: 126, y1: 66, x2: 178, y2: 70 },
-          { x1: 178, y1: 70, x2: 245, y2: 79 },
-          { x1: 245, y1: 79, x2: 280, y2: 79 }
+          { x1: 90, y1: 100, x2: 82, y2: 62 },
+          { x1: 82, y1: 62, x2: 110, y2: 58 },
+          { x1: 110, y1: 58, x2: 190, y2: 62 },
+          { x1: 190, y1: 62, x2: 245, y2: 79 },
+          { x1: 245, y1: 68, x2: 280, y2: 68 }
         ]
       },
       rightRamp: {
@@ -602,18 +602,25 @@
         exit: { x: 430, y: 335 },
         boost: 0,
         segments: [
-          { x1: 468, y1: 68, x2: 470, y2: 88 },
+          { x1: 408, y1: 14, x2: 410, y2: 16 },
+          { x1: 410, y1: 16, x2: 422, y2: 22 },
+          { x1: 422, y1: 22, x2: 434, y2: 30 },
+          { x1: 434, y1: 30, x2: 445, y2: 42 },
+          { x1: 445, y1: 42, x2: 455, y2: 54 },
+          { x1: 455, y1: 54, x2: 462, y2: 66 },
+          { x1: 462, y1: 66, x2: 467, y2: 77 },
+          { x1: 467, y1: 77, x2: 470, y2: 88 },
           { x1: 470, y1: 88, x2: 470, y2: 159 },
           { x1: 470, y1: 159, x2: 470, y2: 216 },
           { x1: 470, y1: 216, x2: 468, y2: 286 },
           { x1: 468, y1: 286, x2: 444, y2: 345 }
         ],
         guides: [
-          { x1: 373, y1: 90, x2: 406, y2: 110 },
-          { x1: 406, y1: 110, x2: 429, y2: 130 },
-          { x1: 429, y1: 130, x2: 441, y2: 161 },
-          { x1: 441, y1: 161, x2: 442, y2: 180 },
-          { x1: 442, y1: 180, x2: 442, y2: 250 },
+          { x1: 424, y1: 73, x2: 432, y2: 100 },
+          { x1: 432, y1: 100, x2: 438, y2: 124 },
+          { x1: 438, y1: 124, x2: 444, y2: 159 },
+          { x1: 444, y1: 159, x2: 444, y2: 216 },
+          { x1: 444, y1: 216, x2: 442, y2: 250 },
           { x1: 442, y1: 250, x2: 436, y2: 335 },
           { x1: 436, y1: 335, x2: 428, y2: 420 }
         ],
@@ -632,10 +639,12 @@
         mergeInner: [
           { x1: 470, y1: 88, x2: 458, y2: 80 },
           { x1: 458, y1: 80, x2: 442, y2: 76 },
-          { x1: 442, y1: 76, x2: 406, y2: 88 },
-          { x1: 406, y1: 88, x2: 373, y2: 90 },
-          { x1: 373, y1: 90, x2: 312, y2: 79 },
-          { x1: 312, y1: 79, x2: 280, y2: 79 }
+          { x1: 442, y1: 76, x2: 424, y2: 73 },
+          { x1: 424, y1: 73, x2: 404, y2: 70 },
+          { x1: 404, y1: 70, x2: 372, y2: 69 },
+          { x1: 372, y1: 69, x2: 336, y2: 68 },
+          { x1: 336, y1: 68, x2: 308, y2: 68 },
+          { x1: 308, y1: 68, x2: 280, y2: 79 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 345,
@@ -3689,6 +3698,9 @@
 
     // Right orbit vs shooter slot: live bounce-loops are often faster than the crawl gate.
     var rightRtEarly = state.sideRoutes && state.sideRoutes.rightRamp;
+    if (state.activeHabitrail === 'ramp-r') {
+      rightRtEarly = null;
+    }
     if (rightRtEarly && rightRtEarly.segments && ball.y > 70 && ball.y < 360 && ball.x < LAUNCH_LANE_LEFT) {
       var npRE = nearestPointOnSegments(ball.x, ball.y, rightRtEarly.segments);
       var inSlotEarly =
@@ -3754,6 +3766,9 @@
     }
     // Live ping-pong in the slot between right orbit outer and shooter wall
     var rightRt = state.sideRoutes && state.sideRoutes.rightRamp;
+    if (state.activeHabitrail === 'ramp-r') {
+      rightRt = null;
+    }
     if (rightRt && rightRt.segments && ball.y > 70 && ball.y < 360 && ball.x < LAUNCH_LANE_LEFT) {
       var npR = nearestPointOnSegments(ball.x, ball.y, rightRt.segments);
       var inSlot =
