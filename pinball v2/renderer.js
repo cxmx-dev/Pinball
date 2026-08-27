@@ -937,7 +937,7 @@
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
     var filler = ramp.id === 'fill-l' || ramp.id === 'fill-r';
     if (!filler) {
-      // shoe1: Pioneer is lower sausages only. Horseshoe is two neon tubes.
+      // shoe2: Pioneer is lower fill-l / fill-r sausages only. Horseshoe is solid sausages in drawHorseshoeOrbit.
       return;
     }
     // Draw hull = physics outline. No inset (that made a skeleton off the rail).
@@ -1058,100 +1058,131 @@
     return pts;
   }
 
-  /** shoe1: two matching neon tubes. No hull fill, no Pioneer lobe. */
+  /** shoe2: solid cyan / copper sausage hull (filled, neon rim). Physics polylines only. */
+  function fillSausageHull(ctx, outerPts, innerPts, theme, simple, rimW) {
+    if (!outerPts || !innerPts || outerPts.length < 2 || innerPts.length < 2) return;
+    var outer = chaikinSmooth(outerPts, 2);
+    var inner = chaikinSmooth(innerPts, 2);
+    if (outer.length < 2 || inner.length < 2) return;
+    var hull = outer.concat(inner.slice().reverse());
+    var cyan = theme === 'cyan';
+    var minX = hull[0].x, maxX = hull[0].x, minY = hull[0].y, maxY = hull[0].y;
+    var hi;
+    for (hi = 1; hi < hull.length; hi++) {
+      if (hull[hi].x < minX) minX = hull[hi].x;
+      if (hull[hi].x > maxX) maxX = hull[hi].x;
+      if (hull[hi].y < minY) minY = hull[hi].y;
+      if (hull[hi].y > maxY) maxY = hull[hi].y;
+    }
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    strokeExact(ctx, hull, true);
+    ctx.fillStyle = cyan ? '#0a3040' : '#4a1c08';
+    ctx.fill();
+    var g = ctx.createLinearGradient(minX, minY, maxX, maxY);
+    if (cyan) {
+      g.addColorStop(0, 'rgba(90, 224, 255, 1)');
+      g.addColorStop(0.4, 'rgba(18, 150, 200, 1)');
+      g.addColorStop(1, 'rgba(6, 70, 100, 1)');
+    } else {
+      g.addColorStop(0, 'rgba(255, 176, 64, 1)');
+      g.addColorStop(0.4, 'rgba(214, 88, 20, 1)');
+      g.addColorStop(1, 'rgba(120, 44, 8, 1)');
+    }
+    strokeExact(ctx, hull, true);
+    ctx.fillStyle = g;
+    ctx.fill();
+    if (!simple) applyShadow(ctx, cyan ? 'rgba(40, 200, 255, 0.28)' : 'rgba(255, 140, 40, 0.28)', 10);
+    var width = rimW == null ? 5.5 : rimW;
+    strokeExact(ctx, outer, false);
+    ctx.strokeStyle = cyan ? 'rgba(80, 220, 255, 0.95)' : 'rgba(255, 168, 64, 0.95)';
+    ctx.lineWidth = width;
+    ctx.stroke();
+    strokeExact(ctx, inner, false);
+    ctx.stroke();
+    if (!simple) {
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = cyan ? 'rgba(200, 245, 255, 0.55)' : 'rgba(255, 230, 170, 0.55)';
+      ctx.lineWidth = Math.max(2, width * 0.28);
+      strokeExact(ctx, outer, false);
+      ctx.stroke();
+      strokeExact(ctx, inner, false);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /** Rounded tube mouth where the U dumps into the copper drop. No ellipse / scale. */
+  function drawCopperDropMouth(ctx, dropO, dropI, simple) {
+    if (!dropO || !dropI || !dropO.length || !dropI.length) return;
+    var a = dropO[0];
+    var b = dropI[0];
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (!simple) applyShadow(ctx, 'rgba(255, 140, 40, 0.35)', 12);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = 'rgba(255, 176, 64, 0.96)';
+    ctx.lineWidth = 16;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = 'rgba(70, 24, 6, 0.88)';
+    ctx.lineWidth = 8;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = 'rgba(255, 230, 170, 0.55)';
+    ctx.lineWidth = 2.4;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** shoe2: solid cyan left U + solid copper right U and drop. Physics hulls only. */
+  function extendJoinX(pts, towardX) {
+    var out = [];
+    var i;
+    for (i = 0; i < (pts || []).length; i++) {
+      var p = pts[i];
+      out.push(Math.abs(p.x - 280) < 1.5 ? { x: towardX, y: p.y } : p);
+    }
+    return out;
+  }
+
   function drawHorseshoeOrbit(ctx, left, right, pulse) {
     if (!left) return;
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
     var tubeW = 5.5;
-    var cyanTube = {
-      core: 'rgba(80, 230, 255, 0.95)',
-      glow: 'rgba(40, 180, 255, 0.45)',
-      hi: 'rgba(220, 250, 255, 0.7)',
-      width: tubeW,
-      smooth: !simple
-    };
-    var copperTube = {
-      core: 'rgba(255, 190, 90, 0.92)',
-      glow: 'rgba(255, 150, 40, 0.42)',
-      hi: 'rgba(255, 245, 210, 0.65)',
-      width: tubeW,
-      smooth: !simple
-    };
-    var JOIN_X = 280;
     var blend = 26;
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    // Cyan sausage = left physics hull. Copper U = merge hull. Draw-only 8px join overlap.
+    fillSausageHull(ctx, extendJoinX(segsToPoints(left.segments), 280 + blend), extendJoinX(segsToPoints(left.guides), 280 + blend), 'cyan', simple, tubeW);
     if (right && right.mergeOuter && right.mergeInner) {
-      var outer = chaikinSmooth(horseshoeOuterPoints(left, right), 2);
-      var inner = chaikinSmooth(horseshoeInnerPoints(left, right), 2);
-      if (outer.length >= 4 && inner.length >= 4) {
-        // Copper under, cyan over: 26px overlap at x=280 is a color blend, not a brick seam.
-        strokeTubePath(ctx, clipPtsAtJoinX(outer, JOIN_X - blend, false), copperTube);
-        strokeTubePath(ctx, clipPtsAtJoinX(inner, JOIN_X - blend, false), copperTube);
-        strokeTubePath(ctx, clipPtsAtJoinX(outer, JOIN_X + blend, true), cyanTube);
-        strokeTubePath(ctx, clipPtsAtJoinX(inner, JOIN_X + blend, true), cyanTube);
+      fillSausageHull(ctx, extendJoinX(segsToPoints(right.mergeOuter), 280 - blend), extendJoinX(segsToPoints(right.mergeInner), 280 - blend), 'copper', simple, tubeW);
+      var copperFallOuter = segsToPoints(clipSegsBelowY(right.segments, 88));
+      var copperFallInner = segsToPoints(right.guides);
+      if (copperFallOuter.length >= 2 && copperFallInner.length >= 2) {
+        fillSausageHull(ctx, copperFallOuter, copperFallInner, 'copper', simple, tubeW);
+        drawCopperDropMouth(ctx, copperFallOuter, copperFallInner, simple);
       }
-      var dropO = chaikinSmooth(segsToPoints(clipSegsBelowY(right.segments, 88)), 2);
-      var dropI = chaikinSmooth(segsToPoints(right.guides), 2);
-      if (dropO.length >= 2) strokeTubePath(ctx, dropO, copperTube);
-      if (dropI.length >= 2) strokeTubePath(ctx, dropI, copperTube);
-    } else {
-      strokeTubePath(ctx, chaikinSmooth(segsToPoints(left.segments), 2), cyanTube);
-      strokeTubePath(ctx, chaikinSmooth(segsToPoints(left.guides), 2), cyanTube);
     }
     ctx.restore();
   }
 
   function drawCopperMergeShoulder(ctx, ramp, pulse) {
-    // shoe1: no Pioneer lobe on mergeOuter / mergeInner. Tubes live in drawHorseshoeOrbit.
     return;
   }
 
   function drawMergeJoinRims(ctx, outerSegs, innerSegs) {
-    // Rim-only continuous copper join (no filled splice / sausage over the brown lane).
-    function joinPts(segs, dropUFloor) {
-      if (!segs || !segs.length) return [];
-      var pts = [{ x: segs[0].x1, y: segs[0].y1 }];
-      var i;
-      for (i = 0; i < segs.length; i++) {
-        // Keep the U mouth; drop only leftover floor chords that ride the U hull.
-        if (dropUFloor) {
-          var sdy = Math.abs(segs[i].y2 - segs[i].y1);
-          var sdx = Math.abs(segs[i].x2 - segs[i].x1);
-          var sminX = Math.min(segs[i].x1, segs[i].x2);
-          var smaxX = Math.max(segs[i].x1, segs[i].x2);
-          var sminY = Math.min(segs[i].y1, segs[i].y2);
-          var smaxY = Math.max(segs[i].y1, segs[i].y2);
-          var inSeamBand = smaxX >= 460 && sminX <= 560 && smaxY >= 70 && sminY <= 103;
-          var flatSeam = sdy <= 14 || (sdx > 1 && sdy / sdx <= 0.55);
-          if (segs[i].x2 <= 490 || (inSeamBand && flatSeam)) continue;
-        }
-        pts.push({ x: segs[i].x2, y: segs[i].y2 });
-      }
-      return pts;
-    }
-    var outer = joinPts(outerSegs, false);
-    var inner = joinPts(innerSegs, true);
-    if (outer.length < 2 && inner.length < 2) return;
-    var copperTube = {
-      core: 'rgba(255, 190, 90, 0.92)',
-      glow: 'rgba(255, 150, 40, 0.42)',
-      hi: 'rgba(255, 245, 210, 0.65)',
-      width: 6,
-      smooth: true
-    };
-    var copperGuide = {
-      core: 'rgba(255, 220, 140, 0.55)',
-      glow: 'rgba(255, 180, 60, 0.22)',
-      hi: 'rgba(255, 230, 170, 0.45)',
-      width: 3.5,
-      smooth: true
-    };
-    strokeTubePath(ctx, outer, copperTube);
-    // Do not stroke inner copperGuide. Leftover 392,103→344,78 (and flatter
-    // U-floor chords) drew a white/light-orange horizontal seam at the top of
-    // the vertical orange lane as it curves left into the cyan U. Physics stays.
+    return;
   }
   function drawSideRoutes(ctx, state, pulse) {
     if (!state.sideRoutes) return;
