@@ -91,3 +91,4 @@ Gravity, flippers, charge launch, wireform, bumpers, slings, targets, rollovers,
 
 **2026-08-26** — VOID PULSE table pass (t139): cyan boingers in/up (C 125,708 / B 352,707), right 300 at 343,295, mid 500 at 340,520, horseshoe crown y=18 joining at x=280, rails follow the traces. Cache `?v=opt1`.
 **2026-08-26** — VOID PULSE opt1: unlatch L Flip on pointerup/leave/blur, clip so no magenta rect outside the rail, game-over restart hits the visible label/card. Cache `?v=opt1`.
+**2026-08-26** - VOID PULSE opt2: unstick horseshoe crown shelf (wider channel, join 280,80), keep opt1 sausage peel / flipper unlatch / magenta clip / restart hit. Cache `?v=opt2`.
