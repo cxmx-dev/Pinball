@@ -1171,6 +1171,13 @@
         fillSausageHull(ctx, dropO, dropI, 'copper', simple, tubeW);
       }
     }
+    if (right && right.failDump && right.failDump.outer && right.failDump.inner) {
+      var dumpO = segsToPoints(right.failDump.outer);
+      var dumpI = segsToPoints(right.failDump.inner);
+      if (dumpO.length >= 2 && dumpI.length >= 2) {
+        fillSausageHull(ctx, dumpO, dumpI, 'copper', simple, tubeW);
+      }
+    }
   }
 
   function drawCopperMergeShoulder(ctx, ramp, pulse) {

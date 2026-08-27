@@ -635,7 +635,25 @@
           { x1: 458, y1: 80, x2: 390, y2: 80 },
           { x1: 390, y1: 80, x2: 330, y2: 80 },
           { x1: 330, y1: 80, x2: 280, y2: 80 }
-                ]
+                ],
+        // dump1: Williams fail-ramp. Inner NE elbow window dumps down-left
+        // under the UR saucer (410,148) onto the upper-right playfield
+        // toward yellow 300 (343,295). Crown floor x=280-400 stays closed.
+        failDump: {
+          outer: [
+            { x1: 428, y1: 100, x2: 392, y2: 118 },
+            { x1: 392, y1: 118, x2: 360, y2: 160 },
+            { x1: 360, y1: 160, x2: 338, y2: 204 }
+          ],
+          inner: [
+            { x1: 444, y1: 160, x2: 416, y2: 198 },
+            { x1: 416, y1: 198, x2: 384, y2: 232 },
+            { x1: 384, y1: 232, x2: 356, y2: 260 }
+          ],
+          gate: [
+            { x1: 338, y1: 204, x2: 356, y2: 260 }
+          ]
+        }
       },
       leftFiller: {
         id: 'fill-l',
@@ -739,7 +757,34 @@
     pushPath(routes.leftRamp.segments, 'habitrail', { cyan: true });
     pushInner(routes.leftRamp.guides, { cyan: true });
     pushPath(routes.rightRamp.segments, 'habitrail');
-    pushInner(routes.rightRamp.guides);
+    function isElbowDumpMouthSeg(seg) {
+      var mx = (seg.x1 + seg.x2) * 0.5;
+      var my = (seg.y1 + seg.y2) * 0.5;
+      return mx > 400 && mx < 460 && my > 70 && my < 162;
+    }
+    function pushRightGuides(segs) {
+      if (!segs) return;
+      var i;
+      for (i = 0; i < segs.length; i++) {
+        var seg = segs[i];
+        var top = seg.y1 < 200 && seg.y2 < 200;
+        var pieces = top ? subdivideSeg(seg, 20) : [seg];
+        var mouth = isElbowDumpMouthSeg(seg);
+        var p;
+        for (p = 0; p < pieces.length; p++) {
+          var w = {
+            x1: pieces[p].x1,
+            y1: pieces[p].y1,
+            x2: pieces[p].x2,
+            y2: pieces[p].y2,
+            kind: top ? 'habitrail' : 'guide'
+          };
+          if (mouth) w.failMouth = true;
+          walls.push(w);
+        }
+      }
+    }
+    pushRightGuides(routes.rightRamp.guides);
     function pushMerge(segs, kind) {
       if (!segs) return;
       var m;
@@ -760,6 +805,31 @@
     }
     pushMerge(routes.rightRamp.mergeOuter, 'habitrail');
     pushMerge(routes.rightRamp.mergeInner, 'habitrail');
+    function pushFailDump(segs, flags) {
+      if (!segs) return;
+      var i;
+      for (i = 0; i < segs.length; i++) {
+        var pieces = subdivideSeg(segs[i], 16);
+        var p;
+        for (p = 0; p < pieces.length; p++) {
+          var w = {
+            x1: pieces[p].x1,
+            y1: pieces[p].y1,
+            x2: pieces[p].x2,
+            y2: pieces[p].y2,
+            kind: 'habitrail',
+            dumpRamp: true
+          };
+          if (flags && flags.gate) w.dumpGate = true;
+          walls.push(w);
+        }
+      }
+    }
+    if (routes.rightRamp.failDump) {
+      pushFailDump(routes.rightRamp.failDump.outer);
+      pushFailDump(routes.rightRamp.failDump.inner);
+      pushFailDump(routes.rightRamp.failDump.gate, { gate: true });
+    }
     // merge3 closer: vertical launch join then rounded into the floor. No bird-beak.
     walls.push({ x1: LAUNCH_LANE_LEFT, y1: 103, x2: LAUNCH_LANE_LEFT, y2: 94, kind: 'habitrail', merge: true });
     walls.push({ x1: LAUNCH_LANE_LEFT, y1: 94, x2: LAUNCH_LANE_LEFT - 2, y2: 88, kind: 'habitrail', merge: true });
@@ -2903,6 +2973,24 @@
         // hang a second roof in the channel.
         return;
       }
+      if (wall.failMouth) {
+        // Trapdoor: open for a dying ball already in the orange sausage.
+        // Closed for field balls and RTL climbers (they hug / bounce).
+        var insideElbow = ball.x >= 428 && ball.x <= 478 && ball.y >= 78 && ball.y <= 175;
+        var climbing = ball.vy < -80;
+        var fastU = ball.y < 86 && vecLen(ball.vx, ball.vy) > 260;
+        if (insideElbow && !climbing && !fastU) return;
+      }
+      if (wall.dumpRamp && !wall.dumpGate && ball.x > 446 && ball.y < 200) {
+        // Dump sausage lives on the playfield side of the inner wall.
+        return;
+      }
+      if (wall.dumpGate) {
+        var fromSausage = (ball.x > 400 && ball.y < 210) ||
+          (state.activeHabitrail === 'ramp-r' && ball.y < 280) ||
+          !state.exitedLaunchLane;
+        if (fromSausage) return;
+      }
       if (wall.merge) {
         // merge3: plunge / launchRailT riders MUST hit the floor.
         // RTL climbers below the raised floor skip so they do not bounce from under.
@@ -3081,6 +3169,11 @@
     return !!(ball && ball.x >= 400 && ball.x <= 460 && ball.y >= 320 && ball.y <= 390);
   }
 
+  /** dump1: NE elbow fail-ramp window. Not the lower 500-mouth box. */
+  function copperElbowDumpBox(ball) {
+    return !!(ball && ball.x >= 420 && ball.x <= 490 && ball.y >= 82 && ball.y <= 170);
+  }
+
   function copperRubberMid(state) {
     var list = state && state.bumpers;
     if (!list) return null;
@@ -3127,7 +3220,7 @@
     var rideHab = state.activeHabitrail === 'ramp-l' || state.activeHabitrail === 'ramp-r';
     if (rideHab && vecLen(ball.vx, ball.vy) > 50) return;
     if (state.launchRailT != null && ball === state.ball && vecLen(ball.vx, ball.vy) > 180) return;
-    var top = copperLodgeBox(ball);
+    var top = copperLodgeBox(ball) && !copperElbowDumpBox(ball);
     var dump = copperDumpMouthBox(ball);
     if (!top && !dump) {
       ball._copperStuck = 0;
