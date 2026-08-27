@@ -431,7 +431,7 @@
       var bi;
       for (bi = 0; bi < pack.length; bi++) {
         var b = pack[bi];
-        if (b && b.inPlay && ballInsideTriangle(b, tri)) ejectBallFromTriangle(state, b, tri);
+        if (b && b.inPlay && !skipBallAssist(state, b) && ballInsideTriangle(b, tri)) ejectBallFromTriangle(state, b, tri);
       }
     }
     var i;
@@ -505,9 +505,9 @@
       var s = tri.sides[i];
       var preVx = ball.vx;
       var preVy = ball.vy;
-      segmentCollision(ball, s.x1, s.y1, s.x2, s.y2, SLING_RESTITUTION, function () {
+      segmentCollision(ball, s.x1, s.y1, s.x2, s.y2, SLING_RESTITUTION * TRIANGLE_RUBBER_MULT, function () {
         var incident = Math.max(0, -dot(preVx, preVy, s.nx, s.ny));
-        var kick = clamp(incident * SLING_KICK_GAIN, SLING_KICK_MIN, SLING_KICK_MAX);
+        var kick = clamp(incident * SLING_KICK_GAIN * TRIANGLE_RUBBER_MULT, SLING_KICK_MIN * TRIANGLE_RUBBER_MULT, SLING_KICK_MAX * TRIANGLE_RUBBER_MULT);
         ball.vx += s.nx * kick;
         ball.vy += s.ny * kick - kick * 0.32;
         applyTriangleHitSpin(tri, ball, preVx, preVy);
@@ -1993,6 +1993,7 @@
   }
 
   function unstickOneTriangleInterior(state, ball, tri) {
+    if (!triangleIsUp(tri)) return false;
     if (skipBallAssist(state, ball)) return false;
     if (!ball || !ball.inPlay || !tri) return false;
     if (!ballInsideTriangle(ball, tri)) {

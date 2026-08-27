@@ -758,6 +758,8 @@
   function drawPulseTriangle(ctx, state) {
     var tri = state && state.pulseTriangle;
     if (!tri || !tri.verts || !tri.sides) return;
+    var SimTri = root.PinballSim;
+    if (SimTri && typeof SimTri.triangleIsUp === 'function' && !SimTri.triangleIsUp(tri)) return;
     var v = tri.verts;
     var r = tri.radius || 8;
     ctx.save();
@@ -918,7 +920,7 @@
 
     // Copper + cyan habitrail: one smooth hull (no chord / brick ticks).
     // Fillers and phone/simple stay exact. Phone/simple: no ellipse/scale.
-    var strokeHull = (simple || filler) ? strokeExact : strokeSmooth;
+    var strokeHull = strokeExact;
     strokeHull(ctx, hull, true);
     ctx.fillStyle = cyan ? (filler ? '#0a3040' : '#061820') : (filler ? '#4a1c08' : '#2a1206');
     ctx.fill();
@@ -964,11 +966,49 @@
         ctx.stroke();
       }
     }
-    // Thin rims; copper uses the smooth hull path so chord joints stay hidden.
-    paintRim(outer, simple ? 5 : 6);
-    paintRim(inner.slice().reverse(), simple ? 4 : 5);
+    // Thin rims. Fillers keep paintRim; orbit tubes use one smooth strokeTubePath (no brick / melt).
+    if (filler) {
+      paintRim(outer, simple ? 5 : 6);
+      paintRim(inner.slice().reverse(), simple ? 4 : 5);
+    } else {
+      var tube = {
+        core: cyan ? 'rgba(80, 230, 255, 0.95)' : 'rgba(255, 190, 90, 0.92)',
+        glow: cyan ? 'rgba(40, 180, 255, 0.45)' : 'rgba(255, 150, 40, 0.42)',
+        hi: cyan ? 'rgba(220, 250, 255, 0.7)' : 'rgba(255, 245, 210, 0.65)',
+        width: 6,
+        smooth: !simple
+      };
+      var guide = {
+        core: cyan ? 'rgba(160, 240, 255, 0.6)' : 'rgba(255, 220, 140, 0.55)',
+        glow: cyan ? 'rgba(40, 180, 255, 0.22)' : 'rgba(255, 180, 60, 0.22)',
+        hi: cyan ? 'rgba(255,255,255,0.4)' : 'rgba(255, 230, 170, 0.45)',
+        width: 3.5,
+        smooth: !simple
+      };
+      strokeTubePath(ctx, outer, tube);
+      strokeTubePath(ctx, inner.slice().reverse(), guide);
+    }
 
     ctx.restore();
+  }
+
+  function clipSegsBelowY(segs, y0) {
+    var out = [];
+    var i;
+    for (i = 0; i < (segs || []).length; i++) {
+      var seg = segs[i];
+      var y1 = seg.y1, y2 = seg.y2;
+      if (y1 >= y0 && y2 >= y0) {
+        out.push(seg);
+      } else if (y1 < y0 && y2 >= y0) {
+        var t = (y0 - y1) / (y2 - y1);
+        out.push({ x1: seg.x1 + (seg.x2 - seg.x1) * t, y1: y0, x2: seg.x2, y2: y2 });
+      } else if (y2 < y0 && y1 >= y0) {
+        var t2 = (y0 - y1) / (y2 - y1);
+        out.push({ x1: seg.x1, y1: y1, x2: seg.x1 + (seg.x2 - seg.x1) * t2, y2: y0 });
+      }
+    }
+    return out;
   }
 
   function horseshoeOuterPoints(left, right) {
@@ -996,14 +1036,16 @@
     var outer = horseshoeOuterPoints(left, right);
     var inner = horseshoeInnerPoints(left, right);
     if (outer.length < 4 || inner.length < 4) return;
-    // pop1: cohesive tube ring. No leftover closer-cap, no melt-fill blob.
-    var hull = outer.concat(inner.slice().reverse());
+    // pop1: PHYSICS=DRAW hull clipped at the orange ramp (x=470) so the top tube
+    // meets the copper slide with no leftover closer-cap / 1px V over the shooter.
+    var outerDraw = clipPtsAtJoinX(outer, 470, true);
+    var innerDraw = clipPtsAtJoinX(inner, 470, true);
+    var hull = outerDraw.concat(innerDraw.slice().reverse());
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
-    var strokeHull = simple ? strokeExact : strokeSmooth;
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    strokeHull(ctx, hull, true);
+    strokeExact(ctx, hull, true);
     ctx.fillStyle = '#071018';
     ctx.fill();
     if (!simple) applyShadow(ctx, 'rgba(40, 160, 200, 0.16)', 8);
@@ -1035,11 +1077,17 @@
       width: 3.5,
       smooth: !simple
     };
-    var blend = 6;
+    var blend = 18;
     strokeTubePath(ctx, clipPtsAtJoinX(outer, 280 + blend, true), cyanTube);
     strokeTubePath(ctx, clipPtsAtJoinX(outer, 280 - blend, false), copperTube);
     strokeTubePath(ctx, clipPtsAtJoinX(inner, 280 + blend, true), cyanGuide);
     strokeTubePath(ctx, clipPtsAtJoinX(inner, 280 - blend, false), copperGuide);
+    // PHYSICS=DRAW: the copper join curve (rightRamp.segments y<88) is the
+    // top-line-to-orange-ramp tube. Do not leave it as a leftover invisible wall.
+    var joinCurve = segsToPoints((right.segments || []).filter(function (sg) {
+      return Math.min(sg.y1, sg.y2) < 87;
+    }));
+    if (joinCurve.length >= 2) strokeTubePath(ctx, joinCurve, copperTube);
     ctx.restore();
   }
 
@@ -1133,7 +1181,7 @@
       // Copper slide hull is the vertical arm only (y>=88). Top lobe is the horseshoe.
       drawPioneerRamp(ctx, {
         segments: (ramp.segments || []).filter(function (s) { return Math.min(s.y1, s.y2) >= 87; }),
-        guides: ramp.guides
+        guides: clipSegsBelowY(ramp.guides, 88)
       }, pulse);
     }
   }
