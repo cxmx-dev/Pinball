@@ -3256,7 +3256,7 @@ console.log('All tests passed.');
   assert(renSrcPop.indexOf('segments: (ramp.segments') === -1, 'no Pioneer on rightRamp');
   assert(renSrcPop.indexOf('drawPioneerRamp(ctx, { segments: ramp.mergeOuter') === -1, 'no Pioneer on mergeOuter');
   var idxSrc = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxSrc.indexOf('?v=shoe1') !== -1, 'cache bust shoe1');
+  assert(idxSrc.indexOf('?v=flip1') !== -1, 'cache bust flip1');
   assert(renSrcPop.indexOf('{ x: 472, y: 103 }') === -1, 'leftover closer-cap draw is gone');
   var segs = fresh().sideRoutes.rightRamp.segments;
   assert(segs.some(function (sg) { return sg.x1 === 408 && sg.y1 === 14; }), 'copper join curve 408,14 stays (PHYSICS=DRAW)');
@@ -3317,4 +3317,104 @@ console.log('All tests passed.');
   assert.strictEqual(sim.TABLE_W, 560, 'width kept');
   assert.strictEqual(sim.HABITRAIL_ASSIST, 0, 'no rail magnet');
   console.log('PASS: shoe1 tubes + pop1 triangle 1+1 / rubber / plunge U');
+})();
+
+(function testFlip1SweptFlipperBlocksAndCenterHole() {
+  function raise(state, which) {
+    state.flippers.forEach(function (f) {
+      if (which === 'upper') {
+        if (f.role !== 'upper') return;
+      } else if (f.role === 'upper') {
+        return;
+      } else if (which !== 'both' && f.side !== which) {
+        return;
+      }
+      f.active = true;
+      f.angle = f.activeAngle;
+      f.targetAngle = f.activeAngle;
+      f.omega = 0;
+    });
+  }
+  function fireInto(side, speed, dt) {
+    var state = fresh();
+    state.ball.inPlay = true;
+    state.exitedLaunchLane = true;
+    state.phase = 'playing';
+    raise(state, side);
+    var f = state.flippers.find(function (fl) {
+      if (side === 'upper') return fl.role === 'upper';
+      return fl.side === side && fl.role !== 'upper';
+    });
+    var ux = Math.cos(f.angle);
+    var uy = Math.sin(f.angle);
+    var tAlong = f.length * 0.55;
+    var mx = f.pivotX + ux * tAlong;
+    var my = f.pivotY + uy * tAlong;
+    var nx = -uy;
+    var ny = ux;
+    if (ny > 0) { nx = -nx; ny = -ny; }
+    var hit = state.ball.radius + f.width * 0.5;
+    state.ball.x = mx + nx * (hit + 30);
+    state.ball.y = my + ny * (hit + 30);
+    state.ball.vx = -nx * speed;
+    state.ball.vy = -ny * speed;
+    var crossed = false;
+    var bounced = false;
+    var i;
+    for (i = 0; i < 36; i++) {
+      sim.stepPhysics(state, dt);
+      var tip = sim.flipperTip(f);
+      var dx = tip.x - f.pivotX;
+      var dy = tip.y - f.pivotY;
+      var len = Math.hypot(dx, dy);
+      var uxx = dx / len;
+      var uyy = dy / len;
+      var relX = state.ball.x - f.pivotX;
+      var relY = state.ball.y - f.pivotY;
+      var tt = Math.max(0, Math.min(len, relX * uxx + relY * uyy));
+      var cx = f.pivotX + uxx * tt;
+      var cy = f.pivotY + uyy * tt;
+      var sideDot = (state.ball.x - cx) * nx + (state.ball.y - cy) * ny;
+      if (tt > 10 && tt < len - 6 && sideDot < -5) crossed = true;
+      if (state.ball.vx * -nx + state.ball.vy * -ny < speed * 0.15) bounced = true;
+    }
+    return { bounced: bounced, crossed: crossed, x: state.ball.x, y: state.ball.y, vy: state.ball.vy };
+  }
+  var speeds = [400, 650, 900];
+  var si;
+  for (si = 0; si < speeds.length; si++) {
+    var sp = speeds[si];
+    var L = fireInto('left', sp, 1 / 30);
+    assert(L.bounced, 'left raised must rebound at ' + sp + ' (vy=' + L.vy.toFixed(1) + ')');
+    assert(!L.crossed, 'left raised must not appear below the bat at ' + sp);
+    var R = fireInto('right', sp, 1 / 30);
+    assert(R.bounced, 'right raised must rebound at ' + sp + ' (vy=' + R.vy.toFixed(1) + ')');
+    assert(!R.crossed, 'right raised must not appear below the bat at ' + sp);
+  }
+  var hole = fresh();
+  hole.ball.inPlay = true;
+  hole.exitedLaunchLane = true;
+  hole.phase = 'playing';
+  raise(hole, 'both');
+  var leftF = hole.flippers.find(function (f) { return f.side === 'left' && f.role !== 'upper'; });
+  var rightF = hole.flippers.find(function (f) { return f.side === 'right' && f.role !== 'upper'; });
+  var gapL = sim.flipperTip(leftF).x;
+  var gapR = sim.flipperTip(rightF).x;
+  assert(gapR - gapL > 24, 'hold-both still leaves a center hole');
+  hole.ball.x = (gapL + gapR) / 2;
+  hole.ball.y = Math.min(sim.flipperTip(leftF).y, sim.flipperTip(rightF).y) - 40;
+  hole.ball.vx = 0;
+  hole.ball.vy = 700;
+  var beforeBalls = hole.ballsRemaining;
+  var n;
+  for (n = 0; n < 90; n++) sim.tick(hole, 1 / 60);
+  assert(hole.ballsRemaining < beforeBalls || !hole.ball.inPlay, 'center hole still drains with both raised');
+  var U = fireInto('upper', 700, 1 / 30);
+  assert(U.bounced, 'upper flipper must block (vy=' + U.vy.toFixed(1) + ')');
+  assert(!U.crossed, 'upper flipper must not be a ghost');
+  var simSrc = require('fs').readFileSync(require('path').join(__dirname, '..', 'simulation.js'), 'utf8');
+  assert(simSrc.indexOf('Swept / sub-step capsule tests') !== -1, 'swept flipper collision present');
+  assert.strictEqual(sim.TABLE_W, 560, 'TABLE_W stays 560');
+  assert.strictEqual(sim.GRAVITY, 1180, 'GRAVITY stays 1180');
+  console.log('PASS: flip1 swept flippers block + center hole + upper');
 })();

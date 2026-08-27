@@ -3899,57 +3899,117 @@
     }
   }
 
-  function resolveFlipperCollisions(state) {
+  function closestPointOnFlipper(ballX, ballY, flipper) {
+    var tip = flipperTip(flipper);
+    var dx = tip.x - flipper.pivotX;
+    var dy = tip.y - flipper.pivotY;
+    var segLen = vecLen(dx, dy);
+    if (segLen < 1e-6) return null;
+    var ux = dx / segLen;
+    var uy = dy / segLen;
+    var relX = ballX - flipper.pivotX;
+    var relY = ballY - flipper.pivotY;
+    var t = clamp(dot(relX, relY, ux, uy), 0, segLen);
+    var cx = flipper.pivotX + ux * t;
+    var cy = flipper.pivotY + uy * t;
+    return { t: t, cx: cx, cy: cy, dist: vecLen(ballX - cx, ballY - cy), segLen: segLen, ux: ux, uy: uy };
+  }
+
+  /** Discrete capsule hit on either face. Parked = passive; sweeping = slap. */
+  function collideBallWithFlipper(state, ball, flipper) {
+    var hit = closestPointOnFlipper(ball.x, ball.y, flipper);
+    if (!hit) return false;
+    var hitDist = ball.radius + flipper.width * 0.5;
+    if (hit.dist >= hitDist) return false;
+
+    var n;
+    if (hit.dist > 1e-6) {
+      n = normalize(ball.x - hit.cx, ball.y - hit.cy);
+    } else {
+      var nx = -hit.uy;
+      var ny = hit.ux;
+      if (dot(ball.vx, ball.vy, nx, ny) > 0) {
+        nx = -nx;
+        ny = -ny;
+      }
+      if (Math.abs(nx) < 1e-8 && Math.abs(ny) < 1e-8) {
+        nx = 0;
+        ny = -1;
+      }
+      n = normalize(nx, ny);
+    }
+    ball.x = hit.cx + n.x * hitDist;
+    ball.y = hit.cy + n.y * hitDist;
+    var sweeping = flipperIsSweeping(flipper);
+    var rest = sweeping ? FLIPPER_RESTITUTION_SWEEP : FLIPPER_RESTITUTION_PASSIVE;
+    var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, rest);
+    ball.vx = rv.vx;
+    ball.vy = rv.vy;
+
+    if (sweeping) {
+      var tapMult = flipper.tapBoost ? FLIPPER_TAP_MULT : 1;
+      var tipFrac = Math.pow(hit.t / hit.segLen, FLIPPER_TIP_POWER);
+      var contactVx = -Math.sin(flipper.angle) * flipper.omega * hit.t;
+      var contactVy = Math.cos(flipper.angle) * flipper.omega * hit.t;
+      var addVx = contactVx * FLIPPER_IMPULSE_GAIN * tipFrac * tapMult;
+      var addVy = contactVy * FLIPPER_IMPULSE_GAIN * tipFrac * tapMult;
+      var addSpeed = vecLen(addVx, addVy);
+      var maxAdd = FLIPPER_MAX_ADD_SPEED * tapMult;
+      if (addSpeed > maxAdd && addSpeed > 1e-6) {
+        var scale = maxAdd / addSpeed;
+        addVx *= scale;
+        addVy *= scale;
+      }
+      ball.vx += addVx;
+      ball.vy += addVy;
+      state.lastHitType = 'flipper';
+      state.lastHitId = flipper.side;
+    }
+    return true;
+  }
+
+  /**
+   * Swept / sub-step capsule tests so a fast ball cannot tunnel a 14px bat
+   * in one tick (game dt can be 1/30). Both faces; mains and upper.
+   * No extra geometry — hold-both still leaves the center hole.
+   */
+  function resolveFlipperCollisions(state, dt) {
     var ball = state.ball;
-    state.flippers.forEach(function (flipper) {
-      var tip = flipperTip(flipper);
-      var dx = tip.x - flipper.pivotX;
-      var dy = tip.y - flipper.pivotY;
-      var segLen = vecLen(dx, dy);
-      if (segLen < 1e-6) return;
+    if (!ball || !ball.inPlay) return;
+    var flippers = state.flippers;
+    if (!flippers || !flippers.length) return;
 
-      var ux = dx / segLen;
-      var uy = dy / segLen;
-      var relX = ball.x - flipper.pivotX;
-      var relY = ball.y - flipper.pivotY;
-      var t = clamp(dot(relX, relY, ux, uy), 0, segLen);
-      var cx = flipper.pivotX + ux * t;
-      var cy = flipper.pivotY + uy * t;
-      var dist = vecLen(ball.x - cx, ball.y - cy);
-      var hitDist = ball.radius + flipper.width * 0.5;
+    var x1 = ball.x;
+    var y1 = ball.y;
+    var x0 = ball._prevX != null ? ball._prevX : x1;
+    var y0 = ball._prevY != null ? ball._prevY : y1;
+    var move = vecLen(x1 - x0, y1 - y0);
+    var maxStep = 3.5;
+    var steps = Math.max(1, Math.ceil(move / maxStep));
 
-      if (dist < hitDist && dist > 1e-6) {
-        var n = normalize(ball.x - cx, ball.y - cy);
-        ball.x = cx + n.x * hitDist;
-        ball.y = cy + n.y * hitDist;
-        var sweeping = flipperIsSweeping(flipper);
-        var rest = sweeping ? FLIPPER_RESTITUTION_SWEEP : FLIPPER_RESTITUTION_PASSIVE;
-        var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, rest);
-        ball.vx = rv.vx;
-        ball.vy = rv.vy;
-
-        if (sweeping) {
-          // Contact-point bat velocity (omega Ã— r), tip-weighted.
-          var tapMult = flipper.tapBoost ? FLIPPER_TAP_MULT : 1;
-          var tipFrac = Math.pow(t / segLen, FLIPPER_TIP_POWER);
-          var contactVx = -Math.sin(flipper.angle) * flipper.omega * t;
-          var contactVy = Math.cos(flipper.angle) * flipper.omega * t;
-          var addVx = contactVx * FLIPPER_IMPULSE_GAIN * tipFrac * tapMult;
-          var addVy = contactVy * FLIPPER_IMPULSE_GAIN * tipFrac * tapMult;
-          var addSpeed = vecLen(addVx, addVy);
-          var maxAdd = FLIPPER_MAX_ADD_SPEED * tapMult;
-          if (addSpeed > maxAdd && addSpeed > 1e-6) {
-            var scale = maxAdd / addSpeed;
-            addVx *= scale;
-            addVy *= scale;
+    var i;
+    var fi;
+    for (i = 0; i <= steps; i++) {
+      var u = i / steps;
+      ball.x = x0 + (x1 - x0) * u;
+      ball.y = y0 + (y1 - y0) * u;
+      for (fi = 0; fi < flippers.length; fi++) {
+        if (collideBallWithFlipper(state, ball, flippers[fi])) {
+          if (dt && u < 1) {
+            var rem = (1 - u) * dt;
+            if (rem > 1e-8) {
+              ball.x += ball.vx * rem;
+              ball.y += ball.vy * rem;
+              var fj;
+              for (fj = 0; fj < flippers.length; fj++) {
+                collideBallWithFlipper(state, ball, flippers[fj]);
+              }
+            }
           }
-          ball.vx += addVx;
-          ball.vy += addVy;
-          state.lastHitType = 'flipper';
-          state.lastHitId = flipper.side;
+          return;
         }
       }
-    });
+    }
   }
 
   function applyBallDragAndSpeedCeiling(ball) {
@@ -4158,6 +4218,8 @@
       resolveGateSpinner(state);
       return;
     }
+    ball._prevX = ball.x;
+    ball._prevY = ball.y;
     ball.vy += GRAVITY * dt;
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
@@ -4193,7 +4255,7 @@
     resolveSaucer(state, dt);
 
     if (!isBallInLaunchLane(state)) {
-      resolveFlipperCollisions(state);
+      resolveFlipperCollisions(state, dt);
       resolveFlipperPivotCollisions(state);
       unstickFromFlippers(state);
       nudgeInlaneApron(state);
