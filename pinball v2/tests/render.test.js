@@ -114,13 +114,13 @@ console.log('=========================');
   console.log('PASS: renderer draws physics rails and avoids ellipse/scale');
 })();
 
-(function testOpt1PlayfieldClipNoDebugFill() {
+(function testOpt2PlayfieldClipNoDebugFill() {
   var src = fs.readFileSync(require('path').join(__dirname, '../renderer.js'), 'utf8');
   assert(src.indexOf('ctx.clip()') !== -1, 'playfield/vfx clip present');
   assert(src.indexOf('drawLaunchLaneChannel') !== -1, 'launch lane still drawn');
   assert(src.indexOf('_dbg') === -1, 'no leftover _dbg');
   assert(src.indexOf('#ff00ff') === -1, 'no magenta debug fill');
-  console.log('PASS: opt1 playfield clip + no debug magenta fill');
+  console.log('PASS: opt2 playfield clip + no debug magenta fill');
 })();
 
 console.log('All render tests passed.');

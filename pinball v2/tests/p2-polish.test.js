@@ -61,7 +61,7 @@ console.log('============================');
 
 console.log('============================');
 
-(function testOpt1FlipperReleaseAndRestartHit() {
+(function testOpt2FlipperReleaseAndRestartHit() {
   var src = fs.readFileSync(require('path').join(__dirname, '../game.js'), 'utf8');
   var html = fs.readFileSync(require('path').join(__dirname, '../index.html'), 'utf8');
   assert(src.indexOf("addEventListener('pointerup'") !== -1, 'pointerup listener');
@@ -76,7 +76,7 @@ console.log('============================');
   assert(src.indexOf('function isGameOverRestartHit') !== -1, 'restart hit helper');
   assert(src.indexOf('gameOverUi.addEventListener') !== -1, 'whole game-over card clickable');
   assert(html.indexOf('cursor: pointer;') !== -1, 'restart label is a hit target');
-  assert(html.indexOf('?v=opt1') !== -1 && html.indexOf('?v=lay2') === -1, 'cache bust opt1');
+  assert(html.indexOf('?v=opt2') !== -1 && html.indexOf('?v=opt1') === -1, 'cache bust opt2');
   function isGameOverRestartHit(x, y, w, h) {
     if (y >= 72 && y <= h - 28) return true;
     var ty = h * 0.38 + 44;
@@ -84,7 +84,7 @@ console.log('============================');
   }
   assert(isGameOverRestartHit(300, 980 * 0.38 + 44, 600, 980), 'drawn label is a hit');
   assert(isGameOverRestartHit(300, 200, 600, 980), 'game-over card is a hit');
-  console.log('PASS: opt1 flipper release + game-over reset + restart hit');
+  console.log('PASS: opt2 flipper release + game-over reset + restart hit');
 })();
 
 console.log('All P2 polish tests passed.');

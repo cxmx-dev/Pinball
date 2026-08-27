@@ -2552,7 +2552,7 @@ console.log('All tests passed.');
 
   var merge = state.sideRoutes.rightRamp.mergeInner || [];
   assert(merge.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'merge3 inner kept');
-  assert(left.guides[left.guides.length - 1].x2 === 280 && left.guides[left.guides.length - 1].y2 === 68, 'cyan inner joins at 280,68');
+  assert(left.guides[left.guides.length - 1].x2 === 280 && left.guides[left.guides.length - 1].y2 >= 68 && left.guides[left.guides.length - 1].y2 <= 82, 'cyan inner joins at 280,68-82 (opt2 sloped crown)');
   assert(sim.HABITRAIL_ASSIST === 0 && sim.HABITRAIL_MIN_SPEED === 0, 'no habitrail assist');
   assert(sim.GRAVITY === 1180 && sim.TABLE_PITCH_DEG === 6.8, 'gravity/pitch are phys1');
 
@@ -3260,7 +3260,7 @@ console.log('All tests passed.');
   assert(renSrcPop.indexOf('segments: (ramp.segments') === -1, 'no Pioneer on rightRamp');
   assert(renSrcPop.indexOf('drawPioneerRamp(ctx, { segments: ramp.mergeOuter') === -1, 'no Pioneer on mergeOuter');
   var idxSrc = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxSrc.indexOf('?v=opt1') !== -1, 'cache bust opt1');
+  assert(idxSrc.indexOf('?v=opt2') !== -1, 'cache bust opt2');
   assert(renSrcPop.indexOf('{ x: 472, y: 103 }') === -1, 'leftover closer-cap draw is gone');
   var segs = fresh().sideRoutes.rightRamp.segments;
   assert(segs.some(function (sg) { return sg.x1 === 408 && sg.y1 === 14; }), 'copper join curve 408,14 stays (PHYSICS=DRAW)');
@@ -3526,4 +3526,77 @@ console.log('All tests passed.');
   var gap = sim.flipperTip(rightF).x - sim.flipperTip(leftF).x;
   assert(gap > 24, 'hold-both must not seal center (gap=' + gap.toFixed(1) + ')');
   console.log('PASS: opt1 t139 coords locked + center hole open');
+})();
+
+(function testOpt2CrownShelfEjectAndPlungeU() {
+  function yOnSegs(segs, x) {
+    var best = null;
+    var i;
+    for (i = 0; i < (segs || []).length; i++) {
+      var s = segs[i];
+      var minX = Math.min(s.x1, s.x2);
+      var maxX = Math.max(s.x1, s.x2);
+      if (x < minX - 0.5 || x > maxX + 0.5) continue;
+      var dx = s.x2 - s.x1;
+      var t = Math.abs(dx) < 1e-6 ? 0 : (x - s.x1) / dx;
+      if (t < -0.05 || t > 1.05) continue;
+      var y = s.y1 + (s.y2 - s.y1) * t;
+      if (best == null || Math.abs(x - (s.x1 + dx * t)) < 2) best = y;
+    }
+    return best;
+  }
+  function channelH(state, x) {
+    var left = state.sideRoutes.leftRamp;
+    var right = state.sideRoutes.rightRamp;
+    var outer = (left.segments || []).concat(right.mergeOuter || []);
+    var inner = (left.guides || []).concat(right.mergeInner || []);
+    var oy = yOnSegs(outer, x);
+    var iy = yOnSegs(inner, x);
+    return (oy == null || iy == null) ? null : (iy - oy);
+  }
+  var geo = fresh();
+  [200, 235, 260, 280].forEach(function (x) {
+    var h = channelH(geo, x);
+    assert(h != null && h >= 38, 'crown channel at x=' + x + ' must be >=38 (h=' + h + ')');
+  });
+  assert.strictEqual(sim.GRAVITY, 1180);
+  assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
+  assert.strictEqual(sim.TABLE_W, 560);
+
+  var pinch = fresh();
+  pinch.phase = 'playing';
+  pinch.ball.inPlay = true;
+  pinch.exitedLaunchLane = true;
+  pinch.ball.x = 235;
+  pinch.ball.y = 90;
+  pinch.ball.vx = 0;
+  pinch.ball.vy = 0;
+  var t = 0;
+  var moved = false;
+  while (t < 1) {
+    sim.tick(pinch, 1 / 60);
+    t += 1 / 60;
+    var sp = Math.hypot(pinch.ball.vx, pinch.ball.vy);
+    var inPinch = pinch.ball.x >= 180 && pinch.ball.x <= 300 && pinch.ball.y >= 8 && pinch.ball.y <= 100 && sp < 40;
+    if (!inPinch && sp >= 40) { moved = true; break; }
+  }
+  var endSp = Math.hypot(pinch.ball.vx, pinch.ball.vy);
+  assert(moved || endSp >= 40 || pinch.ball.x > 300 || pinch.ball.y > 100, 'crown shelf ball must be moving/out within 1s (x=' + pinch.ball.x.toFixed(1) + ' y=' + pinch.ball.y.toFixed(1) + ' sp=' + endSp.toFixed(1) + ')');
+  assert(pinch.ball.x < sim.LAUNCH_LANE_LEFT - 4, 'eject must not dump into the shooter');
+
+  var plunge = fresh();
+  sim.launchBall(plunge, 1400);
+  var u = false;
+  var frames = 0;
+  while (frames < 240) {
+    sim.tick(plunge, 1 / 60);
+    frames++;
+    var b = plunge.ball;
+    if (b.y < 90 && b.x > 140 && b.x < 440) u = true;
+    if (plunge.exitedLaunchLane && b.y > 420) break;
+    if (!b.inPlay && frames > 12) break;
+  }
+  assert(plunge.exitedLaunchLane, 'full plunge must leave the lane');
+  assert(u, 'full plunge must still ride the U (x=' + plunge.ball.x.toFixed(1) + ' y=' + plunge.ball.y.toFixed(1) + ')');
+  console.log('PASS: opt2 crown shelf eject + channel >=38 + plunge rides U');
 })();

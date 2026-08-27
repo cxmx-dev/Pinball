@@ -588,10 +588,11 @@
           { x1: 82, y1: 200, x2: 98, y2: 161 },
           { x1: 98, y1: 161, x2: 90, y2: 100 },
           { x1: 90, y1: 100, x2: 82, y2: 62 },
-          { x1: 82, y1: 62, x2: 110, y2: 58 },
-          { x1: 110, y1: 58, x2: 190, y2: 62 },
-          { x1: 190, y1: 62, x2: 245, y2: 68 },
-          { x1: 245, y1: 68, x2: 280, y2: 68 }
+          { x1: 82, y1: 62, x2: 120, y2: 72 },
+          { x1: 120, y1: 72, x2: 180, y2: 82 },
+          { x1: 180, y1: 82, x2: 230, y2: 92 },
+          { x1: 230, y1: 92, x2: 260, y2: 98 },
+          { x1: 260, y1: 98, x2: 280, y2: 100 }
         ]
       },
       rightRamp: {
@@ -635,16 +636,16 @@
           { x1: 420, y1: 18, x2: 348, y2: 18 },
           { x1: 348, y1: 18, x2: 280, y2: 18 }
         ],
-        // merge3 plunge floor kept. Inner U floor joins cyan at (280,68).
+        // opt2: inner crown dropped/sloped so a r=12 ball cannot rest on a shelf. Join (280,100).
         mergeInner: [
           { x1: 470, y1: 88, x2: 458, y2: 80 },
           { x1: 458, y1: 80, x2: 442, y2: 76 },
           { x1: 442, y1: 76, x2: 424, y2: 73 },
           { x1: 424, y1: 73, x2: 404, y2: 70 },
           { x1: 404, y1: 70, x2: 372, y2: 69 },
-          { x1: 372, y1: 69, x2: 336, y2: 68 },
-          { x1: 336, y1: 68, x2: 308, y2: 68 },
-          { x1: 308, y1: 68, x2: 280, y2: 68 }
+          { x1: 372, y1: 69, x2: 336, y2: 82 },
+          { x1: 336, y1: 82, x2: 308, y2: 94 },
+          { x1: 308, y1: 94, x2: 280, y2: 100 }
         ],
         x1: LAUNCH_LANE_LEFT - 14,
         y1: 345,
@@ -1981,6 +1982,7 @@
   function lodgeFarming(state, ball) {
     if (!ball) return false;
     if (sausageFarmPocket(state, ball)) return true;
+    if (horseshoeFarmPocket(state, ball) && vecLen(ball.vx, ball.vy) < 40) return true;
     if (state && ballInsideTriangle(ball, state.pulseTriangle)) return true;
     if ((ball._copperStuck || 0) >= 4) return true;
     if ((ball._sausageStuck || 0) >= 4) return true;
@@ -2168,6 +2170,10 @@
     return false;
   }
 
+  function horseshoeFarmPocket(state, ball) {
+    return !!(ball && ball.x >= 170 && ball.x <= 310 && ball.y >= 6 && ball.y <= 110);
+  }
+
   function sausageFarmPocket(state, ball) {
     if (!ball) return false;
     if (sausageCuspBox(ball)) return true;
@@ -2315,6 +2321,52 @@
     var balls = allLiveBalls(state);
     var i;
     for (i = 0; i < balls.length; i++) unstickOneSausageCusp(state, balls[i], dt);
+  }
+
+  function unstickOneHorseshoeCrown(state, ball, dt) {
+    if (skipBallAssist(state, ball)) return;
+    if (!ball || !ball.inPlay) return;
+    if (!horseshoeFarmPocket(state, ball)) {
+      ball._horseStuckT = 0;
+      return;
+    }
+    var sp = vecLen(ball.vx, ball.vy);
+    if (sp < 40) {
+      ball._horseStuckT = (ball._horseStuckT || 0) + (dt || 1 / 60);
+    } else {
+      ball._horseStuckT = 0;
+      return;
+    }
+    if ((ball._horseStuckT || 0) < 0.2) return;
+    var left = state.sideRoutes && state.sideRoutes.leftRamp;
+    var right = state.sideRoutes && state.sideRoutes.rightRamp;
+    var travel = horseshoeTravelSegs(left, right);
+    var near = nearestPointOnSegments(ball.x, ball.y, travel);
+    var tx = 0.96;
+    var ty = 0.18;
+    if (near && near.seg) {
+      tx = near.seg.x2 - near.seg.x1;
+      ty = near.seg.y2 - near.seg.y1;
+      var slen = vecLen(tx, ty) || 1;
+      tx /= slen;
+      ty /= slen;
+      if (tx < 0) { tx = -tx; ty = -ty; }
+    }
+    if (tx < 0.4) { tx = 0.96; ty = 0.18; }
+    var inners = topHorseshoeInnerSegs(left, right);
+    var nearInner = nearestPointOnSegments(ball.x, ball.y, inners);
+    if (nearInner && ball.y >= nearInner.y - 2 && ty > 0.25) ty = 0.08;
+    if (ball.x > 470) tx = Math.min(tx, 0.15);
+    var keep = Math.max(sp, 170);
+    ball.vx = ball.vx * 0.18 + tx * keep * 0.82;
+    ball.vy = ball.vy * 0.18 + ty * keep * 0.82;
+    ball._horseStuckT = 0;
+  }
+
+  function unstickHorseshoeCrown(state, dt) {
+    var balls = allLiveBalls(state);
+    var i;
+    for (i = 0; i < balls.length; i++) unstickOneHorseshoeCrown(state, balls[i], dt);
   }
 
   function topHorseshoeInnerSegs(leftRamp, rightRamp) {
@@ -4249,6 +4301,7 @@
     unstickWallSlide(state);
     unstickCopperMergePocket(state);
     unstickSausageCusp(state, dt);
+    unstickHorseshoeCrown(state, dt);
     resolvePostCollisions(state);
     resolveKickerCollisions(state);
     resolveTargetCollisions(state);
