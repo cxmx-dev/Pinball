@@ -654,12 +654,15 @@
       leftFiller: {
         id: 'fill-l',
         theme: 'copper',
+        // opt1: thin two-tube sausage. Peel off the rail so a real left outlane
+        // stays open (dying ball at ~50,720 drains). Climb + bulge 122,712 kept.
         segments: [
-          { x1: 36, y1: 568, x2: 36, y2: 610 },
-          { x1: 36, y1: 610, x2: 36, y2: 650 },
-          { x1: 36, y1: 650, x2: 36, y2: 688 },
-          { x1: 36, y1: 688, x2: 36, y2: 712 },
-          { x1: 36, y1: 712, x2: 36, y2: 738 }
+          { x1: 36, y1: 568, x2: 48, y2: 588 },
+          { x1: 48, y1: 588, x2: 60, y2: 628 },
+          { x1: 60, y1: 628, x2: 68, y2: 668 },
+          { x1: 68, y1: 668, x2: 80, y2: 704 },
+          { x1: 80, y1: 704, x2: 96, y2: 732 },
+          { x1: 96, y1: 732, x2: 104, y2: 744 }
         ],
         guides: [
           { x1: 36, y1: 568, x2: 48, y2: 578 },
@@ -668,9 +671,8 @@
           { x1: 76, y1: 628, x2: 80, y2: 652 },
           { x1: 80, y1: 652, x2: 82, y2: 670 },
           { x1: 82, y1: 670, x2: 122, y2: 712 },
-          { x1: 122, y1: 712, x2: 90, y2: 728 },
-          { x1: 90, y1: 728, x2: 50, y2: 738 },
-          { x1: 50, y1: 738, x2: 36, y2: 738 }
+          { x1: 122, y1: 712, x2: 112, y2: 728 },
+          { x1: 112, y1: 728, x2: 104, y2: 744 }
         ]
       },
       rightFiller: {
@@ -1182,11 +1184,12 @@
     // flipper row, framing the timed cyan boingers (VOID PULSE annotation).
     // orbit1: cages still guard the lower boingers, but no longer form a V
     // with the sausage tips (gap >=28 or flush).
+    // opt1: frame C / sausage nose, do not bar the left outlane slot.
     walls.push({
-      x1: 40,
-      y1: 736,
-      x2: 86,
-      y2: 738,
+      x1: 108,
+      y1: 728,
+      x2: 136,
+      y2: 734,
       kind: 'cage',
       id: 'cage-l',
       chrome: true
@@ -2160,8 +2163,8 @@
     if (ball.x >= 440 && ball.x <= 480 && ball.y >= 520 && ball.y <= 560) return true;
     // orbit1: right sausage tip vs cage / inlane join
     if (ball.x >= 408 && ball.x <= 452 && ball.y >= 698 && ball.y <= 740) return true;
-    // need1: left sausage tip vs cage / post (opened tip + old pocket)
-    if (ball.x >= 36 && ball.x <= 112 && ball.y >= 668 && ball.y <= 748) return true;
+    // opt1: left sausage tip only — not the outlane slot along x=36-80
+    if (ball.x >= 96 && ball.x <= 132 && ball.y >= 688 && ball.y <= 746) return true;
     return false;
   }
 

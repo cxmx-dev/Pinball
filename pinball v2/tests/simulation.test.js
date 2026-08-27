@@ -1628,6 +1628,8 @@ console.log('All tests passed.');
   assert(left.segments[0].x1 === 36 && left.segments[0].y1 === 568, 'left filler flush on x=36');
   assert(left.guides.some(function (s) { return s.x2 === 80 && s.y2 === 652; }), 'left sausage keeps climb vertex 80,652');
   assert(left.guides.some(function (s) { return s.x2 === 122 && s.y2 === 712; }), 'left sausage bulges to 122,712');
+  assert(!left.guides.some(function (s) { return s.x2 === 36 && s.y2 === 738; }), 'opt1: sausage no longer seals outlane at the rail');
+  assert(!left.guides.some(function (s) { return s.x1 === 90 && s.y1 === 728 && s.x2 === 50; }), 'opt1: old outlane-seal slant gone');
   assert(right.segments[0].x1 === sim.LAUNCH_LANE_LEFT && right.segments[0].y1 === 538, 'right filler grown up the plunger wall');
   assert(right.guides.some(function (s) { return s.x2 === 414 && s.y2 === 662; }), 'right sausage peaks at 334,662');
   var fillerWalls = state.walls.filter(function (w) { return w.kind === 'filler'; });
@@ -1640,7 +1642,7 @@ console.log('All tests passed.');
   assert(!fillerWalls.some(function (w) { return w.x1 === 428 && w.y1 === 580 && w.x2 === 418 && w.y2 === 622; }), 'right climb rubber is sling not filler');
   assert(!fillerWalls.some(function (w) { return w.x1 === 418 && w.y1 === 622 && w.x2 === 414 && w.y2 === 662; }), 'right peak rubber is sling not filler');
   assert(fillerWalls.some(function (w) { return w.x1 === 414 && w.y1 === 662 && w.x2 === 420 && w.y2 === 698; }), 'right downhill after peak stays filler');
-  assert(fillerWalls.some(function (w) { return w.x1 === 122 && w.y1 === 712 && w.x2 === 90 && w.y2 === 728; }), 'left sausage bulge seats to the rail');
+  assert(fillerWalls.some(function (w) { return w.x1 === 122 && w.y1 === 712 && w.x2 === 112 && w.y2 === 728; }), 'left sausage bulge turns toward inlane, not the rail');
   assert(!fillerWalls.some(function (w) { return w.x1 === 48 && w.y1 === 578 && w.x2 === 64 && w.y2 === 598; }), 'left top rubber is sling not filler');
   assert(fillerWalls.some(function (w) { return w.x1 === 428 && w.y1 === 714 && w.x2 === 442 && w.y2 === 728; }), 'right bottom inner stays filler');
   var midU = fillerWalls.some(function (w) {
@@ -1665,7 +1667,7 @@ console.log('All tests passed.');
   assert(Math.min.apply(null, right.guides.map(function (s) { return Math.min(s.x1, s.x2); })) >= 330, 'right filler fatter but not inlane');
   assert(Math.max.apply(null, right.segments.map(function (s) { return Math.max(s.x1, s.x2); })) <= sim.LAUNCH_LANE_LEFT, 'right filler stays at launch wall');
   assert(Math.min.apply(null, left.segments.map(function (s) { return Math.min(s.x1, s.x2); })) === 36, 'left outer flush x=36');
-  assert(Math.max.apply(null, left.segments.map(function (s) { return Math.max(s.x1, s.x2); })) === 36, 'left outer only x=36');
+  assert(Math.max.apply(null, left.segments.map(function (s) { return Math.max(s.x1, s.x2); })) >= 96 && Math.max.apply(null, left.segments.map(function (s) { return Math.max(s.x1, s.x2); })) <= 110, 'opt1: left outer peels in to open the outlane');
   assert(Math.min.apply(null, right.segments.map(function (s) { return Math.min(s.x1, s.x2); })) === sim.LAUNCH_LANE_LEFT, 'right outer flush on launch lane');
   var segs = state.sideRoutes.rightRamp.segments;
   var jagged = segs.some(function (s) { return s.x1 === 330 && s.y1 === 36 && s.x2 === 390 && s.y2 === 76; });
@@ -2078,7 +2080,7 @@ console.log('All tests passed.');
   var left = cages.find(function (w) { return w.id === 'cage-l'; });
   var right = cages.find(function (w) { return w.id === 'cage-r'; });
   assert(left && !right, 'cage-r dumbbell removed; cage-l kept');
-  assert(left.x1 < 50 && left.x2 < 100 && left.y1 > 700 && left.y2 < 740, 'left cage frames lower-left boinger');
+  assert(left.x1 >= 96 && left.x2 <= 150 && left.y1 > 700 && left.y2 < 750, 'left cage frames C, not the outlane');
   console.log('PASS: cage1 rubber-mid below triangle, cyan boingers lower/outer, right dumbbell gone');
 })();
 
@@ -2227,8 +2229,8 @@ console.log('All tests passed.');
   assert(insideR.x < 440, 'right interior 450,620 ejects toward playfield (x=' + insideR.x.toFixed(1) + ')');
   assert(insideR.x < sim.LAUNCH_LANE_LEFT - 8, 'right eject must not enter shooter');
   assert(insideR.maxSp > 40, 'right interior eject has roll');
-  var insideL = runAt(50, 640, 8);
-  assert(insideL.x > 70, 'left interior 50,640 ejects toward playfield (x=' + insideL.x.toFixed(1) + ')');
+  var insideL = runAt(100, 700, 8);
+  assert(insideL.x > 110, 'left interior 100,700 ejects toward playfield (x=' + insideL.x.toFixed(1) + ')');
   assert(insideL.maxSp > 40, 'left interior eject has roll');
   var farm = fresh();
   farm.ball.inPlay = true;
@@ -3258,7 +3260,7 @@ console.log('All tests passed.');
   assert(renSrcPop.indexOf('segments: (ramp.segments') === -1, 'no Pioneer on rightRamp');
   assert(renSrcPop.indexOf('drawPioneerRamp(ctx, { segments: ramp.mergeOuter') === -1, 'no Pioneer on mergeOuter');
   var idxSrc = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxSrc.indexOf('?v=lay2') !== -1, 'cache bust lay2');
+  assert(idxSrc.indexOf('?v=opt1') !== -1, 'cache bust opt1');
   assert(renSrcPop.indexOf('{ x: 472, y: 103 }') === -1, 'leftover closer-cap draw is gone');
   var segs = fresh().sideRoutes.rightRamp.segments;
   assert(segs.some(function (sg) { return sg.x1 === 408 && sg.y1 === 14; }), 'copper join curve 408,14 stays (PHYSICS=DRAW)');
@@ -3421,4 +3423,107 @@ console.log('All tests passed.');
   assert.strictEqual(sim.BOINGER_B_X, 352, 'B at 352');
   assert.strictEqual(sim.BOINGER_B_Y, 707, 'B y at 707');
   console.log('PASS: flip1 swept flippers block + center hole + upper');
+})();
+
+(function testOpt1OutlaneSlotAndCFace() {
+  function place(state, x, y, vx, vy) {
+    state.ball.inPlay = true;
+    state.exitedLaunchLane = true;
+    state.phase = 'playing';
+    state.ball.x = x;
+    state.ball.y = y;
+    state.ball.vx = vx;
+    state.ball.vy = vy;
+  }
+  function runTick(x, y, vx, vy, frames) {
+    var state = fresh();
+    place(state, x, y, vx, vy);
+    var startBalls = state.ballsRemaining;
+    var maxX = x;
+    var i;
+    for (i = 0; i < frames; i++) {
+      var liveX = state.ball.x;
+      sim.tick(state, 1 / 60);
+      if (state.ballsRemaining < startBalls || !state.ball.inPlay) {
+        if (liveX > maxX) maxX = liveX;
+        break;
+      }
+      if (state.ball.x > maxX) maxX = state.ball.x;
+    }
+    return {
+      drained: state.ballsRemaining < startBalls || !state.ball.inPlay,
+      x: state.ball.x,
+      y: state.ball.y,
+      maxX: maxX,
+      inPlay: state.ball.inPlay,
+      remaining: state.ballsRemaining
+    };
+  }
+  var dying = runTick(50, 720, 0, 40, 180);
+  assert(dying.drained, 'dying ball at 50,720 must drain left (x=' + dying.x.toFixed(1) + ' y=' + dying.y.toFixed(1) + ')');
+  assert(dying.maxX < 160, 'outlane must not teleport into the inlane (maxX=' + dying.maxX.toFixed(1) + ')');
+
+  var rail = runTick(50, 640, 0, 160, 180);
+  assert(rail.drained, 'rail-down 50,640 must still be able to drain');
+  assert(rail.maxX < 200, 'rail-down must not get cheap-saved into inlane (maxX=' + rail.maxX.toFixed(1) + ')');
+
+  var face = fresh();
+  place(face, 125, 708, -8, 24);
+  (face.boingers || []).forEach(function (b) { if (b.x < 200) { b.up = false; b.pop = 0; } });
+  var k, farm = 0, nan = false, maxJump = 0, px = 125, py = 708;
+  for (k = 0; k < 90; k++) {
+    sim.stepPhysics(face, 1 / 60);
+    var b = face.ball;
+    if (!isFinite(b.x) || !isFinite(b.y) || !isFinite(b.vx) || !isFinite(b.vy)) nan = true;
+    var jump = Math.hypot(b.x - px, b.y - py);
+    if (jump > maxJump) maxJump = jump;
+    px = b.x; py = b.y;
+    if (b.x >= 36 && b.x <= 118 && b.y >= 650 && b.y <= 750 && Math.hypot(b.vx, b.vy) < 35) farm++;
+  }
+  assert(!nan, 'C-face spawn must not NaN');
+  assert(farm < 20, 'C-face must not farm inside plastic (farm=' + farm + ')');
+  assert(face.ball.x > 118, 'C-face must pop out to playfield (x=' + face.ball.x.toFixed(1) + ')');
+  assert(maxJump < 80, 'C-face must not tunnel (maxJump=' + maxJump.toFixed(1) + ')');
+
+  var mid = fresh();
+  place(mid, 340, 520, 16, 12);
+  for (k = 0; k < 60; k++) sim.stepPhysics(mid, 1 / 60);
+  assert(isFinite(mid.ball.x) && isFinite(mid.ball.y), '500 spawn stays finite');
+  assert(!(mid.ball.x > 322 && mid.ball.x < 358 && mid.ball.y > 502 && mid.ball.y < 538 && Math.hypot(mid.ball.vx, mid.ball.vy) < 20), 'must not sit inside 500');
+
+  var tri = fresh();
+  place(tri, 186, 558, 0, 16);
+  for (k = 0; k < 24; k++) sim.stepPhysics(tri, 1 / 60);
+  var dTri = Math.hypot(tri.ball.x - 186, tri.ball.y - 558);
+  assert(dTri > 20, 'triangle centroid must eject (d=' + dTri.toFixed(1) + ')');
+
+  assert.strictEqual(sim.GRAVITY, 1180, 'GRAVITY stays 1180');
+  assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8, 'pitch stays 6.8');
+  assert.strictEqual(sim.HABITRAIL_ASSIST, 0, 'no rail magnet');
+  assert.strictEqual(sim.TABLE_W, 560, 'TABLE_W stays 560');
+  console.log('PASS: opt1 outlane slot + C-face pop-out');
+})();
+
+(function testOpt1T139CoordsAndCenterHole() {
+  assert.strictEqual(sim.BOINGER_C_X, 125);
+  assert.strictEqual(sim.BOINGER_C_Y, 708);
+  assert.strictEqual(sim.BOINGER_B_X, 352);
+  assert.strictEqual(sim.BOINGER_B_Y, 707);
+  assert.strictEqual(sim.GRAVITY, 1180);
+  assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
+  assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
+  assert.strictEqual(sim.TABLE_W, 560);
+  var hole = sim.createInitialState();
+  hole.phase = 'playing';
+  hole.ball.inPlay = true;
+  hole.exitedLaunchLane = true;
+  var leftF = hole.flippers.find(function (f) { return f.side === 'left' && f.role !== 'upper'; });
+  var rightF = hole.flippers.find(function (f) { return f.side === 'right' && f.role !== 'upper'; });
+  sim.activateFlipper(hole, 'left', true);
+  sim.activateFlipper(hole, 'right', true);
+  var t = 0;
+  while (t < 0.4) { sim.tick(hole, 1 / 60); t += 1 / 60; }
+  var gap = sim.flipperTip(rightF).x - sim.flipperTip(leftF).x;
+  assert(gap > 24, 'hold-both must not seal center (gap=' + gap.toFixed(1) + ')');
+  console.log('PASS: opt1 t139 coords locked + center hole open');
 })();
