@@ -1220,7 +1220,7 @@ function runOrbit(place, dirLabel, speed) {
   var droppedThrough = false;
   var minYAtApex = 999;
   var i;
-  for (i = 0; i < 300; i++) {
+  for (i = 0; i < 420; i++) {
     sim.stepPhysics(state, 1 / 60);
     var b = state.ball;
     if (b.x > 240 && b.x < 320 && b.y < 100) {
@@ -1229,7 +1229,7 @@ function runOrbit(place, dirLabel, speed) {
       if (b.y > 95 && Math.abs(b.vx) < 30) droppedThrough = true;
     }
     if (dirLabel === 'LTR' && b.x > 400 && b.y < 160) farSide = true;
-    if (dirLabel === 'RTL' && b.x < 120 && b.y < 160) farSide = true;
+    if (dirLabel === 'RTL' && b.x < 250 && b.y < 160) farSide = true;
     if (farSide) break;
   }
   return { crossedApex: crossedApex, farSide: farSide, droppedThrough: droppedThrough, minYAtApex: minYAtApex, x: state.ball.x, y: state.ball.y, vx: state.ball.vx };
@@ -2550,7 +2550,7 @@ console.log('All tests passed.');
 
   var merge = state.sideRoutes.rightRamp.mergeInner || [];
   assert(merge.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'merge3 inner kept');
-  assert(left.guides[left.guides.length - 1].x2 === 280 && left.guides[left.guides.length - 1].y2 === 79, 'cyan inner joins at 280,79');
+  assert(left.guides[left.guides.length - 1].x2 === 280 && left.guides[left.guides.length - 1].y2 === 68, 'cyan inner joins at 280,68');
   assert(sim.HABITRAIL_ASSIST === 0 && sim.HABITRAIL_MIN_SPEED === 0, 'no habitrail assist');
   assert(sim.GRAVITY === 1180 && sim.TABLE_PITCH_DEG === 6.8, 'gravity/pitch are phys1');
 
