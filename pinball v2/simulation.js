@@ -57,6 +57,11 @@
   var TRIANGLE_SPIN_MAX = 2.2;
   var TRIANGLE_SPIN_FRICTION = 1.65;
   var TRIANGLE_SPIN_STOP = 0.03;
+  var TRIANGLE_UP_SEC = 1.0;
+  var TRIANGLE_DOWN_SEC = 1.0;
+  var TRIANGLE_CYCLE_SEC = 2.0;
+  /** Rubber kick while the triangle is up (25% over sling baseline). */
+  var TRIANGLE_RUBBER_MULT = 1.25;
   var BUMPER_RESTITUTION = 1.15;
   var FLIPPER_RESTITUTION = FLIPPER_RESTITUTION_PASSIVE;
   var SLING_RESTITUTION = 1.08;
@@ -396,11 +401,39 @@
     return 0.38 + 0.62 * (0.5 + 0.5 * Math.sin(2 * Math.PI * hz * age + (side.phaseOffset || 0)));
   }
 
+  function triangleIsUp(tri) {
+    if (!tri) return false;
+    var t = (tri.cycleT || 0) % TRIANGLE_CYCLE_SEC;
+    if (t < 0) t += TRIANGLE_CYCLE_SEC;
+    return t < TRIANGLE_UP_SEC;
+  }
+
+  function ejectBallFromTriangle(state, ball, tri) {
+    if (!ball || !tri) return;
+    var dx = ball.x - tri.cx;
+    var dy = ball.y - tri.cy;
+    var d = vecLen(dx, dy);
+    if (d < 1e-6) { dx = 0; dy = -1; d = 1; }
+    ball.x = tri.cx + (dx / d) * 56;
+    ball.y = tri.cy + (dy / d) * 56;
+    ball.vx += (dx / d) * 260;
+    ball.vy += (dy / d) * 260;
+  }
+
   function stepPulseTriangle(state, dt) {
     var tri = state && state.pulseTriangle;
     if (!tri) return;
+    var wasUp = triangleIsUp(tri);
     rotatePulseTriangleBody(state, dt);
     tri.cycleT = (tri.cycleT || 0) + dt;
+    if (!wasUp && triangleIsUp(tri)) {
+      var pack = allLiveBalls(state);
+      var bi;
+      for (bi = 0; bi < pack.length; bi++) {
+        var b = pack[bi];
+        if (b && b.inPlay && ballInsideTriangle(b, tri)) ejectBallFromTriangle(state, b, tri);
+      }
+    }
     var i;
     for (i = 0; i < tri.sides.length; i++) {
       var s = tri.sides[i];
@@ -443,6 +476,7 @@
     var tri = state && state.pulseTriangle;
     var ball = state && state.ball;
     if (!tri || !ball || !ball.inPlay) return;
+    if (!triangleIsUp(tri)) return;
     var i;
     var r = tri.radius || 8;
     for (i = 0; i < tri.verts.length; i++) {
@@ -457,7 +491,7 @@
         var preVyV = ball.vy;
         ball.x = p.x + n.x * minD;
         ball.y = p.y + n.y * minD;
-        var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, SLING_RESTITUTION);
+        var rv = reflectVelocity(ball.vx, ball.vy, n.x, n.y, SLING_RESTITUTION * TRIANGLE_RUBBER_MULT);
         ball.vx = rv.vx;
         ball.vy = rv.vy;
         applyTriangleHitSpin(tri, ball, preVxV, preVyV);
@@ -1161,15 +1195,7 @@
       id: 'cage-l',
       chrome: true
     });
-    walls.push({
-      x1: 382,
-      y1: 716,
-      x2: 398,
-      y2: 718,
-      kind: 'cage',
-      id: 'cage-r',
-      chrome: true
-    });
+
 
     return walls;
   }
@@ -4478,6 +4504,11 @@
     TRIANGLE_SPIN_MAX: TRIANGLE_SPIN_MAX,
     TRIANGLE_SPIN_FRICTION: TRIANGLE_SPIN_FRICTION,
     TRIANGLE_SPIN_STOP: TRIANGLE_SPIN_STOP,
+    TRIANGLE_UP_SEC: TRIANGLE_UP_SEC,
+    TRIANGLE_DOWN_SEC: TRIANGLE_DOWN_SEC,
+    TRIANGLE_CYCLE_SEC: TRIANGLE_CYCLE_SEC,
+    TRIANGLE_RUBBER_MULT: TRIANGLE_RUBBER_MULT,
+    triangleIsUp: triangleIsUp,
     createUpperRightFlipper: createUpperRightFlipper,
     FLIPPER_IMPULSE_GAIN: FLIPPER_IMPULSE_GAIN,
     FLIPPER_TAP_MULT: FLIPPER_TAP_MULT,

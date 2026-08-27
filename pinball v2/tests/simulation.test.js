@@ -2072,14 +2072,12 @@ console.log('All tests passed.');
   assert.strictEqual(c.theme, 'cyan');
   assert.strictEqual(b.theme, 'cyan');
   var cages = state.walls.filter(function (w) { return w.kind === 'cage'; });
-  assert.strictEqual(cages.length, 2, 'two chrome cage bars');
+  assert.strictEqual(cages.length, 1, 'only the left chrome cage remains');
   var left = cages.find(function (w) { return w.id === 'cage-l'; });
   var right = cages.find(function (w) { return w.id === 'cage-r'; });
-  assert(left && right, 'cage-l and cage-r present');
+  assert(left && !right, 'cage-r dumbbell removed; cage-l kept');
   assert(left.x1 < 50 && left.x2 < 100 && left.y1 > 700 && left.y2 < 740, 'left cage frames lower-left boinger');
-  assert(right.x1 > 370 && right.x2 < 440 && right.y1 > 700 && right.y2 < 740, 'right cage frames lower-right boinger');
-  assert(right.x2 < sim.LAUNCH_LANE_LEFT, 'right cage does not pinch the shooter');
-  console.log('PASS: cage1 rubber-mid below triangle, cyan boingers lower/outer, two chrome cage bars');
+  console.log('PASS: cage1 rubber-mid below triangle, cyan boingers lower/outer, right dumbbell gone');
 })();
 
 (function testMultiballSurvivorStaysLive() {
@@ -2785,9 +2783,9 @@ console.log('All tests passed.');
   assert(fillR.guides.some(function (s) { return s.x2 === 414 && s.y2 === 662; }), 'right sausage peak kept');
 
   var cages = (state.walls || []).filter(function (w) { return w.kind === 'cage'; });
-  assert.strictEqual(cages.length, 2, 'two chrome cage bars kept');
+  assert.strictEqual(cages.length, 1, 'right dumbbell cage-r removed');
   var cageR = cages.find(function (w) { return w.id === 'cage-r'; });
-  assert(cageR && cageR.x2 <= 402, 'right cage shortened so it does not V the sausage (x2=' + (cageR && cageR.x2) + ')');
+  assert(!cageR, 'cage-r dumbbell is gone');
 
   var oneWay = fresh();
   oneWay.ball.inPlay = true;
@@ -3234,4 +3232,67 @@ console.log('All tests passed.');
 
   assert(sim.createUpperRightFlipper().pivotX > 340, 'need1 upper flipper kept');
   console.log('PASS: phys1 gauge + gravity (15/50/100=' + s15.toFixed(0) + '/' + s50.toFixed(0) + '/' + s100.toFixed(0) + ' drop=' + t.toFixed(2) + 's)');
+})();
+
+(function testPop1TriangleAndDumbbell() {
+  assert.strictEqual(sim.TRIANGLE_UP_SEC, 1, 'triangle up 1s');
+  assert.strictEqual(sim.TRIANGLE_DOWN_SEC, 1, 'triangle down 1s');
+  assert.strictEqual(sim.TRIANGLE_CYCLE_SEC, 2, 'loop every 2s');
+  assert.strictEqual(sim.TRIANGLE_RUBBER_MULT, 1.25, 'rubber +25% when up');
+  var tri = sim.createPulseTriangle();
+  tri.cycleT = 0;
+  assert(sim.triangleIsUp(tri), 'starts up');
+  tri.cycleT = 0.99;
+  assert(sim.triangleIsUp(tri), 'still up just before 1s');
+  tri.cycleT = 1.01;
+  assert(!sim.triangleIsUp(tri), 'down after 1s');
+  tri.cycleT = 1.99;
+  assert(!sim.triangleIsUp(tri), 'still down just before 2s');
+  tri.cycleT = 2.01;
+  assert(sim.triangleIsUp(tri), 'up again after 2s');
+
+  var cages = fresh().walls.filter(function (w) { return w.kind === "cage" || w.id === "cage-r"; });
+  assert(!cages.some(function (w) { return w.id === 'cage-r'; }), 'dumbbell cage-r removed from physics');
+
+  var down = fresh();
+  down.pulseTriangle.cycleT = 1.2;
+  down.ball.inPlay = true;
+  down.exitedLaunchLane = true;
+  down.phase = 'playing';
+  down.ball.x = down.pulseTriangle.cx;
+  down.ball.y = down.pulseTriangle.cy;
+  down.ball.vx = 80;
+  down.ball.vy = 40;
+  var vx0 = down.ball.vx, vy0 = down.ball.vy, x0 = down.ball.x, y0 = down.ball.y;
+  sim.resolvePulseTriangle(down);
+  assert(Math.abs(down.ball.vx - vx0) < 1e-6 && Math.abs(down.ball.vy - vy0) < 1e-6, 'no collide when down');
+  assert(Math.abs(down.ball.x - x0) < 1e-6 && Math.abs(down.ball.y - y0) < 1e-6, 'no rubber when down');
+
+  var pop = fresh();
+  pop.pulseTriangle.cycleT = 1.85;
+  pop.ball.inPlay = true;
+  pop.exitedLaunchLane = true;
+  pop.phase = 'playing';
+  pop.ball.x = pop.pulseTriangle.cx;
+  pop.ball.y = pop.pulseTriangle.cy;
+  pop.ball.vx = 0;
+  pop.ball.vy = 0;
+  sim.stepPulseTriangle(pop, 0.3);
+  assert(sim.triangleIsUp(pop.pulseTriangle), 'crossed into up');
+  var dPop = Math.hypot(pop.ball.x - pop.pulseTriangle.cx, pop.ball.y - pop.pulseTriangle.cy);
+  assert(dPop > 20, 'ejects instead of trapping on pop-up (d=' + dPop.toFixed(1) + ')');
+
+  var full = fresh();
+  sim.launchBall(full, 1);
+  var inU = false, n;
+  for (n = 0; n < 180; n++) {
+    sim.tick(full, 1 / 60);
+    var b = full.ball;
+    if (full.exitedLaunchLane && b.y < 90 && b.x > 140 && b.x < 440) inU = true;
+  }
+  assert(inU, 'full plunge still enters the U after pop1');
+  assert.strictEqual(sim.GRAVITY, 1180, 'phys1 gravity kept');
+  assert.strictEqual(sim.TABLE_W, 560, 'width kept');
+  assert.strictEqual(sim.HABITRAIL_ASSIST, 0, 'no rail magnet');
+  console.log('PASS: pop1 triangle 1+1 / no-collide-down / +25% rubber / dumbbell gone / plunge U');
 })();

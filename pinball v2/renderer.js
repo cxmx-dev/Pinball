@@ -996,28 +996,17 @@
     var outer = horseshoeOuterPoints(left, right);
     var inner = horseshoeInnerPoints(left, right);
     if (outer.length < 4 || inner.length < 4) return;
-    var closer = [{ x: 472, y: 103 }, { x: 472, y: 94 }, { x: 470, y: 88 }];
-    var hull = outer.concat(closer).concat(inner.slice().reverse());
+    // pop1: cohesive tube ring. No leftover closer-cap, no melt-fill blob.
+    var hull = outer.concat(inner.slice().reverse());
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
     var strokeHull = simple ? strokeExact : strokeSmooth;
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     strokeHull(ctx, hull, true);
-    ctx.fillStyle = '#081218';
+    ctx.fillStyle = '#071018';
     ctx.fill();
-    var g = ctx.createLinearGradient(36, 8, 524, 8);
-    g.addColorStop(0, 'rgba(120, 230, 255, 1)');
-    g.addColorStop(0.36, 'rgba(24, 150, 200, 1)');
-    g.addColorStop(0.46, 'rgba(70, 170, 170, 1)');
-    g.addColorStop(0.50, 'rgba(190, 150, 90, 1)');
-    g.addColorStop(0.54, 'rgba(214, 110, 36, 1)');
-    g.addColorStop(0.64, 'rgba(255, 184, 72, 1)');
-    g.addColorStop(1, 'rgba(110, 40, 10, 1)');
-    ctx.fillStyle = g;
-    strokeHull(ctx, hull, true);
-    ctx.fill();
-    if (!simple) applyShadow(ctx, 'rgba(80, 200, 220, 0.22)', 10);
+    if (!simple) applyShadow(ctx, 'rgba(40, 160, 200, 0.16)', 8);
     var cyanTube = {
       core: 'rgba(80, 230, 255, 0.95)',
       glow: 'rgba(40, 180, 255, 0.45)',
@@ -1046,7 +1035,7 @@
       width: 3.5,
       smooth: !simple
     };
-    var blend = 26;
+    var blend = 6;
     strokeTubePath(ctx, clipPtsAtJoinX(outer, 280 + blend, true), cyanTube);
     strokeTubePath(ctx, clipPtsAtJoinX(outer, 280 - blend, false), copperTube);
     strokeTubePath(ctx, clipPtsAtJoinX(inner, 280 + blend, true), cyanGuide);
