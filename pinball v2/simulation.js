@@ -551,7 +551,7 @@
   function createSideRoutes() {
     // Horseshoe orbit: left slide + top channel + right slide meet under the arch.
     // Outer / inner polylines are also the draw tubes (cyan left, copper right).
-    // shoe5: rounded on-ramp + orange elbow. Crown y~18 join x=280. Channel 50-62.
+    // shoe6: flat inner crown y=80, outer y=18, 62px channel. Join x=280.
     return {
       leftCaptive: {
         id: 'captive-l',
@@ -587,14 +587,12 @@
           { x1: 92, y1: 276, x2: 92, y2: 200 },
           { x1: 92, y1: 200, x2: 98, y2: 161 },
           { x1: 98, y1: 161, x2: 92, y2: 100 },
-          { x1: 92, y1: 100, x2: 92, y2: 78 },
-          { x1: 92, y1: 78, x2: 100, y2: 68 },
-          { x1: 100, y1: 68, x2: 120, y2: 66 },
-          { x1: 120, y1: 66, x2: 150, y2: 70 },
-          { x1: 150, y1: 70, x2: 180, y2: 74 },
-          { x1: 180, y1: 74, x2: 220, y2: 76 },
-          { x1: 220, y1: 76, x2: 255, y2: 78 },
-          { x1: 255, y1: 78, x2: 280, y2: 80 }
+          { x1: 92, y1: 100, x2: 92, y2: 88 },
+          { x1: 92, y1: 88, x2: 96, y2: 82 },
+          { x1: 96, y1: 82, x2: 104, y2: 80 },
+          { x1: 104, y1: 80, x2: 180, y2: 80 },
+          { x1: 180, y1: 80, x2: 240, y2: 80 },
+          { x1: 240, y1: 80, x2: 280, y2: 80 }
                 ]
       },
       rightRamp: {
@@ -620,7 +618,7 @@
           { x1: 442, y1: 250, x2: 436, y2: 335 },
           { x1: 436, y1: 335, x2: 428, y2: 420 }
         ],
-        // shoe5: rounded NE elbow continues the crown (478,18)-(502,26)-(518,42)-(524,64).
+        // shoe6: flat inner crown y=80; rounded NE elbow continues the crown (478,18)-(502,26)-(518,42)-(524,64).
         mergeOuter: [
           { x1: 524, y1: 103, x2: 524, y2: 88 },
           { x1: 524, y1: 88, x2: 524, y2: 64 },
@@ -631,15 +629,12 @@
           { x1: 420, y1: 18, x2: 348, y2: 18 },
           { x1: 348, y1: 18, x2: 280, y2: 18 }
         ],
-        // shoe5: inner parallels NE elbow after the plunge mouth. Join (280,80).
+        // shoe6: flat inner crown y=80 after plunge mouth. Join (280,80).
         mergeInner: [
           { x1: 470, y1: 88, x2: 458, y2: 80 },
-          { x1: 458, y1: 80, x2: 442, y2: 76 },
-          { x1: 442, y1: 76, x2: 424, y2: 73 },
-          { x1: 424, y1: 73, x2: 390, y2: 76 },
-          { x1: 390, y1: 76, x2: 350, y2: 78 },
-          { x1: 350, y1: 78, x2: 315, y2: 79 },
-          { x1: 315, y1: 79, x2: 280, y2: 80 }
+          { x1: 458, y1: 80, x2: 390, y2: 80 },
+          { x1: 390, y1: 80, x2: 330, y2: 80 },
+          { x1: 330, y1: 80, x2: 280, y2: 80 }
                 ]
       },
       leftFiller: {

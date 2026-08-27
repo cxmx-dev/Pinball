@@ -1108,25 +1108,18 @@
     ctx.restore();
   }
 
-  /** shoe6: clip one U hull, hard vertical cyan/copper split at x=280. No two-hull overlap. */
-  function fillHorseshoeSplit(ctx, outer, inner, simple, rimW) {
-    if (!outer || !inner || outer.length < 2 || inner.length < 2) return;
+
+  function drawHorseshoeOrbit(ctx, left, right, pulse) {
+    if (!left) return;
+    var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
+    var tubeW = 5.5;
+    var JOIN_X = 280;
+    var fullOuter = horseshoeOuterPoints(left, right);
+    var fullInner = horseshoeInnerPoints(left, right);
+    if (!fullOuter || fullOuter.length < 2 || !fullInner || fullInner.length < 2) return;
+    var outer = chaikinSmooth(fullOuter, 2);
+    var inner = chaikinSmooth(fullInner, 2);
     var hull = outer.concat(inner.slice().reverse());
-    var joinX = 280;
-    var seamW = 10;
-    var minX = hull[0].x, maxX = hull[0].x, minY = hull[0].y, maxY = hull[0].y;
-    var hi;
-    for (hi = 1; hi < hull.length; hi++) {
-      if (hull[hi].x < minX) minX = hull[hi].x;
-      if (hull[hi].x > maxX) maxX = hull[hi].x;
-      if (hull[hi].y < minY) minY = hull[hi].y;
-      if (hull[hi].y > maxY) maxY = hull[hi].y;
-    }
-    var pad = 6;
-    var bandY = minY - pad;
-    var bandH = maxY - minY + pad * 2;
-    var leftW = joinX - (minX - pad);
-    var rightW = (maxX + pad) - joinX;
 
     ctx.save();
     ctx.lineCap = 'round';
@@ -1134,77 +1127,50 @@
     strokeExact(ctx, hull, true);
     ctx.clip();
 
-    ctx.fillStyle = '#0a3040';
-    ctx.fillRect(minX - pad, bandY, leftW, bandH);
-    var cyanG = ctx.createLinearGradient(0, minY, 0, maxY);
-    cyanG.addColorStop(0, 'rgba(90, 224, 255, 1)');
-    cyanG.addColorStop(0.45, 'rgba(18, 150, 200, 1)');
-    cyanG.addColorStop(1, 'rgba(6, 70, 100, 1)');
-    ctx.fillStyle = cyanG;
-    ctx.fillRect(minX - pad, bandY, leftW, bandH);
+    var cyanFill = ctx.createLinearGradient(0, 0, 0, 140);
+    cyanFill.addColorStop(0, 'rgba(90, 224, 255, 1)');
+    cyanFill.addColorStop(0.55, 'rgba(18, 150, 200, 1)');
+    cyanFill.addColorStop(1, 'rgba(6, 70, 100, 1)');
+    ctx.fillStyle = cyanFill;
+    ctx.fillRect(0, 0, JOIN_X, 860);
 
-    ctx.fillStyle = '#4a1c08';
-    ctx.fillRect(joinX, bandY, rightW, bandH);
-    var copG = ctx.createLinearGradient(0, minY, 0, maxY);
-    copG.addColorStop(0, 'rgba(255, 176, 64, 1)');
-    copG.addColorStop(0.45, 'rgba(214, 88, 20, 1)');
-    copG.addColorStop(1, 'rgba(120, 44, 8, 1)');
-    ctx.fillStyle = copG;
-    ctx.fillRect(joinX, bandY, rightW, bandH);
+    var copperFill = ctx.createLinearGradient(JOIN_X, 0, JOIN_X, 140);
+    copperFill.addColorStop(0, 'rgba(255, 176, 64, 1)');
+    copperFill.addColorStop(0.55, 'rgba(214, 88, 20, 1)');
+    copperFill.addColorStop(1, 'rgba(120, 44, 8, 1)');
+    ctx.fillStyle = copperFill;
+    ctx.fillRect(JOIN_X, 0, 560, 860);
 
-    var halfSeam = seamW * 0.5;
-    var seam = ctx.createLinearGradient(joinX - halfSeam, 0, joinX + halfSeam, 0);
-    seam.addColorStop(0, 'rgba(18, 150, 200, 1)');
-    seam.addColorStop(1, 'rgba(214, 88, 20, 1)');
+    var seam = ctx.createLinearGradient(JOIN_X - 6, 0, JOIN_X + 6, 0);
+    seam.addColorStop(0, 'rgba(90, 224, 255, 1)');
+    seam.addColorStop(1, 'rgba(255, 176, 64, 1)');
     ctx.fillStyle = seam;
-    ctx.fillRect(joinX - halfSeam, bandY, seamW, bandH);
+    ctx.fillRect(JOIN_X - 6, 0, 12, 860);
     ctx.restore();
 
-    var width = rimW == null ? 5.5 : rimW;
-    function clipBand(x, y, w, h) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + w, y);
-      ctx.lineTo(x + w, y + h);
-      ctx.lineTo(x, y + h);
-      ctx.closePath();
-      ctx.clip();
-    }
-    function paintSplitRim(pts) {
-      ctx.save();
-      clipBand(minX - 24, minY - 24, joinX - (minX - 24), maxY - minY + 48);
-      strokeExact(ctx, pts, false);
-      ctx.strokeStyle = 'rgba(80, 220, 255, 0.95)';
-      ctx.lineWidth = width;
-      ctx.stroke();
-      ctx.restore();
-      ctx.save();
-      clipBand(joinX, minY - 24, maxX - joinX + 24, maxY - minY + 48);
-      strokeExact(ctx, pts, false);
-      ctx.strokeStyle = 'rgba(255, 168, 64, 0.95)';
-      ctx.lineWidth = width;
-      ctx.stroke();
-      ctx.restore();
-    }
-    if (!simple) {
-      applyShadow(ctx, 'rgba(40, 200, 255, 0.18)', 8);
-    }
-    paintSplitRim(outer);
-    paintSplitRim(inner);
-    ctx.shadowBlur = 0;
-  }
-
-  function drawHorseshoeOrbit(ctx, left, right, pulse) {
-    if (!left) return;
-    var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
-    var tubeW = 5.5;
-    var fullOuter = chaikinSmooth(horseshoeOuterPoints(left, right), 2);
-    var fullInner = chaikinSmooth(horseshoeInnerPoints(left, right), 2);
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    fillHorseshoeSplit(ctx, fullOuter, fullInner, simple, tubeW);
+    var rim = ctx.createLinearGradient(0, 0, 560, 0);
+    rim.addColorStop(0, 'rgba(80, 220, 255, 0.95)');
+    rim.addColorStop((JOIN_X - 8) / 560, 'rgba(80, 220, 255, 0.95)');
+    rim.addColorStop((JOIN_X + 8) / 560, 'rgba(255, 168, 64, 0.95)');
+    rim.addColorStop(1, 'rgba(255, 168, 64, 0.95)');
+    ctx.strokeStyle = rim;
+    ctx.lineWidth = tubeW;
+    strokeExact(ctx, outer, false);
+    ctx.stroke();
+    strokeExact(ctx, inner, false);
+    ctx.stroke();
     ctx.restore();
+
+    if (right && right.mergeOuter && right.mergeInner) {
+      var dropO = segsToPoints(clipSegsBelowY(right.mergeOuter, 88));
+      var dropI = segsToPoints(clipSegsBelowY(right.mergeInner, 88));
+      if (dropO.length >= 2 && dropI.length >= 2) {
+        fillSausageHull(ctx, dropO, dropI, 'copper', simple, tubeW);
+      }
+    }
   }
 
   function drawCopperMergeShoulder(ctx, ramp, pulse) {

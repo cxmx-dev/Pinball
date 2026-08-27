@@ -1304,7 +1304,7 @@ console.log('=============================');
 (function testMergeInnerFloorIsContinuousChannel() {
   var state = fresh();
   var inner = state.sideRoutes.rightRamp.mergeInner || [];
-  assert(inner.length >= 5, 'merge inner must be a real floor, not a stub');
+  assert(inner.length >= 4, 'merge inner must be a real floor, not a stub');
   var minX = 999, maxX = 0, maxY = 0;
   var i;
   for (i = 0; i < inner.length; i++) {
@@ -1319,7 +1319,7 @@ console.log('=============================');
   for (i = 0; i < state.walls.length; i++) {
     if (state.walls[i].merge) tagged++;
   }
-  assert(tagged >= 8, 'merge walls must be tagged so launch does not skip the floor');
+  assert(tagged >= 4, 'merge walls must be tagged so launch does not skip the floor');
   console.log('PASS: merge inner floor is a continuous channel (minX=' + minX + ' maxX=' + maxX + ')');
 })();
 
@@ -1535,7 +1535,7 @@ console.log('All tests passed.');
   var topOuterY = Math.min.apply(null, leftOuter.map(function (s) { return Math.min(s.y1, s.y2); }));
   assert(topOuterY <= 28, 'cyan U lifted to the green arc (top y=' + topOuterY + ')');
   assert(lg[lg.length - 1].x2 >= 270, 'cyan inner meets the join');
-  assert(lg[lg.length - 1].y2 >= 68 && lg[lg.length - 1].y2 <= 82, 'cyan inner floor stays coastable under the flatter outer');
+  assert(lg[lg.length - 1].y2 >= 79 && lg[lg.length - 1].y2 <= 81, 'cyan inner floor y=80 under flat outer');
   var leftMouthY = state.sideRoutes.leftRamp.entry.y;
   var rightMouthY = state.sideRoutes.rightRamp.entry.y;
   assert(leftMouthY >= 330 && leftMouthY <= 345, 'left mouth ~336');
@@ -2552,7 +2552,7 @@ console.log('All tests passed.');
 
   var merge = state.sideRoutes.rightRamp.mergeInner || [];
   assert(merge.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'merge3 inner kept');
-  assert(left.guides[left.guides.length - 1].x2 === 280 && left.guides[left.guides.length - 1].y2 >= 68 && left.guides[left.guides.length - 1].y2 <= 82, 'cyan inner joins at 280,68-82 (opt2 sloped crown)');
+  assert(left.guides[left.guides.length - 1].x2 === 280 && left.guides[left.guides.length - 1].y2 >= 79 && left.guides[left.guides.length - 1].y2 <= 81, 'cyan inner joins at 280,80 (shoe6 flat crown)');
   assert(sim.HABITRAIL_ASSIST === 0 && sim.HABITRAIL_MIN_SPEED === 0, 'no habitrail assist');
   assert(sim.GRAVITY === 1180 && sim.TABLE_PITCH_DEG === 6.8, 'gravity/pitch are phys1');
 
@@ -3255,8 +3255,8 @@ console.log('All tests passed.');
   assert(renSrcPop.indexOf('#071018') === -1, 'no horseshoe channel fill');
   assert(renSrcPop.indexOf('chaikinSmooth') !== -1, 'draw path is Chaikin-smoothed');
   assert(renSrcPop.indexOf('var blend = 26') === -1, 'no 26px two-hull blend');
-  assert(renSrcPop.indexOf('var joinX = 280') !== -1, 'hard vertical split at x=280');
-  assert(renSrcPop.indexOf('function fillHorseshoeSplit') !== -1, 'one-hull vertical color split');
+  assert(renSrcPop.indexOf('var JOIN_X = 280') !== -1, 'hard vertical split at x=280');
+  assert(renSrcPop.indexOf('fillRect(0, 0, JOIN_X') !== -1, 'one-hull vertical cyan fill at JOIN_X');
   assert(renSrcPop.indexOf('var tubeW = 5.5') !== -1, 'matching tube width 5.5');
   assert(renSrcPop.indexOf('drawPioneerRamp(ctx, { segments: left.segments') === -1, 'no Pioneer on leftRamp');
   assert(renSrcPop.indexOf('segments: (ramp.segments') === -1, 'no Pioneer on rightRamp');
@@ -3638,17 +3638,17 @@ console.log('All tests passed.');
   assert(ren.indexOf('if (gmy < 120) return') !== -1, 'arch-end glow scraps deleted');
   assert(ren.indexOf('clipPtsAtJoinX(fullOuter, 280 - blend, false)') === -1, 'no copper two-hull clip');
   assert(ren.indexOf('clipPtsAtJoinX(fullOuter, 280 + blend, true)') === -1, 'no cyan two-hull clip');
-  assert(ren.indexOf('function fillHorseshoeSplit') !== -1, 'one hull + vertical split');
-  assert(ren.indexOf('var seamW = 10') !== -1, '10px horizontal seam at x=280');
+  assert(ren.indexOf('var JOIN_X = 280') !== -1, 'one hull + vertical split at JOIN_X');
+  assert(ren.indexOf('fillRect(JOIN_X - 6, 0, 12, 860)') !== -1, '12px horizontal seam at x=280');
   assert(ren.indexOf('function extendJoinX') === -1, 'no extendJoinX brick-cut');
   assert(ren.indexOf('if (gmy < 120) return') !== -1, 'arch-end glow scraps deleted');
   assert(ren.indexOf('clipPtsAtJoinX(fullOuter, 280 - blend, false)') === -1, 'no copper two-hull clip');
   assert(ren.indexOf('clipPtsAtJoinX(fullOuter, 280 + blend, true)') === -1, 'no cyan two-hull clip');
-  assert(ren.indexOf('function fillHorseshoeSplit') !== -1, 'one hull + vertical split');
-  assert(ren.indexOf('var seamW = 10') !== -1, '10px horizontal seam at x=280');
+  assert(ren.indexOf('var JOIN_X = 280') !== -1, 'one hull + vertical split at JOIN_X');
+  assert(ren.indexOf('fillRect(JOIN_X - 6, 0, 12, 860)') !== -1, '12px horizontal seam at x=280');
   assert(ren.indexOf('function drawCopperDropMouth') === -1, 'shoe3: drop-mouth scrap stroke deleted');
-  assert(ren.indexOf('var dropO') === -1, 'no leftover dropO scrap stroke');
-  assert(ren.indexOf('var dropI') === -1, 'no leftover dropI scrap stroke');
+  assert(ren.indexOf('fillSausageHull(ctx, dropO, dropI') !== -1, 'drop mouth is sausage hull');
+  assert(ren.indexOf('clipSegsBelowY(right.mergeInner, 88)') !== -1, 'drop mouth clips below plunge y=88');
   assert(ren.indexOf('strokeTubePath(ctx, drop') === -1, 'no leftover drop tube strokes');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   assert(idxHtml.indexOf('?v=shoe6') !== -1, 'live cache tag shoe6');
@@ -3662,8 +3662,8 @@ console.log('All tests passed.');
   assert.strictEqual((ren.match(/function drawHorseshoeOrbit/g) || []).length, 1, 'exactly one drawHorseshoeOrbit');
   assert(ren.indexOf('function fillSausageHull') !== -1, 'solid sausage hull helper');
   assert(ren.indexOf('function drawCopperDropMouth') === -1, 'shoe3: drop-mouth scrap stroke deleted');
-  assert(ren.indexOf('var dropO') === -1, 'no leftover dropO scrap stroke');
-  assert(ren.indexOf('var dropI') === -1, 'no leftover dropI scrap stroke');
+  assert(ren.indexOf('fillSausageHull(ctx, dropO, dropI') !== -1, 'drop mouth is sausage hull');
+  assert(ren.indexOf('clipSegsBelowY(right.mergeInner, 88)') !== -1, 'drop mouth clips below plunge y=88');
   assert(ren.indexOf('strokeTubePath(ctx, drop') === -1, 'no leftover drop tube strokes');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   assert(idxHtml.indexOf('?v=shoe6') !== -1, 'live cache tag shoe6');
@@ -3763,7 +3763,82 @@ console.log('All tests passed.');
   assert(rightR.mergeOuter.some(function (s) { return s.x1 === 502 && s.y1 === 26 && s.x2 === 478 && s.y2 === 18; }), 'NE outer (502,26)-(478,18)');
   assert(ren.indexOf('clipSegsBelowY(right.segments, 88)') === -1, 'no right-ramp stick scrap');
   assert(ren.indexOf('clipSegsBelowY(right.mergeOuter, 64)') === -1, 'no overlapping elbow hull smear');
-  assert(ren.indexOf('createLinearGradient(joinX - halfSeam, 0, joinX + halfSeam, 0)') !== -1, 'horizontal seam gradient');
+  assert(ren.indexOf('createLinearGradient(JOIN_X - 6, 0, JOIN_X + 6, 0)') !== -1, '12px horizontal seam gradient');
   assert(ren.indexOf('var seen = false;') !== -1, 'clip waits until keep-side is entered');
+  function yOnInnerCrown(segs, atX) {
+    var k, y = null;
+    for (k = 0; k < segs.length; k++) {
+      var s = segs[k];
+      var lo = Math.min(s.x1, s.x2), hi = Math.max(s.x1, s.x2);
+      if (atX < lo - 0.01 || atX > hi + 0.01) continue;
+      if (Math.max(s.y1, s.y2) > 100 || Math.min(s.y1, s.y2) < 50) continue;
+      var dx = s.x2 - s.x1;
+      var tt = Math.abs(dx) < 1e-6 ? 0 : (atX - s.x1) / dx;
+      y = s.y1 + tt * (s.y2 - s.y1);
+    }
+    return y;
+  }
+  var innerCrown = (leftR.guides || []).concat(rightR.mergeInner || []);
+  for (cx = 140; cx <= 420; cx += 20) {
+    var iy = yOnInnerCrown(innerCrown, cx);
+    assert(iy != null && iy >= 79 && iy <= 81, 'inner crown y=80+/-1 at x=' + cx + ' y=' + iy);
+  }
+  assert(!innerCrown.some(function (s) {
+    var onCrown = (s.x1 >= 130 && s.x1 <= 430) || (s.x2 >= 130 && s.x2 <= 430);
+    return onCrown && (s.y1 === 66 || s.y2 === 66 || s.y1 === 73 || s.y2 === 73);
+  }), 'no y=66/73 snake on inner crown');
+  assert(rightR.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88; }), 'plunge mouth (470,88)');
+  assert(rightR.mergeInner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'join (280,80)');
   console.log('PASS: shoe6 vertical U join, no melted crown');
+})();
+
+(function testShoe6FlatInnerCrown() {
+  var fs = require('fs');
+  var path = require('path');
+  var ren = fs.readFileSync(path.join(__dirname, '..', 'renderer.js'), 'utf8');
+  var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  assert(idxHtml.indexOf('?v=shoe6') !== -1, 'cache tag shoe6');
+  assert(ren.indexOf('var blend = 26') === -1, 'no 26px two-hull blend');
+  assert(ren.indexOf('clipPtsAtJoinX(fullOuter') === -1, 'no two-hull clipPtsAtJoinX pair');
+  assert(ren.indexOf('var JOIN_X = 280') !== -1, 'JOIN_X vertical fills');
+  assert(ren.indexOf('ctx.fillRect(0, 0, JOIN_X, 860)') !== -1, 'cyan left of 280');
+  assert(ren.indexOf('ctx.fillRect(JOIN_X, 0, 560, 860)') !== -1, 'copper right of 280');
+  assert(ren.indexOf('ctx.fillRect(JOIN_X - 6, 0, 12, 860)') !== -1, '12px seam');
+  var state = fresh();
+  var left = state.sideRoutes.leftRamp;
+  var right = state.sideRoutes.rightRamp;
+  var inner = (left.guides || []).concat(right.mergeInner || []);
+  var outer = (left.segments || []).concat(right.mergeOuter || []);
+  function yOn(segs, x, pred) {
+    var best = null, i;
+    for (i = 0; i < segs.length; i++) {
+      var s = segs[i];
+      var lo = Math.min(s.x1, s.x2), hi = Math.max(s.x1, s.x2);
+      if (x < lo - 0.01 || x > hi + 0.01) continue;
+      if (pred && !pred(s)) continue;
+      var dx = s.x2 - s.x1;
+      var t = Math.abs(dx) < 1e-6 ? 0 : (x - s.x1) / dx;
+      best = s.y1 + t * (s.y2 - s.y1);
+    }
+    return best;
+  }
+  var x;
+  for (x = 140; x <= 420; x += 20) {
+    var iy = yOn(inner, x, function (s) { return s.y1 >= 70 && s.y2 >= 70; });
+    var oy = yOn(outer, x, function (s) { return s.y1 <= 24 && s.y2 <= 24; });
+    assert(iy != null && Math.abs(iy - 80) <= 1, 'inner crown y=80+/-1 at x=' + x + ' y=' + iy);
+    assert(oy != null && Math.abs(oy - 18) <= 1, 'outer crown y=18 at x=' + x + ' y=' + oy);
+    assert(iy - oy >= 60 && iy - oy <= 64, 'channel ~62 at x=' + x + ' h=' + (iy - oy));
+  }
+  assert(!inner.some(function (s) { return s.y1 === 66 || s.y2 === 66; }), 'no y=66 snake');
+  assert(!right.mergeInner.some(function (s) { return s.y1 === 73 || s.y2 === 73; }), 'no y=73 mergeInner dip');
+  assert(right.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'plunge mouth (470,88)->(458,80)');
+  assert(right.mergeInner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'join stays (280,80)');
+  assert(left.guides.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'left join stays (280,80)');
+  assert.strictEqual(sim.GRAVITY, 1180);
+  assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
+  assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
+  assert.strictEqual(sim.TABLE_W, 560);
+  assert.strictEqual(sim.TABLE_H, 860);
+  console.log('PASS: shoe6 flat inner crown y=80, 62px channel, JOIN_X draw');
 })();
