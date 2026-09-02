@@ -32,3 +32,18 @@ Thumbs.db
 
 pinball v2/notes/
 
+# local dump scratch (do not publish)
+_tmp*
+_probe*
+_fix*
+_apply_dump*
+_dump*
+_chk*
+_curl*
+_patch*
+_playtest*
+_readlog*
+_run*
+notes/
+*.diff
+*.b64
