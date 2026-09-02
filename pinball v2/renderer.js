@@ -1193,18 +1193,8 @@
     ctx.stroke();
     ctx.restore();
 
-    // dump5: off-ramp is a copper sausage peel sharing the inner elbow.
-    // Not a mouth-cut melted scrap and not a disconnected dumpO banana.
-    var dump = right && right.failDump;
-    if (dump && dump.outer && dump.inner) {
-      var peelO = segsToPoints(dump.outer);
-      var peelI = segsToPoints(dump.inner);
-      if (peelO.length >= 2 && peelI.length >= 2) {
-        peelO.unshift({ x: 448, y: 88 });
-        peelI.unshift({ x: 470, y: 88 });
-        fillSausageHull(ctx, peelO, peelI, 'copper', simple, tubeW);
-      }
-    }
+    // dump10: Williams peel is the inner-wall gap in mergeInner (same polylines
+    // as physics). No separate banana dump sausage.
   }
 
   function drawCopperMergeShoulder(ctx, ramp, pulse) {

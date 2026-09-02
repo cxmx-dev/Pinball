@@ -1306,7 +1306,7 @@ console.log('=============================');
 (function testMergeInnerFloorIsContinuousChannel() {
   var state = fresh();
   var inner = state.sideRoutes.rightRamp.mergeInner || [];
-  assert(inner.length >= 4, 'merge inner must be a real floor, not a stub');
+  assert(inner.length >= 3, 'merge inner must be a real floor, not a stub');
   var minX = 999, maxX = 0, maxY = 0;
   var i;
   for (i = 0; i < inner.length; i++) {
@@ -1314,9 +1314,9 @@ console.log('=============================');
     maxX = Math.max(maxX, inner[i].x1, inner[i].x2);
     maxY = Math.max(maxY, inner[i].y1, inner[i].y2);
   }
-  assert(maxX >= 470, 'merge inner must start at the shooter join');
+  assert(maxX >= 400 && maxX <= 430, 'merge inner ends at the Williams peel lip, not the shooter');
   assert(minX <= 300, 'merge inner must reach the copper U floor');
-  assert(maxY <= 112, 'merge inner must stay above the shooter well');
+  assert(maxY <= 116, 'lower inner wall / peel lip stays under the crown');
   var tagged = 0;
   for (i = 0; i < state.walls.length; i++) {
     if (state.walls[i].merge) tagged++;
@@ -2396,10 +2396,10 @@ console.log('All tests passed.');
     return (s.x1 === 392 && s.y1 === 103) || (s.x2 === 392 && s.y2 === 103);
   });
   assert(!hasBeak, 'old (392,103) bird-beak must be gone');
-  var hasNew = inner.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; });
-  assert(hasNew, 'merge3 inner starts at 390,88 -> 378,80');
-  var closer = (state.walls || []).filter(function (w) { return w.merge && Math.abs(w.x1 - sim.LAUNCH_LANE_LEFT) < 1 && Math.abs(w.y1 - 103) < 1; });
-  assert(closer.length >= 1, 'rounded closer from launch,103 exists');
+  var hasNew = inner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; });
+  assert(hasNew, 'dump10 Williams lower inner wall (368,112)->(408,80)');
+  var closer = (state.walls || []).filter(function (w) { return w.merge && Math.abs(w.x1 - sim.LAUNCH_LANE_LEFT) < 1 && Math.abs(w.y1 - 103) < 1 && w.y2 < 100; });
+  assert(closer.length === 0, 'dump10: no hall-to-U closer sealing the peel');
   assert(!closer.some(function (w) { return w.x2 === 392 && w.y2 === 103 && w.x1 === 390 && w.y1 === 90; }), 'old V closer 390,90-392,103 must be gone');
 
   function channelWidthAt(x) {
@@ -2438,7 +2438,7 @@ console.log('All tests passed.');
       sim.tick(st, 1 / 60);
       var b = st.ball;
       if (b.y < 90 && b.x > 140 && b.x < 440) inU = true;
-      if (!inU && b.x > 430 && b.x < 490 && b.y > 140 && b.y < 280) dropped = true;
+      if (!inU && b.x > 200 && b.x < 460 && b.y > 120 && b.y < 520) dropped = true;
       if (st.exitedLaunchLane && b.y > 420) break;
       if (!b.inPlay && n > 12) break;
     }
@@ -2478,7 +2478,8 @@ console.log('All tests passed.');
 
   var v = placeRun(sim.LAUNCH_LANE_LEFT, 96, 0, 0, true, 24);
   assert(!(v.x > 450 && v.x < 490 && v.y > 80 && v.y < 120 && Math.hypot(v.vx, v.vy) < 30), 'old V-pinch 392,96 must peel out within 0.4s (x=' + v.x.toFixed(1) + ' y=' + v.y.toFixed(1) + ')');
-  assert(Math.hypot(v.vx, v.vy) > 40, 'V-pinch peel has speed');
+  var vSp = Math.hypot(v.vx, v.vy);
+  assert(vSp > 40 || (v.x < 430 && v.y > 120), 'V-pinch peels onto the field (sp=' + vSp.toFixed(1) + ' x=' + v.x.toFixed(1) + ' y=' + v.y.toFixed(1) + ')');
   assert(v.x < 480, 'V peel goes into the U / play, not down the plunger');
 
   var rtl = fresh();
@@ -2565,7 +2566,7 @@ console.log('All tests passed.');
   assert(bendMin >= 44, 'left-top bend min width >= 44 (w=' + bendMin.toFixed(1) + ')');
 
   var merge = state.sideRoutes.rightRamp.mergeInner || [];
-  assert(merge.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'merge3 inner kept');
+  assert(merge.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'Williams peel lip kept');
   assert(left.guides[left.guides.length - 1].x2 === 280 && left.guides[left.guides.length - 1].y2 >= 79 && left.guides[left.guides.length - 1].y2 <= 81, 'cyan inner joins at 280,80 (shoe6 flat crown)');
   assert(sim.HABITRAIL_ASSIST === 0 && sim.HABITRAIL_MIN_SPEED === 0, 'no habitrail assist');
   assert(sim.GRAVITY === 1180 && sim.TABLE_PITCH_DEG === 6.8, 'gravity/pitch are phys1');
@@ -2638,7 +2639,7 @@ console.log('All tests passed.');
   var right = state.sideRoutes.rightRamp;
   var inner = right.mergeInner || [];
   var outer = right.mergeOuter || [];
-  assert(inner.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'merge3 inner kept');
+  assert(inner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'Williams peel lip kept');
   assert(!left.segments.some(function (s) {
     return (s.x1 === 42 && s.y1 === 146) || (s.x2 === 42 && s.y2 === 146) || (s.x1 === 62 && s.y1 === 107);
   }), 'leftover top-left (42,146)/(62,107) cusp deleted');
@@ -2710,7 +2711,7 @@ console.log('All tests passed.');
       var b = st.ball;
       if (b.y < 95 && b.x > 140 && b.x < 440) inU = true;
       if (inU && b.x < 200 && b.y < 160) left200 = true;
-      if (!inU && b.x > 430 && b.x < 490 && b.y > 140 && b.y < 280) dropped = true;
+      if (!inU && b.x > 200 && b.x < 460 && b.y > 120 && b.y < 520) dropped = true;
       if (n > 24 && Math.hypot(b.vx, b.vy) < 25 && b.y < 160) lodged = true;
       if (!b.inPlay && n > 12) break;
     }
@@ -2865,7 +2866,8 @@ console.log('All tests passed.');
   var leftTop = Math.min.apply(null, state.sideRoutes.leftRamp.segments.map(function (s) { return Math.min(s.y1, s.y2); }));
   assert(leftTop >= 16 && leftTop <= 22, 'cyan U crown y=' + leftTop);
   assert(state.sideRoutes.leftRamp.segments[0].x1 === 36 || state.sideRoutes.leftRamp.segments.some(function (s) { return s.x1 === 36 || s.x2 === 36; }), 'cabinet left wall stays x=36');
-  assert(state.sideRoutes.rightRamp.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'merge3 plunge floor kept');
+  assert(state.sideRoutes.rightRamp.mergeInner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'copper inner still joins at (280,80)');
+  assert(!state.sideRoutes.rightRamp.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88; }), 'dump10: no hall-connected inner at (470,88)');
   assert(sim.GRAVITY === 1180 && sim.TABLE_PITCH_DEG === 6.8 && sim.HABITRAIL_ASSIST === 0, 'HABITRAIL_ASSIST stays 0; gravity is phys1');
 
   st = fresh();
@@ -2906,8 +2908,9 @@ console.log('All tests passed.');
   assert(Math.abs(copperJoin.x2 - 280) < 2 && Math.abs(copperJoin.y2 - 18) < 3, 'copper outer ends at the join (280,18)');
   assert(Math.abs(cyanEnd.x2 - copperJoin.x2) < 2 && Math.abs(cyanEnd.y2 - copperJoin.y2) < 2, 'cyan/copper join is one continuous path');
   assert(!left.segments.some(function (s) { return s.x2 === 328 && s.y2 === 14; }), 'no leftover cyan cap on the copper corner');
-  assert(right.segments.some(function (s) { return s.x2 === 470 && s.y2 === 88; }), 'RTL corner still meets merge3 at 470,88');
-  assert(inner.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'merge3 plunge floor kept');
+  assert(right.segments.every(function (s) { return Math.min(s.y1, s.y2) >= 110; }), 'right slide starts below the peel, not hanging in the U');
+  assert(inner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'copper inner still joins at (280,80)');
+  assert(inner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'Williams lower inner wall at the copper elbow');
 
   function yOn(segs, atX) {
     var k, y = null;
@@ -2940,7 +2943,7 @@ console.log('All tests passed.');
       sim.tick(st, 1 / 60);
       var b = st.ball;
       if (b.y < 95 && b.x > 140 && b.x < 440) inU = true;
-      if (!inU && b.x > 430 && b.x < 490 && b.y > 140 && b.y < 280) dropped = true;
+      if (!inU && b.x > 200 && b.x < 460 && b.y > 120 && b.y < 520) dropped = true;
       if (n > 24 && Math.hypot(b.vx, b.vy) < 25 && b.y < 160) lodged = true;
       if (!b.inPlay && n > 12) break;
     }
@@ -3127,7 +3130,7 @@ console.log('All tests passed.');
       sim.tick(st, 1 / 60);
       var bb = st.ball;
       if (bb.y < 95 && bb.x > 140 && bb.x < 460) inU = true;
-      if (!inU && bb.x > 430 && bb.x < 490 && bb.y > 140 && bb.y < 280) dropped = true;
+      if (!inU && bb.x > 200 && bb.x < 460 && bb.y > 120 && bb.y < 520) dropped = true;
       if (!bb.inPlay && n > 12) break;
     }
     return { inU: inU, dropped: dropped, x: st.ball.x, y: st.ball.y };
@@ -3276,11 +3279,13 @@ console.log('All tests passed.');
   assert(renSrcPop.indexOf('segments: (ramp.segments') === -1, 'no Pioneer on rightRamp');
   assert(renSrcPop.indexOf('drawPioneerRamp(ctx, { segments: ramp.mergeOuter') === -1, 'no Pioneer on mergeOuter');
   var idxSrc = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxSrc.indexOf('?v=dump9') !== -1, 'cache bust dump5');
+  assert(idxSrc.indexOf('?v=dump10') !== -1, 'cache bust dump5');
   assert(renSrcPop.indexOf('{ x: 472, y: 103 }') === -1, 'leftover closer-cap draw is gone');
   var segs = fresh().sideRoutes.rightRamp.segments;
   assert(!segs.some(function (sg) { return sg.x1 === 408 && sg.y1 === 14; }), 'copper join curve 408,14 pinch deleted (PHYSICS=DRAW)');
-  assert(segs.some(function (sg) { return sg.x1 === 470 && sg.y1 === 88; }), 'join meets orange ramp at 470,88');
+  assert(segs.every(function (sg) { return Math.min(sg.y1, sg.y2) >= 110; }), 'right slide stays below the Williams peel');
+  var copperOuter = fresh().sideRoutes.rightRamp.mergeOuter;
+  assert(copperOuter.some(function (sg) { return sg.x2 === 280 && sg.y2 === 18; }), 'copper outer still joins at (280,18)');
   var tri = sim.createPulseTriangle();
   tri.cycleT = 0;
   assert(sim.triangleIsUp(tri), 'starts up');
@@ -3666,7 +3671,7 @@ console.log('All tests passed.');
   assert(ren.indexOf('clipSegsBelowY(right.mergeInner, 88)') === -1, 'no clipSegsBelowY copper drop fill');
   assert(ren.indexOf('strokeTubePath(ctx, drop') === -1, 'no leftover drop tube strokes');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxHtml.indexOf('?v=dump9') !== -1, 'live cache tag dump5');
+  assert(idxHtml.indexOf('?v=dump10') !== -1, 'live cache tag dump5');
   assert.strictEqual(sim.GRAVITY, 1180);
   assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
   assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
@@ -3682,20 +3687,22 @@ console.log('All tests passed.');
   assert(ren.indexOf('clipSegsBelowY(right.mergeInner, 88)') === -1, 'no clipSegsBelowY copper drop fill');
   assert(ren.indexOf('strokeTubePath(ctx, drop') === -1, 'no leftover drop tube strokes');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxHtml.indexOf('?v=dump9') !== -1, 'live cache tag dump5');
+  assert(idxHtml.indexOf('?v=dump10') !== -1, 'live cache tag dump5');
   assert.strictEqual(sim.GRAVITY, 1180);
   assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
   assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
   assert.strictEqual(sim.TABLE_W, 560);
   var right = fresh().sideRoutes.rightRamp;
-  assert(right.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88; }), 'plunge mouth still starts at 470,88');
   assert(right.mergeInner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'join inner y=80 kept');
+  assert(right.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112; }), 'Williams peel lip at (368,112)');
+  assert(!right.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88; }), 'no hall-connected inner mouth');
   assert(!right.mergeInner.some(function (s) { return s.x1 === 372 || s.x2 === 372; }), 'orange inner dent x=372 deleted');
   assert(!right.mergeOuter.some(function (s) { return s.x1 === 526 || s.x2 === 526; }), 'square 526,90 corner stays gone');
   assert(right.mergeOuter.some(function (s) { return s.x1 === 524 && s.y1 === 64 && s.x2 === 518 && s.y2 === 42; }), 'NE outer stays out then rounds to crown');
   var right = fresh().sideRoutes.rightRamp;
-  assert(right.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88; }), 'plunge mouth still starts at 470,88');
   assert(right.mergeInner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'join inner y=80 kept');
+  assert(right.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112; }), 'Williams peel lip at (368,112)');
+  assert(!right.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88; }), 'no hall-connected inner mouth');
   assert(!right.mergeInner.some(function (s) { return s.x1 === 372 || s.x2 === 372; }), 'orange inner dent x=372 deleted');
   assert(!right.mergeOuter.some(function (s) { return s.x1 === 526 || s.x2 === 526; }), 'square 526,90 corner stays gone');
   assert(right.mergeOuter.some(function (s) { return s.x1 === 524 && s.y1 === 64 && s.x2 === 518 && s.y2 === 42; }), 'NE outer stays out then rounds to crown');
@@ -3753,7 +3760,8 @@ console.log('All tests passed.');
   var neOuter = rightR.mergeOuter;
   var neInner = rightR.mergeInner;
   assert(insideChannel(70, 40, nwOuter, nwInner, 50), 'NW corner (~70,40) is inside the cyan channel');
-  assert(insideChannel(500, 40, neOuter, neInner, 50), 'NE corner (~500,40) is inside a 50px+ copper hull');
+  assert(nearestDist(500, 40, neOuter) < 28, 'NE (~500,40) hugs the solid copper outer elbow');
+  assert(neInner.every(function (s) { return Math.min(s.x1, s.x2) <= 420; }), 'inner does not span the Williams gap to the hall');
   function yOnCrown(segs, atX) {
     var k, y = null;
     for (k = 0; k < segs.length; k++) {
@@ -3795,7 +3803,7 @@ console.log('All tests passed.');
     return y;
   }
   var innerCrown = (leftR.guides || []).concat(rightR.mergeInner || []);
-  for (cx = 140; cx <= 420; cx += 20) {
+  for (cx = 140; cx <= 400; cx += 20) {
     var iy = yOnInnerCrown(innerCrown, cx);
     assert(iy != null && iy >= 79 && iy <= 81, 'inner crown y=80+/-1 at x=' + cx + ' y=' + iy);
   }
@@ -3803,8 +3811,9 @@ console.log('All tests passed.');
     var onCrown = (s.x1 >= 130 && s.x1 <= 430) || (s.x2 >= 130 && s.x2 <= 430);
     return onCrown && (s.y1 === 66 || s.y2 === 66 || s.y1 === 73 || s.y2 === 73);
   }), 'no y=66/73 snake on inner crown');
-  assert(rightR.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88; }), 'plunge mouth (470,88)');
+  assert(rightR.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112; }), 'peel lip (368,112)');
   assert(rightR.mergeInner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'join (280,80)');
+  assert(!rightR.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88; }), 'no (470,88) hall inner');
   console.log('PASS: shoe6 vertical U join, no melted crown');
 })();
 
@@ -3813,7 +3822,7 @@ console.log('All tests passed.');
   var path = require('path');
   var ren = fs.readFileSync(path.join(__dirname, '..', 'renderer.js'), 'utf8');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxHtml.indexOf('?v=dump9') !== -1, 'cache tag dump5');
+  assert(idxHtml.indexOf('?v=dump10') !== -1, 'cache tag dump5');
   assert(ren.indexOf('var blend = 26') === -1, 'no 26px two-hull blend');
   assert(ren.indexOf('clipPtsAtJoinX(fullOuter') === -1, 'no two-hull clipPtsAtJoinX pair');
   assert(ren.indexOf('var JOIN_X = 280') !== -1, 'JOIN_X vertical fills');
@@ -3839,7 +3848,7 @@ console.log('All tests passed.');
     return best;
   }
   var x;
-  for (x = 140; x <= 420; x += 20) {
+  for (x = 140; x <= 400; x += 20) {
     var iy = yOn(inner, x, function (s) { return s.y1 >= 70 && s.y2 >= 70; });
     var oy = yOn(outer, x, function (s) { return s.y1 <= 24 && s.y2 <= 24; });
     assert(iy != null && Math.abs(iy - 80) <= 1, 'inner crown y=80+/-1 at x=' + x + ' y=' + iy);
@@ -3848,7 +3857,7 @@ console.log('All tests passed.');
   }
   assert(!inner.some(function (s) { return s.y1 === 66 || s.y2 === 66; }), 'no y=66 snake');
   assert(!right.mergeInner.some(function (s) { return s.y1 === 73 || s.y2 === 73; }), 'no y=73 mergeInner dip');
-  assert(right.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'plunge mouth (470,88)->(458,80)');
+  assert(right.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'peel lip (368,112)->(408,80)');
   assert(right.mergeInner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'join stays (280,80)');
   assert(left.guides.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'left join stays (280,80)');
   assert.strictEqual(sim.GRAVITY, 1180);
@@ -3863,29 +3872,11 @@ console.log('All tests passed.');
   var fs = require('fs');
   var path = require('path');
   var right0 = fresh().sideRoutes.rightRamp;
-  assert(right0.failDump && right0.failDump.outer && right0.failDump.inner && right0.failDump.gate, 'failDump sausage polylines exist');
-  var d0 = right0.failDump.outer[0];
-  assert(d0.x1 >= 428 && d0.x1 <= 448 && d0.y1 >= 96 && d0.y1 <= 110, 'dump mouth under inner elbow, not on the crown');
-  assert(d0.y2 > d0.y1 + 16 && Math.abs(d0.x2 - d0.x1) <= 10, 'first dump chord drops down the inner wall');
-  assert(!right0.failDump.outer.some(function (s) { return s.y1 < 96 || s.y2 < 96; }), 'dump never covers the crown channel y<96');
-  var lastO = right0.failDump.outer[right0.failDump.outer.length - 1];
-  assert(lastO.y2 >= 240 && lastO.x2 >= 420 && lastO.x2 <= 450, 'dump opens beside the shooter, not a blob over the LOCK saucer');
-  assert(!right0.failDump.gate.some(function (s) { return s.y1 <= 204 && s.y2 <= 204; }), 'old stub end-cap gate gone');
-  var saucer = { x: 410, y: 148, r: 15 };
-  function segDist(s, p) {
-    var ax = s.x2 - s.x1, ay = s.y2 - s.y1;
-    var lenSq = ax * ax + ay * ay;
-    var t = lenSq < 1e-6 ? 0 : Math.max(0, Math.min(1, ((p.x - s.x1) * ax + (p.y - s.y1) * ay) / lenSq));
-    var px = s.x1 + ax * t, py = s.y1 + ay * t;
-    return Math.sqrt((p.x - px) * (p.x - px) + (p.y - py) * (p.y - py));
-  }
-  var dumpSegs = right0.failDump.outer.concat(right0.failDump.inner).concat(right0.failDump.gate);
-  dumpSegs.forEach(function (s) {
-    var d = segDist(s, saucer);
-    assert(d >= saucer.r + 6, 'dump wall clears UR saucer dist=' + d.toFixed(1));
-  });
-  assert(right0.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88 && s.x2 === 458 && s.y2 === 80; }), 'plunge mouth (470,88) kept');
-  assert(right0.mergeInner.some(function (s) { return s.y1 === 80 && s.y2 === 80 && Math.min(s.x1, s.x2) <= 280 && Math.max(s.x1, s.x2) >= 330; }), 'crown floor x=280-400 stays');
+  assert(!right0.failDump, 'no failDump banana sausage');
+  assert(right0.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'Williams lower inner wall / field exit (368,112)->(408,80)');
+  assert(right0.mergeInner.some(function (s) { return s.y1 === 80 && s.y2 === 80 && Math.min(s.x1, s.x2) <= 280; }), 'crown floor still joins (280,80)');
+  assert(right0.mergeInner.some(function (s) { return s.y1 === 80 && s.y2 === 80 && Math.max(s.x1, s.x2) >= 360; }), 'crown floor still reaches the peel lip');
+  assert(!right0.mergeInner.some(function (s) { return Math.max(s.x1, s.x2) > 430; }), 'inner does not span the peel gap into the hall');
   assert(right0.mergeOuter.some(function (s) { return s.x1 === 478 && s.y1 === 18 || s.x2 === 280 && s.y2 === 18; }), 'crown outer y=18 kept');
   function isChain(segs) {
     var k;
@@ -3898,15 +3889,23 @@ console.log('All tests passed.');
   assert(right0.mergeOuter.some(function (s) { return (s.y1 === 18 || s.y2 === 18) && (s.x1 === 280 || s.x2 === 280); }), 'outer still reaches crown join 280,18');
   assert(right0.mergeOuter.some(function (s) { return s.x1 === 524 && s.y1 === 64 && s.x2 === 518 && s.y2 === 42; }), 'elbow still rounds into the crown');
   var walls = fresh().walls.filter(function (w) { return w.dumpRamp || w.failMouth || w.dumpGate; });
-  assert(walls.some(function (w) { return w.dumpRamp; }), 'dump ramp walls exist');
-  assert(walls.some(function (w) { return w.failMouth; }), 'elbow dump mouth is a trapdoor wall');
-  assert(walls.some(function (w) { return w.dumpGate; }), 'one-way dump gate exists');
-  var upperGuideSolid = (right0.guides || []).some(function (s) {
-    return s.x1 === 424 && s.y1 === 73 && s.x2 === 428 && s.y2 === 86;
+  assert(walls.length === 0, 'no failMouth / dumpRamp / dumpGate ghost walls');
+  var hanging = (right0.guides || []).some(function (s) {
+    return Math.min(s.y1, s.y2) < 120 && Math.max(s.x1, s.x2) > 400;
   });
-  assert(upperGuideSolid, 'U inner rail (424,73)-(428,86) restored');
-  var failMouthWalls = walls.filter(function (w) { return w.failMouth; });
-  assert(failMouthWalls.every(function (w) { return (w.y1 + w.y2) * 0.5 > 86; }), 'failMouth window is later than the U inner rail');
+  assert(!hanging, 'no hanging inner strips in the orange elbow');
+  var saucer = { x: 410, y: 148, r: 15 };
+  function segDist(s, p) {
+    var ax = s.x2 - s.x1, ay = s.y2 - s.y1;
+    var lenSq = ax * ax + ay * ay;
+    var tt = lenSq < 1e-6 ? 0 : Math.max(0, Math.min(1, ((p.x - s.x1) * ax + (p.y - s.y1) * ay) / lenSq));
+    var px = s.x1 + ax * tt, py = s.y1 + ay * tt;
+    return Math.sqrt((p.x - px) * (p.x - px) + (p.y - py) * (p.y - py));
+  }
+  right0.mergeInner.forEach(function (s) {
+    var d = segDist(s, saucer);
+    assert(d >= saucer.r + 6, 'peel wall clears UR saucer dist=' + d.toFixed(1));
+  });
 
   function rideInfo(st) {
     var b = st.ball;
@@ -3988,9 +3987,11 @@ console.log('All tests passed.');
     if (!mb.inPlay && mhi > 20) break;
     if (mb.y > 500 && mhSt.exitedLaunchLane && mb.inPlay) break;
   }
-  assert(mhU, '1100 rides the U before peeling');
-  assert(mhDump || mhSt.ball.y > 100, '1100 must peel off the U, not sit at y=68 (x=' + mhSt.ball.x.toFixed(1) + ' y=' + mhSt.ball.y.toFixed(1) + ')');
-  assert(mhSt.ballsRemaining === 3, '1100 dump is not an instant drain');
+  assert(mhU, '1100 rides the U');
+  var sitting = mhSt.ball.y < 90 && mhSt.ball.y > 50 && Math.hypot(mhSt.ball.vx, mhSt.ball.vy) < 40;
+  assert(!sitting, '1100 must not sit glued on the crown (x=' + mhSt.ball.x.toFixed(1) + ' y=' + mhSt.ball.y.toFixed(1) + ')');
+  assert(mhDump || mhSt.ball.x < 280 || mhSt.ball.y > 100 || Math.hypot(mhSt.ball.vx, mhSt.ball.vy) > 80, '1100 continues along the U or peels (x=' + mhSt.ball.x.toFixed(1) + ' y=' + mhSt.ball.y.toFixed(1) + ')');
+  assert(mhSt.ballsRemaining === 3, '1100 is not an instant drain');
 
   var field = fresh();
   field.ball.inPlay = true;
@@ -4013,10 +4014,10 @@ console.log('All tests passed.');
   assert(field.ball.y > 80, 'field ball stays below the crown');
 
   var idx = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idx.indexOf('?v=dump9') !== -1, 'cache tag dump5');
-  assert(idx.indexOf('?v=dump1') === -1, 'old dump1 cache tag gone');
+  assert(idx.indexOf('?v=dump10') !== -1, 'cache tag dump5');
+  assert(idx.indexOf('?v=dump9') === -1, 'old dump9 cache tag gone');
   var renSrc = fs.readFileSync(path.join(__dirname, '..', 'renderer.js'), 'utf8');
-  assert(renSrc.indexOf('right.failDump') !== -1, 'renderer draws copper dump sausage');
+  assert(renSrc.indexOf('right.failDump') === -1, 'no failDump banana');
   assert(renSrc.indexOf('clipSegsBelowY(right.mergeOuter, 88)') === -1, 'no leftover copper drop fill');
   assert(renSrc.indexOf('fillSausageHull(ctx, dropO, dropI') === -1, 'no drop hull blob');
   assert(renSrc.indexOf('fillSausageHull(ctx, dumpO') === -1, 'no floating failDump sausage');
@@ -4034,7 +4035,7 @@ console.log('All tests passed.');
   assert(simSrc.indexOf('dumpSlide') === -1, 'no dumpSlide aim at the hole');
   assert(simSrc.indexOf('if (ball.y < 86) ball.y = 92') === -1, 'no mouth y snap');
   assert(simSrc.indexOf('targetY = dumpSlide ? 150') === -1, 'no teleport target 150');
-  assert(renSrc.indexOf('fillSausageHull(ctx, peelO') !== -1, 'renderer peel sausage');
+  assert(renSrc.indexOf('fillSausageHull(ctx, peelO') === -1, 'no separate peel sausage');
 
   function maxJump(power) {
     var st = fresh();
@@ -4098,7 +4099,7 @@ console.log('All tests passed.');
   var ljump = Math.hypot(lodge.ball.x - 407, lodge.ball.y - 202);
   assert(ljump < 80 || lodge.ball.y > 210, 'unstick is a nudge not a teleport to the exit');
 
-  console.log('PASS: dump5 restore U (1400 x=' + full.x.toFixed(1) + ' y=' + full.y.toFixed(1) + ' 900 U 700 dump x=' + soft.x.toFixed(1) + ')');
+  console.log('PASS: dump10 solid elbow + inner peel (1400 x=' + full.x.toFixed(1) + ' y=' + full.y.toFixed(1) + ' 900 U 700 dump x=' + soft.x.toFixed(1) + ')');
 })();
 (function testDump3ContinuousUCrownHull() {
   var Render = require('../renderer.js');
@@ -4124,21 +4125,100 @@ console.log('All tests passed.');
   }
   assert(crownMin <= 62 && crownMax >= 476, 'crown outer y~18 spans ~60-478 (got ' + crownMin + '-' + crownMax + ')');
   assert(outer.some(function (p) { return p.x > 300 && p.y <= 22; }), 'copper crown exists right of join (not left-only)');
-  assert(inner.some(function (p) { return p.x >= 450; }), 'inner hull reaches plunge mouth');
+  assert(inner.some(function (p) { return p.x >= 400 && p.x <= 430; }), 'inner hull reaches the Williams peel lip');
   assert(!inner.some(function (p) { return p.y > 120 && p.x > 300 && p.x < 500; }), 'U inner hull has no melted dump scrap');
   assert(!inner.some(function (p) { return Math.abs(p.x - 472) < 1 && Math.abs(p.y - 286) < 1; }), 'inner hull does not extend hall-to-y=286');
   var fs = require('fs');
   var path = require('path');
   var renSrc = fs.readFileSync(path.join(__dirname, '..', 'renderer.js'), 'utf8');
-  assert(renSrc.indexOf('fillSausageHull(ctx, peelO') !== -1, 'off-ramp is a sausage peel sharing the elbow');
+  assert(renSrc.indexOf('fillSausageHull(ctx, peelO') === -1, 'no separate peel sausage');
   assert(renSrc.indexOf('fillSausageHull(ctx, dumpO') === -1, 'no floating dumpO banana');
   assert(renSrc.indexOf('function appendOriented') !== -1, 'oriented hull join helper');
   assert(renSrc.indexOf('fillRect(JOIN_X, 0, 560, 860)') === -1, 'no oversized copper fillRect width 560');
   assert(renSrc.indexOf('TABLE_W - JOIN_X') !== -1, 'copper fillRect uses table-right width');
   assert(renSrc.indexOf('fillRect(JOIN_X - 5, 0, 10, TABLE_H)') !== -1, '10px color seam');
   var idx = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idx.indexOf('?v=dump9') !== -1, 'cache tag dump5');
+  assert(idx.indexOf('?v=dump10') !== -1, 'cache tag dump5');
   assert(idx.indexOf('?v=dump3') === -1, 'old dump3 cache tag gone');
-  console.log('PASS: dump5 hull spans crown ' + crownMin.toFixed(0) + '-' + crownMax.toFixed(0));
+  console.log('PASS: dump10 hull spans crown ' + crownMin.toFixed(0) + '-' + crownMax.toFixed(0));
+})();
+
+(function testDump10LeftFlipperPivotSeal() {
+  var left = fresh();
+  left.ball.inPlay = true;
+  left.exitedLaunchLane = true;
+  left.phase = 'playing';
+  var f = null;
+  left.flippers.forEach(function (fl) {
+    if (fl.side === 'left' && fl.role !== 'upper') f = fl;
+  });
+  assert(f, 'left main flipper exists');
+  f.active = true;
+  f.targetAngle = f.activeAngle;
+  f.angle = f.activeAngle;
+  f.omega = 0;
+  var ux = Math.cos(f.angle);
+  var uy = Math.sin(f.angle);
+  // Sit on the raised bat, a few px from the hub, rolling toward the pivot.
+  var tAlong = 22;
+  left.ball.x = f.pivotX + ux * tAlong;
+  left.ball.y = f.pivotY + uy * tAlong - (left.ball.radius + f.width * 0.5) + 1;
+  left.ball.vx = -40;
+  left.ball.vy = 20;
+  var vanished = false;
+  var i;
+  var minDist = 999;
+  for (i = 0; i < 180; i++) {
+    sim.tick(left, 1 / 60);
+    var b = left.ball;
+    if (!b || !b.inPlay) break;
+    var dHub = Math.hypot(b.x - f.pivotX, b.y - f.pivotY);
+    if (dHub < minDist) minDist = dHub;
+    // Through the bat into a non-drain void: below the hub, still inPlay, not in the center hole.
+    if (b.y > f.pivotY + b.radius + 8 && b.x < f.pivotX + 10 && b.inPlay && left.ballsRemaining === 3) {
+      vanished = true;
+    }
+  }
+  assert(!vanished, 'catch rolling to left pivot must not vanish through the bat (x=' + left.ball.x.toFixed(1) + ' y=' + left.ball.y.toFixed(1) + ')');
+  assert(left.ball.inPlay || left.ballsRemaining < 3, 'stays in play or drains fairly');
+  if (left.ball.inPlay) {
+    assert(left.ball.y < f.pivotY + 36, 'in-play ball is not lost under the apron x=' + left.ball.x.toFixed(1) + ' y=' + left.ball.y.toFixed(1));
+  }
+
+  var both = fresh();
+  both.ball.inPlay = true;
+  both.exitedLaunchLane = true;
+  both.phase = 'playing';
+  both.flippers.forEach(function (fl) {
+    if (fl.role === 'upper') return;
+    fl.active = true;
+    fl.targetAngle = fl.activeAngle;
+    fl.angle = fl.activeAngle;
+    fl.omega = 0;
+  });
+  var lf = both.flippers.filter(function (fl) { return fl.side === 'left' && fl.role !== 'upper'; })[0];
+  var rf = both.flippers.filter(function (fl) { return fl.side === 'right' && fl.role !== 'upper'; })[0];
+  var lt = { x: lf.pivotX + Math.cos(lf.angle) * lf.length, y: lf.pivotY + Math.sin(lf.angle) * lf.length };
+  var rt = { x: rf.pivotX + Math.cos(rf.angle) * rf.length, y: rf.pivotY + Math.sin(rf.angle) * rf.length };
+  assert(rt.x - lt.x > 24, 'both-up still leaves a center hole');
+  both.ball.x = (lt.x + rt.x) * 0.5;
+  both.ball.y = Math.min(lt.y, rt.y) - 4;
+  both.ball.vx = 0;
+  both.ball.vy = 80;
+  var before = both.ballsRemaining;
+  var k;
+  for (k = 0; k < 240; k++) {
+    sim.tick(both, 1 / 60);
+    if (!both.ball.inPlay || both.ballsRemaining < before) break;
+  }
+  assert(both.ballsRemaining < before || !both.ball.inPlay, 'center hole still drains with both raised');
+  assert.strictEqual(sim.GRAVITY, 1180);
+  assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
+  assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
+  var simSrc = require('fs').readFileSync(require('path').join(__dirname, '..', 'simulation.js'), 'utf8');
+  assert(simSrc.indexOf('dumpSlide') === -1, 'no dumpSlide');
+  assert(simSrc.indexOf('if (ball.x > 400) ball.x = 400') === -1, 'no x=400 dump snap');
+  assert(simSrc.indexOf('state._dumpPeel') === -1, 'no dumpPeel aim-blend');
+  console.log('PASS: dump10 left flipper hub seal + center hole');
 })();
 
