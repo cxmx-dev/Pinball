@@ -1122,54 +1122,65 @@
   }
 
 
+  function clipPtsBeforePeel(pts, lipX) {
+    if (!pts || pts.length < 2) return pts || [];
+    lipX = lipX == null ? 408 : lipX;
+    var out = [];
+    var i;
+    for (i = 0; i < pts.length; i++) {
+      var p = pts[i];
+      var prev = out.length ? out[out.length - 1] : null;
+      if (prev && prev.x >= lipX - 2 && p.y > 90 && p.x < lipX - 2) break;
+      if (prev && p.x > lipX + 0.51 && prev.x <= lipX + 0.51) {
+        var dxp = p.x - prev.x;
+        var tp = Math.abs(dxp) < 1e-6 ? 0 : (lipX - prev.x) / dxp;
+        out.push({ x: lipX, y: prev.y + tp * (p.y - prev.y) });
+        break;
+      }
+      out.push(p);
+    }
+    return out;
+  }
+
   function drawHorseshoeOrbit(ctx, left, right, pulse) {
     if (!left) return;
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
     var tubeW = 5.5;
     var JOIN_X = 280;
+    var LIP_X = 408;
     var TABLE_W = 560;
     var TABLE_H = 860;
-    // Call site must pass rightRamp so mergeOuter/mergeInner continue the crown.
     var fullOuter = horseshoeOuterPoints(left, right);
     var fullInner = horseshoeInnerPoints(left, right);
     if (!fullOuter || fullOuter.length < 2 || !fullInner || fullInner.length < 2) return;
-    var outer = chaikinSmooth(fullOuter, 2);
-    var inner = chaikinSmooth(fullInner, 2);
-    var hull = outer.concat(inner.slice().reverse());
+
+    // dump12: never Chaikin/hull-fill across the 408-472 mouth. That slash
+    // melted the NE floor into hanging strips and left a hole above the hall.
+    var cyanO = clipPtsAtJoinX(fullOuter, JOIN_X, true);
+    var cyanI = clipPtsAtJoinX(fullInner, JOIN_X, true);
+    var copO = clipPtsBeforePeel(clipPtsAtJoinX(fullOuter, JOIN_X, false), LIP_X);
+    var copI = clipPtsBeforePeel(clipPtsAtJoinX(fullInner, JOIN_X, false), LIP_X);
+    fillSausageHull(ctx, cyanO, cyanI, 'cyan', simple, tubeW);
+    fillSausageHull(ctx, copO, copI, 'copper', simple, tubeW);
 
     ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    // One manufactured U: fill the closed hull first so a clip miss cannot
-    // drop the copper half (dump2 clip + fillRect(JOIN_X,0,560,860) left a
-    // cyan end-cap wall at x=280 and only the failDump orange stub).
-    strokeExact(ctx, hull, true);
-    var split = ctx.createLinearGradient(0, 0, TABLE_W, 0);
-    split.addColorStop(0, 'rgba(18, 150, 200, 1)');
-    split.addColorStop((JOIN_X - 5) / TABLE_W, 'rgba(18, 150, 200, 1)');
-    split.addColorStop((JOIN_X + 5) / TABLE_W, 'rgba(214, 88, 20, 1)');
-    split.addColorStop(1, 'rgba(214, 88, 20, 1)');
-    ctx.fillStyle = split;
-    ctx.fill();
-
-    // Tube shading. JOIN_X is a color split only — not a geometric wall.
-    strokeExact(ctx, hull, true);
-    ctx.clip();
-
+    var seamInner = clipPtsBeforePeel(fullInner, LIP_X);
+    if (fullOuter.length >= 2 && seamInner.length >= 2) {
+      strokeExact(ctx, fullOuter.concat(seamInner.slice().reverse()), true);
+      ctx.clip();
+    }
     var cyanFill = ctx.createLinearGradient(0, 0, 0, 140);
     cyanFill.addColorStop(0, 'rgba(90, 224, 255, 1)');
     cyanFill.addColorStop(0.55, 'rgba(18, 150, 200, 1)');
     cyanFill.addColorStop(1, 'rgba(6, 70, 100, 1)');
     ctx.fillStyle = cyanFill;
     ctx.fillRect(0, 0, JOIN_X, TABLE_H);
-
     var copperFill = ctx.createLinearGradient(JOIN_X, 0, JOIN_X, 140);
     copperFill.addColorStop(0, 'rgba(255, 176, 64, 1)');
     copperFill.addColorStop(0.55, 'rgba(214, 88, 20, 1)');
     copperFill.addColorStop(1, 'rgba(120, 44, 8, 1)');
     ctx.fillStyle = copperFill;
     ctx.fillRect(JOIN_X, 0, TABLE_W - JOIN_X, TABLE_H);
-
     var seam = ctx.createLinearGradient(JOIN_X - 5, 0, JOIN_X + 5, 0);
     seam.addColorStop(0, 'rgba(90, 224, 255, 1)');
     seam.addColorStop(1, 'rgba(255, 176, 64, 1)');
@@ -1177,6 +1188,49 @@
     ctx.fillRect(JOIN_X - 5, 0, 10, TABLE_H);
     ctx.restore();
 
+    // NE elbow: offset sausage along the live outer roof (continuous, so
+    // Chaikin is safe). No hall-top closer-cap (472,103) - that was a slash.
+    var neOuter = clipPtsAtJoinX(fullOuter, LIP_X, false);
+    if (neOuter && neOuter.length >= 2) {
+      var neInner = [];
+      var ni;
+      for (ni = 0; ni < neOuter.length; ni++) {
+        var p = neOuter[ni];
+        var prev = neOuter[ni === 0 ? 0 : ni - 1];
+        var next = neOuter[ni === neOuter.length - 1 ? ni : ni + 1];
+        var tx = next.x - prev.x;
+        var ty = next.y - prev.y;
+        var tl = Math.sqrt(tx * tx + ty * ty) || 1;
+        var nx = -ty / tl;
+        var ny = tx / tl;
+        if (nx * (456 - p.x) + ny * (58 - p.y) < 0) {
+          nx = -nx;
+          ny = -ny;
+        }
+        neInner.push({ x: p.x + nx * 62, y: p.y + ny * 62 });
+      }
+      var neHull = neOuter.concat(neInner.slice().reverse());
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      strokeExact(ctx, neHull, true);
+      var neg = ctx.createLinearGradient(LIP_X, 18, 524, 103);
+      neg.addColorStop(0, 'rgba(255, 176, 64, 1)');
+      neg.addColorStop(0.55, 'rgba(214, 88, 20, 1)');
+      neg.addColorStop(1, 'rgba(120, 44, 8, 1)');
+      ctx.fillStyle = neg;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 168, 64, 0.95)';
+      ctx.lineWidth = tubeW;
+      strokeExact(ctx, neOuter, false);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Crown rims. Outer is one polyline so Chaikin is safe. Inner peel is
+    // stroked exact - do not Chaikin a gapped hull.
+    var outerRim = chaikinSmooth(fullOuter, 2);
+    var innerRim = clipPtsBeforePeel(fullInner, LIP_X);
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -1187,14 +1241,25 @@
     rim.addColorStop(1, 'rgba(255, 168, 64, 0.95)');
     ctx.strokeStyle = rim;
     ctx.lineWidth = tubeW;
-    strokeExact(ctx, outer, false);
+    strokeExact(ctx, outerRim, false);
     ctx.stroke();
-    strokeExact(ctx, inner, false);
+    strokeExact(ctx, innerRim, false);
     ctx.stroke();
+    var peel = null;
+    var pi;
+    for (pi = 0; pi < fullInner.length; pi++) {
+      if (fullInner[pi].y > 90 && fullInner[pi].x < LIP_X - 2) {
+        peel = [ { x: LIP_X, y: 80 }, fullInner[pi] ];
+        break;
+      }
+    }
+    if (peel) {
+      ctx.strokeStyle = 'rgba(255, 168, 64, 0.95)';
+      ctx.lineWidth = tubeW;
+      strokeExact(ctx, peel, false);
+      ctx.stroke();
+    }
     ctx.restore();
-
-    // dump10: Williams peel is the inner-wall gap in mergeInner (same polylines
-    // as physics). No separate banana dump sausage.
   }
 
   function drawCopperMergeShoulder(ctx, ramp, pulse) {

@@ -189,14 +189,14 @@ function browserLoad(runId) {
 
   var canvas = window.PinballGame.canvas;
   assertTruthy(canvas, 'PinballGame.canvas');
-  assertEqual(canvas.width, 520, 'canvas.width');
+  assertEqual(canvas.width, 600, 'canvas.width');
   assertEqual(canvas.height, 980, 'canvas.height');
 
   assertTruthy(typeof window.PinballGame.getState === 'function', 'getState');
   assertTruthy(typeof window.PinballGame.gameLoop === 'function', 'gameLoop');
 
   var state = window.PinballGame.getState();
-  assertEqual(state.tableW, 480, 'state.tableW');
+  assertEqual(state.tableW, 560, 'state.tableW');
   assertEqual(state.ballsRemaining, 3, 'state.ballsRemaining');
 
   assertTruthy(rafCallback, 'requestAnimationFrame callback registered');
@@ -213,7 +213,7 @@ function browserLoad(runId) {
   if (tracking.stats.arc < 4) throw new Error('render did not draw playfield arcs');
   if (tracking.stats.fill < 8) throw new Error('render surface not substantially filled');
 
-  log.push('Run ' + runId + ': OK — zero errors, globals on window, canvas 520x980, render observed');
+  log.push('Run ' + runId + ': OK — zero errors, globals on window, canvas 600x980, render observed');
 }
 
 function assertTruthy(v, label) {

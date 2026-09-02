@@ -615,9 +615,11 @@
           { x1: 442, y1: 250, x2: 436, y2: 335 },
           { x1: 436, y1: 335, x2: 428, y2: 420 }
         ],
-        // dump10: one solid copper sausage elbow. Outer is the NE floor.
-        // Inner is the U crown plus a LOWER inner wall at the elbow (Williams peel).
-        // Gap 408-472 is the mouth — weak plunge / dying RTL fall through onto the field.
+        // dump12: one solid copper sausage elbow. Outer is the NE floor/roof (always solid).
+        // Hall right wall (x=524) joins mergeOuter at (524,103) and continues to y=18.
+        // Inner is the U crown plus a LOWER lip at the mouth (Williams peel).
+        // Gap 408-472 is the mouth - weak plunge / dying RTL fall onto the field.
+        // Inner stays left of the RTL climb (x~456) so fast RTL 1120 can crest.
         mergeOuter: [
           { x1: 524, y1: 103, x2: 524, y2: 88 },
           { x1: 524, y1: 88, x2: 524, y2: 64 },
@@ -763,8 +765,9 @@
     var copperOuter = (routes.rightRamp.mergeOuter || []).filter(function (seg) { return !isHallOuterDup(seg); });
     pushMerge(copperOuter, 'habitrail');
     pushMerge(routes.rightRamp.mergeInner, 'habitrail');
-    // dump10: hall left wall already starts at LAUNCH_WIRE_Y1=103 (lane).
-    // Do not extend it up into the U — that closed the Williams inner-wall gap.
+    // dump11: hall left wall already starts at LAUNCH_WIRE_Y1=103 (lane).
+    // Do not extend it UP into the U - that sealed the Williams inner-wall gap.
+    // Inner lip starts at the hall join and drops toward the field so the outer floor fills.
     function pushFiller(fill) {
       if (!fill) return;
       pushPath(fill.segments, 'filler');
@@ -1114,7 +1117,8 @@
     walls.push({ x1: 36, y1: archLeftY, x2: 36, y2: TABLE_H - 80, kind: 'rail', cyan: true });
 
     // Outer right (cabinet edge past launch lane)
-    walls.push({ x1: TABLE_W - 36, y1: LAUNCH_WIRE_Y1, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' });
+    // dump12: hall outer continues UP into the NE elbow (mergeOuter starts at 524,103).
+    walls.push({ x1: TABLE_W - 36, y1: 64, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' });
 
     // Launch lane
     // orbit1: leftover wireform beak (392,103)->(360,80) deleted. Vertical shooter wall stays.
@@ -2890,6 +2894,52 @@
     return false;
   }
 
+
+  /** dump12: keep the ball inside the NE outer copper. Fast plunge used to
+   *  tunnel the thin roof above the hall (x high, y small) into the HUD. */
+  function containHallRoof(state) {
+    var ball = state.ball;
+    if (!ball || !ball.inPlay) return;
+    var r = ball.radius || BALL_RADIUS;
+    if (ball.y < 140 && ball.x + r > TABLE_W - 36) {
+      ball.x = TABLE_W - 36 - r;
+      if (ball.vx > 0) ball.vx = -Math.abs(ball.vx) * HABITRAIL_RESTITUTION;
+    }
+    if (ball.x < 400 || ball.x > TABLE_W) return;
+    if (ball.y > LAUNCH_WIRE_Y1 + 12 && ball.x < LAUNCH_LANE_LEFT) return;
+    if (ball.y > LAUNCH_WIRE_Y1 + 8 && ball.x >= LAUNCH_LANE_LEFT) return;
+    var right = state.sideRoutes && state.sideRoutes.rightRamp;
+    var outer = (right && right.mergeOuter) || [];
+    var near = nearestPointOnSegments(ball.x, ball.y, outer);
+    if (!near) return;
+    var gate = r + 36;
+    if (ball.y - r < 18) gate = r + 90;
+    if (near.dist > gate) return;
+    var ix = 456 - near.x;
+    var iy = 58 - near.y;
+    var il = vecLen(ix, iy);
+    if (il < 1e-6) {
+      ix = -1;
+      iy = 1;
+      il = Math.sqrt(2);
+    }
+    ix /= il;
+    iy /= il;
+    var side = (ball.x - near.x) * ix + (ball.y - near.y) * iy;
+    var need = r + 0.35;
+    // Inside the sausage: merge walls own contact. Only pull back if we
+    // tunneled to the OUTSIDE (above the roof / right of the hall).
+    if (side >= 0 && (ball.y - r) >= 16) return;
+    if (side >= need) return;
+    ball.x = near.x + ix * need;
+    ball.y = near.y + iy * need;
+    var vn = ball.vx * ix + ball.vy * iy;
+    if (vn < 0) {
+      ball.vx -= (1 + HABITRAIL_RESTITUTION) * vn * ix;
+      ball.vy -= (1 + HABITRAIL_RESTITUTION) * vn * iy;
+    }
+  }
+
   function resolveWallCollisions(state) {
     var ball = state.ball;
     var r = ball.radius;
@@ -2902,9 +2952,12 @@
       // Plunge still in the hall skips the short wire so it can reach the outer U.
       // RTL / copper U riders KEEP the wire and roll along it (dump4 geometry).
       if (wall.wireform || wall.kind === 'rail') {
-        var fullPlunge = !state.exitedLaunchLane && launchChargeU(state) >= RIDE_FLOOR_U;
-        var uRider = !!(state.activeHabitrail && ball.y < 92);
-        if (fullPlunge || uRider) return;
+        var hallRight = Math.abs(wall.x1 - (TABLE_W - 36)) < 0.6 && Math.abs(wall.x2 - (TABLE_W - 36)) < 0.6;
+        if (!hallRight) {
+          var fullPlunge = !state.exitedLaunchLane && launchChargeU(state) >= RIDE_FLOOR_U;
+          var uRider = !!(state.activeHabitrail && ball.y < 92);
+          if (fullPlunge || uRider) return;
+        }
       }
       if (wall.kind === 'tri-solid') return; // rubber + solid live in resolvePulseTriangle
       if (wall.kind === 'filler' && ball.y < 500 && (state.activeHabitrail ||
@@ -2925,13 +2978,13 @@
         // hang a second roof in the channel.
         return;
       }
-            if (wall.merge) {
-        // merge3: plunge / launchRailT riders MUST hit the floor.
-        // RTL climbers below the raised floor skip so they do not bounce from under.
-        if (state.activeHabitrail === 'ramp-l' && ball.y > 90) return;
-        // RTL in the right slide skips the raised underside. Once in the U, the floor holds.
-        if (state.activeHabitrail === 'ramp-r' && ball.x > 420 && ball.y > 78) return;
-        var ridingPlunge = state.launchRailT != null || (!state.exitedLaunchLane && isBallInLaunchLane(state));
+      if (wall.merge) {
+        // dump11: plunge / hall riders MUST hit the outer floor.
+        // dump10 skipped merge for ramp-r at x>420 y>78, which is the whole elbow - trash chute.
+        // RTL climbers below the raised underside still skip so they do not bounce from under.
+        if (state.activeHabitrail === 'ramp-l' && ball.y > 90 && ball.x < 280) return;
+        var ridingPlunge = state.launchRailT != null || !state.exitedLaunchLane ||
+          isBallInLaunchLane(state) || ball.x >= LAUNCH_LANE_LEFT - 2;
         if (!ridingPlunge) {
           var underFloor = ball.y > 115 && state.exitedLaunchLane && !isBallInLaunchLane(state);
           if (underFloor) return;
@@ -4314,6 +4367,7 @@
     guideShooterLane(state, dt);
     blockShooterLaneIntrusion(state);
     resolveWallCollisions(state);
+    containHallRoof(state);
     ejectSausageInteriors(state);
     unstickTriangleInterior(state);
     assistHabitrails(state, dt);
