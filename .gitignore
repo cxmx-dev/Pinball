@@ -47,3 +47,11 @@ _run*
 notes/
 *.diff
 *.b64
+
+apply_dump*
+tmp-*
+tmp_*
+_*
+*_ren*.txt
+pinball v2/_trace*
+allow-lan-preview.ps1
