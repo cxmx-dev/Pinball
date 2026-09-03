@@ -1314,7 +1314,7 @@ console.log('=============================');
     maxX = Math.max(maxX, inner[i].x1, inner[i].x2);
     maxY = Math.max(maxY, inner[i].y1, inner[i].y2);
   }
-  assert(maxX >= 400 && maxX <= 430, 'merge inner ends at the Williams peel lip, not the shooter');
+  assert(maxX >= 400 && maxX <= 430, 'merge inner ends at the slide mouth (408), not the shooter');
   assert(minX <= 300, 'merge inner must reach the copper U floor');
   assert(maxY <= 116, 'lower inner wall / peel lip stays under the crown');
   var tagged = 0;
@@ -2397,7 +2397,7 @@ console.log('All tests passed.');
   });
   assert(!hasBeak, 'old (392,103) bird-beak must be gone');
   var hasNew = inner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; });
-  assert(hasNew, 'dump11 Williams lower inner wall (368,112)->(408,80)');
+  assert(hasNew, 'dump11 crown inner joins slide (408,80)->(360,80)');
   var closer = (state.walls || []).filter(function (w) { return w.merge && Math.abs(w.x1 - sim.LAUNCH_LANE_LEFT) < 1 && Math.abs(w.y1 - 103) < 1 && w.y2 < 100; });
   assert(closer.length === 0, 'dump11: no hall-to-U closer sealing the peel');
   assert(!closer.some(function (w) { return w.x2 === 392 && w.y2 === 103 && w.x1 === 390 && w.y1 === 90; }), 'old V closer 390,90-392,103 must be gone');
@@ -2566,7 +2566,7 @@ console.log('All tests passed.');
   assert(bendMin >= 44, 'left-top bend min width >= 44 (w=' + bendMin.toFixed(1) + ')');
 
   var merge = state.sideRoutes.rightRamp.mergeInner || [];
-  assert(merge.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'Williams peel lip kept');
+  assert(merge.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'crown inner joins copper slide at (408,80)');
   assert(left.guides[left.guides.length - 1].x2 === 280 && left.guides[left.guides.length - 1].y2 >= 79 && left.guides[left.guides.length - 1].y2 <= 81, 'cyan inner joins at 280,80 (shoe6 flat crown)');
   assert(sim.HABITRAIL_ASSIST === 0 && sim.HABITRAIL_MIN_SPEED === 0, 'no habitrail assist');
   assert(sim.GRAVITY === 1180 && sim.TABLE_PITCH_DEG === 6.8, 'gravity/pitch are phys1');
@@ -2639,7 +2639,7 @@ console.log('All tests passed.');
   var right = state.sideRoutes.rightRamp;
   var inner = right.mergeInner || [];
   var outer = right.mergeOuter || [];
-  assert(inner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'Williams peel lip kept');
+  assert(inner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'crown inner joins copper slide at (408,80)');
   assert(!left.segments.some(function (s) {
     return (s.x1 === 42 && s.y1 === 146) || (s.x2 === 42 && s.y2 === 146) || (s.x1 === 62 && s.y1 === 107);
   }), 'leftover top-left (42,146)/(62,107) cusp deleted');
@@ -2910,7 +2910,7 @@ console.log('All tests passed.');
   assert(!left.segments.some(function (s) { return s.x2 === 328 && s.y2 === 14; }), 'no leftover cyan cap on the copper corner');
   assert(right.segments.every(function (s) { return Math.min(s.y1, s.y2) >= 110; }), 'right slide starts below the peel, not hanging in the U');
   assert(inner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'copper inner still joins at (280,80)');
-  assert(inner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'Williams lower inner wall at the copper elbow');
+  assert(inner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'crown inner joins copper slide at the copper elbow');
 
   function yOn(segs, atX) {
     var k, y = null;
@@ -3279,11 +3279,12 @@ console.log('All tests passed.');
   assert(renSrcPop.indexOf('segments: (ramp.segments') === -1, 'no Pioneer on rightRamp');
   assert(renSrcPop.indexOf('drawPioneerRamp(ctx, { segments: ramp.mergeOuter') === -1, 'no Pioneer on mergeOuter');
   var idxSrc = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxSrc.indexOf('?v=dump12') !== -1, 'cache bust dump5');
+  assert(idxSrc.indexOf('?v=dump16') !== -1, 'cache bust dump16');
   assert(renSrcPop.indexOf('{ x: 472, y: 103 }') === -1, 'leftover closer-cap draw is gone');
   var segs = fresh().sideRoutes.rightRamp.segments;
   assert(!segs.some(function (sg) { return sg.x1 === 408 && sg.y1 === 14; }), 'copper join curve 408,14 pinch deleted (PHYSICS=DRAW)');
-  assert(segs.every(function (sg) { return Math.min(sg.y1, sg.y2) >= 110; }), 'right slide stays below the Williams peel');
+  assert(segs.some(function (sg) { return sg.x1 === 470 && sg.y1 === 118; }), 'right slide outer starts at the elbow mouth (470,112)');
+  assert(segs.every(function (sg) { return Math.min(sg.y1, sg.y2) >= 110; }), 'right slide starts at the elbow mouth, not the crown');
   var copperOuter = fresh().sideRoutes.rightRamp.mergeOuter;
   assert(copperOuter.some(function (sg) { return sg.x2 === 280 && sg.y2 === 18; }), 'copper outer still joins at (280,18)');
   var tri = sim.createPulseTriangle();
@@ -3671,7 +3672,7 @@ console.log('All tests passed.');
   assert(ren.indexOf('clipSegsBelowY(right.mergeInner, 88)') === -1, 'no clipSegsBelowY copper drop fill');
   assert(ren.indexOf('strokeTubePath(ctx, drop') === -1, 'no leftover drop tube strokes');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxHtml.indexOf('?v=dump12') !== -1, 'live cache tag dump5');
+  assert(idxHtml.indexOf('?v=dump16') !== -1, 'live cache tag dump16');
   assert.strictEqual(sim.GRAVITY, 1180);
   assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
   assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
@@ -3687,21 +3688,21 @@ console.log('All tests passed.');
   assert(ren.indexOf('clipSegsBelowY(right.mergeInner, 88)') === -1, 'no clipSegsBelowY copper drop fill');
   assert(ren.indexOf('strokeTubePath(ctx, drop') === -1, 'no leftover drop tube strokes');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxHtml.indexOf('?v=dump12') !== -1, 'live cache tag dump5');
+  assert(idxHtml.indexOf('?v=dump16') !== -1, 'live cache tag dump16');
   assert.strictEqual(sim.GRAVITY, 1180);
   assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
   assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
   assert.strictEqual(sim.TABLE_W, 560);
   var right = fresh().sideRoutes.rightRamp;
   assert(right.mergeInner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'join inner y=80 kept');
-  assert(right.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112; }), 'Williams peel lip at (368,112)');
+  assert(right.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112; }), 'crown inner lip at (408,80)');
   assert(!right.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88; }), 'no hall-connected inner mouth');
   assert(!right.mergeInner.some(function (s) { return s.x1 === 372 || s.x2 === 372; }), 'orange inner dent x=372 deleted');
   assert(!right.mergeOuter.some(function (s) { return s.x1 === 526 || s.x2 === 526; }), 'square 526,90 corner stays gone');
   assert(right.mergeOuter.some(function (s) { return s.x1 === 524 && s.y1 === 64 && s.x2 === 518 && s.y2 === 42; }), 'NE outer stays out then rounds to crown');
   var right = fresh().sideRoutes.rightRamp;
   assert(right.mergeInner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'join inner y=80 kept');
-  assert(right.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112; }), 'Williams peel lip at (368,112)');
+  assert(right.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112; }), 'crown inner lip at (408,80)');
   assert(!right.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88; }), 'no hall-connected inner mouth');
   assert(!right.mergeInner.some(function (s) { return s.x1 === 372 || s.x2 === 372; }), 'orange inner dent x=372 deleted');
   assert(!right.mergeOuter.some(function (s) { return s.x1 === 526 || s.x2 === 526; }), 'square 526,90 corner stays gone');
@@ -3811,7 +3812,7 @@ console.log('All tests passed.');
     var onCrown = (s.x1 >= 130 && s.x1 <= 430) || (s.x2 >= 130 && s.x2 <= 430);
     return onCrown && (s.y1 === 66 || s.y2 === 66 || s.y1 === 73 || s.y2 === 73);
   }), 'no y=66/73 snake on inner crown');
-  assert(rightR.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112; }), 'peel lip (368,112)');
+  assert(rightR.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112; }), 'crown lip (408,80)');
   assert(rightR.mergeInner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'join (280,80)');
   assert(!rightR.mergeInner.some(function (s) { return s.x1 === 470 && s.y1 === 88; }), 'no (470,88) hall inner');
   console.log('PASS: shoe6 vertical U join, no melted crown');
@@ -3822,7 +3823,7 @@ console.log('All tests passed.');
   var path = require('path');
   var ren = fs.readFileSync(path.join(__dirname, '..', 'renderer.js'), 'utf8');
   var idxHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idxHtml.indexOf('?v=dump12') !== -1, 'cache tag dump5');
+  assert(idxHtml.indexOf('?v=dump16') !== -1, 'cache tag dump16');
   assert(ren.indexOf('var blend = 26') === -1, 'no 26px two-hull blend');
   assert(ren.indexOf('clipPtsAtJoinX(fullOuter, 280 - blend') === -1, 'no dump2 blend two-hull clip');
   assert(ren.indexOf('var JOIN_X = 280') !== -1, 'JOIN_X vertical fills');
@@ -3857,7 +3858,7 @@ console.log('All tests passed.');
   }
   assert(!inner.some(function (s) { return s.y1 === 66 || s.y2 === 66; }), 'no y=66 snake');
   assert(!right.mergeInner.some(function (s) { return s.y1 === 73 || s.y2 === 73; }), 'no y=73 mergeInner dip');
-  assert(right.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'peel lip (368,112)->(408,80)');
+  assert(right.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'crown lip (408,80)->(360,80)');
   assert(right.mergeInner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'join stays (280,80)');
   assert(left.guides.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'left join stays (280,80)');
   assert.strictEqual(sim.GRAVITY, 1180);
@@ -3873,10 +3874,10 @@ console.log('All tests passed.');
   var path = require('path');
   var right0 = fresh().sideRoutes.rightRamp;
   assert(!right0.failDump, 'no failDump banana sausage');
-  assert(right0.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'Williams lower inner wall / field exit (368,112)->(408,80)');
+  assert(right0.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'crown inner joins copper slide (408,80)->(360,80)');
   assert(right0.mergeInner.some(function (s) { return s.y1 === 80 && s.y2 === 80 && Math.min(s.x1, s.x2) <= 280; }), 'crown floor still joins (280,80)');
-  assert(right0.mergeInner.some(function (s) { return s.y1 === 80 && s.y2 === 80 && Math.max(s.x1, s.x2) >= 360; }), 'crown floor still reaches the peel lip');
-  assert(!right0.mergeInner.some(function (s) { return Math.max(s.x1, s.x2) > 430; }), 'inner does not span the peel gap into the hall');
+  assert(right0.mergeInner.some(function (s) { return s.y1 === 80 && s.y2 === 80 && Math.max(s.x1, s.x2) >= 360; }), 'crown floor still reaches the slide mouth');
+  assert(!right0.mergeInner.some(function (s) { return Math.max(s.x1, s.x2) > 440; }), 'crown inner does not span into the hall');
   assert(right0.mergeOuter.some(function (s) { return s.x1 === 478 && s.y1 === 18 || s.x2 === 280 && s.y2 === 18; }), 'crown outer y=18 kept');
   function isChain(segs) {
     var k;
@@ -3891,7 +3892,7 @@ console.log('All tests passed.');
   var walls = fresh().walls.filter(function (w) { return w.dumpRamp || w.failMouth || w.dumpGate; });
   assert(walls.length === 0, 'no failMouth / dumpRamp / dumpGate ghost walls');
   var hanging = (right0.guides || []).some(function (s) {
-    return Math.min(s.y1, s.y2) < 120 && Math.max(s.x1, s.x2) > 400;
+    return Math.min(s.y1, s.y2) < 70 && Math.max(s.x1, s.x2) > 400;
   });
   assert(!hanging, 'no hanging inner strips in the orange elbow');
   var saucer = { x: 410, y: 148, r: 15 };
@@ -4014,7 +4015,7 @@ console.log('All tests passed.');
   assert(field.ball.y > 80, 'field ball stays below the crown');
 
   var idx = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idx.indexOf('?v=dump12') !== -1, 'cache tag dump5');
+  assert(idx.indexOf('?v=dump16') !== -1, 'cache tag dump16');
   assert(idx.indexOf('?v=dump10') === -1, 'old dump10 cache tag gone');
   var renSrc = fs.readFileSync(path.join(__dirname, '..', 'renderer.js'), 'utf8');
   assert(renSrc.indexOf('right.failDump') === -1, 'no failDump banana');
@@ -4078,7 +4079,7 @@ console.log('All tests passed.');
     if (rd > rtlJump) rtlJump = rd;
     rpx = rtl.ball.x;
     rpy = rtl.ball.y;
-    if (rtl.ball.y > 160 && rtl.ball.x < 430 && rtl.ball.x > 200) rtlDump = true;
+    if (rtl.ball.y > 160 && rtl.ball.x < 472 - 8 && rtl.ball.x > 200) rtlDump = true;
   }
   assert(rtlJump <= 50, 'RTL-slow no single-frame rail jump ' + rtlJump.toFixed(1));
   assert(rtlDump, 'RTL-slow dying on copper finds the off-ramp x=' + rtl.ball.x.toFixed(1) + ' y=' + rtl.ball.y.toFixed(1));
@@ -4138,7 +4139,7 @@ console.log('All tests passed.');
   assert(renSrc.indexOf('fillSausageHull(ctx, copO') !== -1, 'copper sausage is fillSausageHull on live outer+inner');
   assert(renSrc.indexOf('fillRect(JOIN_X - 5, 0, 10, TABLE_H)') !== -1, '10px color seam');
   var idx = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idx.indexOf('?v=dump12') !== -1, 'cache tag dump5');
+  assert(idx.indexOf('?v=dump16') !== -1, 'cache tag dump16');
   assert(idx.indexOf('?v=dump3') === -1, 'old dump3 cache tag gone');
   console.log('PASS: dump11 hull spans crown ' + crownMin.toFixed(0) + '-' + crownMax.toFixed(0));
 })();
@@ -4227,8 +4228,8 @@ console.log('All tests passed.');
   var path = require('path');
   var right = fresh().sideRoutes.rightRamp;
   assert(right.mergeOuter.some(function (s) { return s.x1 === 524 && s.y1 === 103 && s.x2 === 524 && s.y2 === 88; }), 'hall outer joins elbow at (524,103)');
-  assert(right.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'Williams peel lip kept');
-  assert(!right.mergeInner.some(function (s) { return Math.max(s.x1, s.x2) > 430; }), 'inner does not span the peel gap into the hall');
+  assert(right.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'crown inner joins copper slide at (408,80)');
+  assert(!right.mergeInner.some(function (s) { return Math.max(s.x1, s.x2) > 440; }), 'crown inner does not span into the hall');
   var closer = (fresh().walls || []).filter(function (w) {
     return w.merge && Math.abs(w.x1 - sim.LAUNCH_LANE_LEFT) < 1 && Math.abs(w.y1 - 103) < 1 && w.y2 < 100;
   });
@@ -4330,7 +4331,7 @@ console.log('All tests passed.');
   assert(!hotOob, 'fast hall-roof shot cannot fly into the HUD (x=' + hot.ball.x.toFixed(1) + ' y=' + hot.ball.y.toFixed(1) + ')');
 
   var idx = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert(idx.indexOf('?v=dump12') !== -1, 'cache tag dump12');
+  assert(idx.indexOf('?v=dump16') !== -1, 'cache tag dump16');
   assert(idx.indexOf('?v=dump11') === -1, 'old dump11 cache tag gone');
   var simSrc = fs.readFileSync(path.join(__dirname, '..', 'simulation.js'), 'utf8');
   assert(simSrc.indexOf('containHallRoof') !== -1, 'hall roof contain is live');
@@ -4340,6 +4341,400 @@ console.log('All tests passed.');
   var horseEnd = renSrc.indexOf('function drawCopperMergeShoulder');
   var horseSrc = renSrc.slice(horse, horseEnd);
   assert(horseSrc.indexOf('clipPtsBeforePeel') !== -1, 'copper hull stops at the peel lip');
+  assert(horseSrc.indexOf('fullInner[pi]') === -1, 'no leftover lip-to-first-inner copper chord');
   assert(horseSrc.indexOf('fullInner.slice().reverse()') === -1, 'no gapped full-hull reverse fill');
   console.log('PASS: dump12 hall roof sealed (1400 x=' + full.x.toFixed(1) + ' y=' + full.y.toFixed(1) + ' 700 dump x=' + soft.x.toFixed(1) + ')');
 })();
+
+(function testDump13TrElbowDoesNotLodge() {
+  var fs = require('fs');
+  var path = require('path');
+  var right = fresh().sideRoutes.rightRamp;
+  assert(right.mergeOuter.some(function (s) { return s.x1 === 524 && s.y1 === 64 && s.x2 === 518 && s.y2 === 42; }), 'NE outer elbow kept');
+  assert(right.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'crown inner joins copper slide at (408,80)');
+  assert(!right.mergeInner.some(function (s) { return Math.max(s.x1, s.x2) > 440; }), 'crown inner does not span into the hall');
+  assert.strictEqual(sim.GRAVITY, 1180);
+  assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
+  assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
+  assert.strictEqual(sim.TABLE_W, 560);
+
+  function roofY(x) {
+    var segs = right.mergeOuter;
+    var best = null;
+    var k;
+    for (k = 0; k < segs.length; k++) {
+      var s = segs[k];
+      var lo = Math.min(s.x1, s.x2), hi = Math.max(s.x1, s.x2);
+      if (x < lo - 0.8 || x > hi + 0.8) continue;
+      var dx = s.x2 - s.x1;
+      var tt = Math.abs(dx) < 1e-6 ? 0 : (x - s.x1) / dx;
+      if (tt < -0.05 || tt > 1.05) continue;
+      var y = s.y1 + tt * (s.y2 - s.y1);
+      if (best == null || y < best) best = y;
+    }
+    return best;
+  }
+
+  function onField(b) {
+    return !!(b && b.inPlay && b.x < sim.LAUNCH_LANE_LEFT - 8 && b.y > 118 && b.y < 520);
+  }
+
+  function runParked(opts) {
+    var st = fresh();
+    st.ball.inPlay = true;
+    st.phase = 'playing';
+    st.exitedLaunchLane = opts.exited !== false;
+    st.activeHabitrail = opts.hab || null;
+    st.launchRailT = opts.railT != null ? opts.railT : null;
+    st.activeLaunchPower = opts.power || 0;
+    st.ball.x = opts.x;
+    st.ball.y = opts.y;
+    st.ball.vx = opts.vx || 0;
+    st.ball.vy = opts.vy || 0;
+    var oob = false;
+    var fieldAt = null;
+    var j;
+    for (j = 0; j < 240; j++) {
+      sim.tick(st, 1 / 60);
+      var b = st.ball;
+      if (!b) break;
+      var r = b.radius || 12;
+      if (b.y - r < -0.5 || b.x + r > sim.TABLE_W + 0.5 || b.x - r < -0.5 || b.y < 0) oob = true;
+      if (b.x > 400 && b.y < 130) {
+        var ry = roofY(b.x);
+        if (ry != null && b.y - r < ry - 1.5) oob = true;
+      }
+      if (fieldAt == null && onField(b)) fieldAt = j;
+      if (!b.inPlay) break;
+    }
+    var b = st.ball || { x: 0, y: 0, vx: 0, vy: 0, inPlay: false };
+    var sp = Math.hypot(b.vx || 0, b.vy || 0);
+    var sitting = b.inPlay && sp < 30 && b.y < 120 && b.x > 360;
+    return { x: b.x, y: b.y, sp: sp, oob: oob, sitting: sitting, fieldAt: fieldAt, inPlay: !!b.inPlay, rem: st.ballsRemaining };
+  }
+
+  var elbow = runParked({ x: 510, y: 50, exited: false, power: 700 });
+  assert(!elbow.oob, 'elbow park must not OOB (x=' + elbow.x.toFixed(1) + ' y=' + elbow.y.toFixed(1) + ')');
+  assert(!elbow.sitting, 'elbow park must not sit in the TR pocket (x=' + elbow.x.toFixed(1) + ' y=' + elbow.y.toFixed(1) + ' sp=' + elbow.sp.toFixed(1) + ')');
+  assert(elbow.fieldAt != null, 'elbow park must peel onto the field within 4s (x=' + elbow.x.toFixed(1) + ' y=' + elbow.y.toFixed(1) + ')');
+
+  var hang = runParked({ x: 504, y: 45, exited: false, power: 900 });
+  assert(!hang.oob, 'NE roof hang must not OOB');
+  assert(!hang.sitting, 'NE roof hang must leave (x=' + hang.x.toFixed(1) + ' y=' + hang.y.toFixed(1) + ')');
+  assert(hang.fieldAt != null, 'NE roof hang must peel onto the field (x=' + hang.x.toFixed(1) + ' y=' + hang.y.toFixed(1) + ')');
+
+  var crown = runParked({ x: 392, y: 68, exited: true, hab: 'ramp-r' });
+  assert(!crown.oob, 'copper crown park must not OOB');
+  assert(!crown.sitting, 'copper crown must not sit on the inner floor (x=' + crown.x.toFixed(1) + ' y=' + crown.y.toFixed(1) + ')');
+  assert(crown.fieldAt != null, 'copper crown must peel onto the field (x=' + crown.x.toFixed(1) + ' y=' + crown.y.toFixed(1) + ')');
+
+  function runPower(power) {
+    var st = fresh();
+    sim.launchBall(st, power);
+    var trace = [];
+    var oob = false;
+    var j;
+    for (j = 0; j < 320; j++) {
+      sim.tick(st, 1 / 60);
+      var b = st.ball;
+      if (!b) break;
+      var r = b.radius || 12;
+      var rec = { x: b.x, y: b.y, rem: st.ballsRemaining, exited: st.exitedLaunchLane, inPlay: b.inPlay };
+      trace.push(rec);
+      if (b.y - r < -0.5 || b.x + r > sim.TABLE_W + 0.5 || b.x - r < -0.5 || b.y < 0) oob = true;
+      if (b.x > 400 && b.y < 130) {
+        var ry = roofY(b.x);
+        if (ry != null && b.y - r < ry - 1.5) oob = true;
+      }
+      if (!b.inPlay) break;
+      if (st.phase === 'ready' && j > 30) break;
+      if (rec.y > 500 && rec.exited) break;
+    }
+    var last = trace[trace.length - 1] || { x: 0, y: 0, rem: st.ballsRemaining };
+    var u = trace.some(function (p) { return p.exited && p.y < 90 && p.x < 400 && p.x > 140; }) ||
+      trace.some(function (p) { return p.exited && p.y < 110 && p.x < 280; });
+    var dumped = trace.some(function (p) {
+      return p.exited && p.x < 472 - 24 && p.y > 120 && p.y < 420 && p.x > 200;
+    });
+    var hallReturn = false;
+    var entered = false;
+    var i;
+    for (i = 0; i < trace.length; i++) {
+      var p = trace[i];
+      if (p.x < 500 && p.x > 400 && p.y < 180) entered = true;
+      if (entered && p.x > 472 && p.y > 200) hallReturn = true;
+    }
+    return { u: u, dumped: dumped, hallReturn: hallReturn, oob: oob, x: last.x, y: last.y, rem: last.rem, inPlay: !!(st.ball && st.ball.inPlay) };
+  }
+
+  var full = runPower(1400);
+  assert(!full.oob, '1400 must stay in-bounds (x=' + full.x.toFixed(1) + ' y=' + full.y.toFixed(1) + ')');
+  assert(full.u, '1400 rides the U');
+  var mid = runPower(900);
+  assert(!mid.oob, '900 must stay in-bounds');
+  assert(mid.u, '900 rides the U');
+  var soft = runPower(700);
+  assert(!soft.hallReturn, '700 must not reverse down the shooter hall');
+  assert(soft.dumped && soft.inPlay, '700 dumps onto playfield');
+  assert(!soft.oob, '700 dump stays in-bounds');
+
+  var hot = fresh();
+  hot.ball.inPlay = true;
+  hot.phase = 'playing';
+  hot.exitedLaunchLane = false;
+  hot.activeLaunchPower = 1400;
+  hot.ball.x = 520;
+  hot.ball.y = 90;
+  hot.ball.vx = 80;
+  hot.ball.vy = -1600;
+  var hotOob = false;
+  var hi;
+  for (hi = 0; hi < 90; hi++) {
+    sim.tick(hot, 1 / 60);
+    var hb = hot.ball;
+    if (!hb) break;
+    var hr = hb.radius || 12;
+    if (hb.x > 400 && (hb.y - hr < -0.5 || hb.x + hr > sim.TABLE_W + 0.5 || hb.y < 0)) hotOob = true;
+    if (hb.x > 470 && hb.y < 115) {
+      var hry = roofY(hb.x);
+      if (hry != null && hb.y - hr < hry - 1.5) hotOob = true;
+    }
+  }
+  assert(!hotOob, 'fast hall-roof shot cannot fly into the HUD (x=' + hot.ball.x.toFixed(1) + ' y=' + hot.ball.y.toFixed(1) + ')');
+
+  var idx = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  assert(idx.indexOf('?v=dump16') !== -1, 'cache tag dump16');
+  assert(idx.indexOf('?v=dump12') === -1, 'old dump12 cache tag gone');
+  assert(idx.indexOf('?v=dump15') === -1, 'old dump15 cache tag gone');
+  assert(idx.indexOf('?v=dump14') === -1, 'old dump14 cache tag gone');
+  assert(idx.indexOf('?v=dump13') === -1, 'old dump13 cache tag gone');
+  var simSrc = fs.readFileSync(path.join(__dirname, '..', 'simulation.js'), 'utf8');
+  assert(simSrc.indexOf('containHallRoof') !== -1, 'hall roof contain is live');
+  assert(simSrc.indexOf('var climbing = ball.vy < -80') !== -1, 'containHallRoof attractor is speed-gated');
+  assert(simSrc.indexOf('ramp-r && ball.x > 420 && ball.y > 78') === -1, 'dump10 floor skip stays gone');
+  assert(simSrc.indexOf('dumpSlide') === -1, 'no dumpSlide');
+  assert(simSrc.indexOf('ball.y = 64') === -1 && simSrc.indexOf('ball.y=64') === -1, 'no y=64 teleport');
+  assert(simSrc.indexOf('vx = -220') === -1 && simSrc.indexOf('vx=-220') === -1, 'no along-tube kick');
+  console.log('PASS: dump13 TR elbow does not lodge (elbow field@' + elbow.fieldAt + ' crown field@' + crown.fieldAt + ' 1400 x=' + full.x.toFixed(1) + ')');
+})();
+
+(function testDump16CopperSlide() {
+  var fs = require('fs');
+  var path = require('path');
+  var right = fresh().sideRoutes.rightRamp;
+  function isChain(segs) {
+    var k;
+    for (k = 1; k < segs.length; k++) {
+      if (Math.abs(segs[k].x1 - segs[k - 1].x2) > 0.51 || Math.abs(segs[k].y1 - segs[k - 1].y2) > 0.51) return false;
+    }
+    return true;
+  }
+  function widthAt(outer, inner, idx) {
+    return Math.hypot(outer[idx].x1 - inner[idx].x1, outer[idx].y1 - inner[idx].y1);
+  }
+  assert(isChain(right.segments), 'slide outer is one polyline');
+  assert(isChain(right.guides), 'slide inner is one polyline');
+  assert(right.segments.some(function (s) { return s.x1 === 470 && s.y1 === 118; }), 'slide outer mouth (470,118)');
+  assert(right.guides.some(function (s) { return s.x1 === 408 && s.y1 === 80; }), 'slide inner lip joins crown (408,80)');
+  assert(right.guides.some(function (s) { return s.x1 === 424 && s.y1 === 100; }), 'slide inner elbow (424,100)');
+  assert(right.segments.some(function (s) { return s.x1 === 468 && s.y1 === 160; }), 'slide outer station (468,160)');
+  assert(right.guides.some(function (s) { return s.x1 === 432 && s.y1 === 160; }), 'slide inner station (432,160)');
+  var oLast = right.segments[right.segments.length - 1];
+  var iLast = right.guides[right.guides.length - 1];
+  assert(oLast.x2 === 430 && oLast.y2 === 340, 'slide outer field exit (430,340)');
+  assert(iLast.x2 === 394 && iLast.y2 === 340, 'slide inner field exit (394,340)');
+  assert(oLast.y2 === iLast.y2, 'exit cap ys match (no dump15 needle)');
+  var wExit = Math.hypot(oLast.x2 - iLast.x2, oLast.y2 - iLast.y2);
+  assert(wExit >= 28 && wExit <= 44, 'exit cap is blunt, not a needle to y=420');
+  assert(oLast.x2 < 452 && iLast.x2 < 452, 'exit cap is on the field, not in the hall');
+  assert(right.guides.every(function (s) { return Math.max(s.y1, s.y2) <= 350; }), 'inner does not hang to y=420');
+  assert(right.segments.every(function (s) { return Math.max(s.y1, s.y2) <= 350; }), 'outer does not hang to y=420');
+  assert(right.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112 && s.x2 === 408 && s.y2 === 80; }), 'crown floor joins the slide mouth');
+  assert(right.mergeInner.some(function (s) { return s.x2 === 280 && s.y2 === 80; }), 'crown inner still joins (280,80)');
+  assert(right.mergeInner.some(function (s) { return s.x1 === 368 && s.y1 === 112; }), 'Williams peel lip kept as field off-ramp');
+  assert(!right.mergeInner.some(function (s) { return Math.max(s.x1, s.x2) > 440; }), 'crown inner does not span the hall');
+  assert(right.mergeOuter.some(function (s) { return s.x1 === 524 && s.y1 === 64 && s.x2 === 518 && s.y2 === 42; }), 'NE outer elbow kept');
+  assert.strictEqual(sim.GRAVITY, 1180);
+  assert.strictEqual(sim.TABLE_PITCH_DEG, 6.8);
+  assert.strictEqual(sim.HABITRAIL_ASSIST, 0);
+  assert.strictEqual(sim.TABLE_W, 560);
+
+  var saucer = { x: 410, y: 148, r: 15 };
+  function segDist(s, p) {
+    var ax = s.x2 - s.x1, ay = s.y2 - s.y1;
+    var lenSq = ax * ax + ay * ay;
+    var tt = lenSq < 1e-6 ? 0 : Math.max(0, Math.min(1, ((p.x - s.x1) * ax + (p.y - s.y1) * ay) / lenSq));
+    var px = s.x1 + ax * tt, py = s.y1 + ay * tt;
+    return Math.sqrt((p.x - px) * (p.x - px) + (p.y - py) * (p.y - py));
+  }
+  right.guides.forEach(function (s) {
+    var d = segDist(s, saucer);
+    assert(d >= saucer.r + 6, 'slide inner clears UR saucer dist=' + d.toFixed(1));
+  });
+  right.mergeInner.forEach(function (s) {
+    var d = segDist(s, saucer);
+    assert(d >= saucer.r + 6, 'crown inner clears UR saucer dist=' + d.toFixed(1));
+  });
+
+  function roofY(x) {
+    var segs = right.mergeOuter;
+    var best = null;
+    var k;
+    for (k = 0; k < segs.length; k++) {
+      var s = segs[k];
+      var lo = Math.min(s.x1, s.x2), hi = Math.max(s.x1, s.x2);
+      if (x < lo - 0.8 || x > hi + 0.8) continue;
+      var dx = s.x2 - s.x1;
+      var tt = Math.abs(dx) < 1e-6 ? 0 : (x - s.x1) / dx;
+      if (tt < -0.05 || tt > 1.05) continue;
+      var y = s.y1 + tt * (s.y2 - s.y1);
+      if (best == null || y < best) best = y;
+    }
+    return best;
+  }
+  function onField(b) {
+    return !!(b && b.inPlay && b.x < sim.LAUNCH_LANE_LEFT - 8 && b.y > 118 && b.y < 520);
+  }
+  function onSlide(b) {
+    if (!b || !b.inPlay) return false;
+    var nearO = null, nearI = null, k, s, ax, ay, lenSq, tt, px, py, d;
+    function near(segs) {
+      var best = 1e9;
+      for (k = 0; k < segs.length; k++) {
+        s = segs[k];
+        ax = s.x2 - s.x1; ay = s.y2 - s.y1;
+        lenSq = ax * ax + ay * ay;
+        tt = lenSq < 1e-6 ? 0 : Math.max(0, Math.min(1, ((b.x - s.x1) * ax + (b.y - s.y1) * ay) / lenSq));
+        px = s.x1 + ax * tt; py = s.y1 + ay * tt;
+        d = Math.hypot(b.x - px, b.y - py);
+        if (d < best) best = d;
+      }
+      return best;
+    }
+    nearO = near(right.segments);
+    nearI = near(right.guides);
+    var inX = b.x > 360 && b.x < sim.LAUNCH_LANE_LEFT + 2;
+    var inY = b.y > 78 && b.y < 430;
+    return inX && inY && (nearO < 36 || nearI < 36);
+  }
+
+  function runParked(opts) {
+    var st = fresh();
+    st.ball.inPlay = true;
+    st.phase = 'playing';
+    st.exitedLaunchLane = opts.exited !== false;
+    st.activeHabitrail = opts.hab || null;
+    st.launchRailT = opts.railT != null ? opts.railT : null;
+    st.activeLaunchPower = opts.power || 0;
+    st.ball.x = opts.x;
+    st.ball.y = opts.y;
+    st.ball.vx = opts.vx || 0;
+    st.ball.vy = opts.vy || 0;
+    var oob = false;
+    var fieldAt = null;
+    var j;
+    for (j = 0; j < 240; j++) {
+      sim.tick(st, 1 / 60);
+      var b = st.ball;
+      if (!b) break;
+      var r = b.radius || 12;
+      if (b.y - r < -0.5 || b.x + r > sim.TABLE_W + 0.5 || b.x - r < -0.5 || b.y < 0) oob = true;
+      if (b.x > 400 && b.y < 130) {
+        var ry = roofY(b.x);
+        if (ry != null && b.y - r < ry - 1.5) oob = true;
+      }
+      if (fieldAt == null && onField(b)) fieldAt = j;
+      if (!b.inPlay) break;
+    }
+    var b = st.ball || { x: 0, y: 0, vx: 0, vy: 0, inPlay: false };
+    var sp = Math.hypot(b.vx || 0, b.vy || 0);
+    var sitting = b.inPlay && sp < 30 && b.y < 120 && b.x > 360;
+    return { x: b.x, y: b.y, sp: sp, oob: oob, sitting: sitting, fieldAt: fieldAt, inPlay: !!b.inPlay };
+  }
+
+  var elbow = runParked({ x: 510, y: 50, exited: false, power: 700 });
+  assert(!elbow.oob, 'dump13 elbow park must not OOB (x=' + elbow.x.toFixed(1) + ' y=' + elbow.y.toFixed(1) + ')');
+  assert(!elbow.sitting, 'dump13 elbow park must leave (x=' + elbow.x.toFixed(1) + ' y=' + elbow.y.toFixed(1) + ' sp=' + elbow.sp.toFixed(1) + ')');
+  assert(elbow.fieldAt != null, 'dump13 elbow park must peel onto the field (x=' + elbow.x.toFixed(1) + ' y=' + elbow.y.toFixed(1) + ')');
+
+  var crown = runParked({ x: 392, y: 68, exited: true, hab: 'ramp-r' });
+  assert(!crown.oob, 'dump13 copper crown park must not OOB');
+  assert(!crown.sitting, 'dump13 copper crown must leave (x=' + crown.x.toFixed(1) + ' y=' + crown.y.toFixed(1) + ')');
+  assert(crown.fieldAt != null, 'dump13 copper crown must peel onto the field');
+
+  function runPower(power) {
+    var st = fresh();
+    sim.launchBall(st, power);
+    var trace = [];
+    var oob = false;
+    var slideHit = false;
+    var j;
+    for (j = 0; j < 360; j++) {
+      sim.tick(st, 1 / 60);
+      var b = st.ball;
+      if (!b) break;
+      var r = b.radius || 12;
+      var rec = { x: b.x, y: b.y, rem: st.ballsRemaining, exited: st.exitedLaunchLane, inPlay: b.inPlay };
+      trace.push(rec);
+      if (onSlide(b) && rec.exited && rec.y > 100) slideHit = true;
+      if (b.y - r < -0.5 || b.x + r > sim.TABLE_W + 0.5 || b.x - r < -0.5 || b.y < 0) oob = true;
+      if (b.x > 400 && b.y < 130) {
+        var ry = roofY(b.x);
+        if (ry != null && b.y - r < ry - 1.5) oob = true;
+      }
+      if (!b.inPlay) break;
+      if (st.phase === 'ready' && j > 30) break;
+      if (rec.y > 500 && rec.exited) break;
+    }
+    var last = trace[trace.length - 1] || { x: 0, y: 0, rem: st.ballsRemaining };
+    var uLeft = trace.some(function (p) { return p.exited && p.y < 92 && p.x < 280; });
+    var dumped = trace.some(function (p) {
+      return p.exited && p.x < 472 - 24 && p.y > 120 && p.y < 430 && p.x > 180;
+    });
+    var hallReturn = false;
+    var entered = false;
+    var i;
+    for (i = 0; i < trace.length; i++) {
+      var p = trace[i];
+      if (p.x < 500 && p.x > 400 && p.y < 180) entered = true;
+      if (entered && p.x > 472 && p.y > 200) hallReturn = true;
+    }
+    var lodge = last.inPlay !== false && Math.hypot((st.ball && st.ball.vx) || 0, (st.ball && st.ball.vy) || 0) < 30 && last.y < 125 && last.x > 360;
+    return { uLeft: uLeft, dumped: dumped, hallReturn: hallReturn, oob: oob, slideHit: slideHit, lodge: lodge, x: last.x, y: last.y, inPlay: !!(st.ball && st.ball.inPlay) };
+  }
+
+  var full = runPower(1400);
+  assert(!full.oob, '1400 must stay in-bounds (x=' + full.x.toFixed(1) + ' y=' + full.y.toFixed(1) + ')');
+  assert(full.uLeft, '1400 rides the U left of 280 (x=' + full.x.toFixed(1) + ' y=' + full.y.toFixed(1) + ')');
+  var mid = runPower(900);
+  assert(!mid.oob, '900 must stay in-bounds');
+  assert(mid.uLeft, '900 rides the U left of 280 (x=' + mid.x.toFixed(1) + ' y=' + mid.y.toFixed(1) + ')');
+  var soft = runPower(700);
+  assert(!soft.hallReturn, '700 must not reverse down the shooter hall');
+  assert(!soft.oob, '700 dump stays in-bounds');
+  assert(!soft.lodge, '700 must not lodge (x=' + soft.x.toFixed(1) + ' y=' + soft.y.toFixed(1) + ')');
+  assert(soft.slideHit || (soft.dumped && soft.inPlay), '700 rolls the copper slide onto the field (x=' + soft.x.toFixed(1) + ' y=' + soft.y.toFixed(1) + ')');
+  assert(soft.dumped && soft.inPlay, '700 dumps onto playfield via the slide');
+  assert(soft.x < 452, '700 dump ends on the field (x=' + soft.x.toFixed(1) + ' y=' + soft.y.toFixed(1) + ')');
+
+  var idx = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  assert(idx.indexOf('?v=dump16') !== -1, 'cache tag dump16');
+  assert(idx.indexOf('?v=dump15') === -1, 'old dump15 cache tag gone');
+  assert(idx.indexOf('?v=dump14') === -1, 'old dump14 cache tag gone');
+  assert(idx.indexOf('?v=dump12') === -1, 'old dump12 cache tag gone');
+  var simSrc = fs.readFileSync(path.join(__dirname, '..', 'simulation.js'), 'utf8');
+  var renSrc = fs.readFileSync(path.join(__dirname, '..', 'renderer.js'), 'utf8');
+  assert(simSrc.indexOf('dumpSlide') === -1, 'no dumpSlide');
+  assert(simSrc.indexOf('if (ball.y < 86) ball.y = 92') === -1, 'no y=92 teleport');
+  assert(simSrc.indexOf('aim-blend') === -1 && simSrc.indexOf('aimBlend') === -1, 'no aim-blend');
+  assert(renSrc.indexOf('fillSausageHull(ctx, slideO, bodyI') !== -1, 'slide body is fillSausageHull on matching-cap inner');
+  assert(renSrc.indexOf('fillSausageHull(ctx, slideO, slideI') !== -1, 'slide fallback still fillSausageHull on live rails');
+  assert(renSrc.indexOf('function sausageCapsOk') !== -1, 'peel-gap hulls refuse Chaikin fill');
+  assert(renSrc.indexOf('fullInner[pi]') === -1, 'dump14 leftover fullInner chord stays gone');
+  var horse = renSrc.indexOf('function drawHorseshoeOrbit');
+  var horseEnd = renSrc.indexOf('function drawCopperMergeShoulder');
+  var horseSrc = renSrc.slice(horse, horseEnd);
+  assert(horseSrc.indexOf('clipPtsBeforePeel') !== -1, 'copper U hull still clips at the mouth');
+  console.log('PASS: dump16 copper slide (mouth 470,118  field 430,340 / 394,340  1400 x=' + full.x.toFixed(1) + ' 700 x=' + soft.x.toFixed(1) + ' y=' + soft.y.toFixed(1) + ')');
+})();
+

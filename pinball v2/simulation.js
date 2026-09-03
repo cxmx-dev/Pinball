@@ -225,7 +225,7 @@
       { x: 280, y: 275, radius: 16, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0, hit: false },
       // Wings - mid-field under the lifted U, clear of slide mouths
       { x: 155, y: 308, radius: 22, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0, hit: false },
-      { x: 343, y: 295, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0, hit: false },
+      { x: 328, y: 365, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0, hit: false },
       {
         // Weaker / smaller saver - outlane tension
         x: 210,
@@ -603,23 +603,23 @@
         exit: { x: 430, y: 335 },
         boost: 0,
         segments: [
-          { x1: 470, y1: 118, x2: 470, y2: 159 },
+          { x1: 458, y1: 80, x2: 470, y2: 88 },
+          { x1: 470, y1: 88, x2: 470, y2: 159 },
           { x1: 470, y1: 159, x2: 470, y2: 216 },
           { x1: 470, y1: 216, x2: 468, y2: 286 },
           { x1: 468, y1: 286, x2: 444, y2: 345 }
         ],
         guides: [
-          { x1: 436, y1: 156, x2: 438, y2: 159 },
-          { x1: 438, y1: 159, x2: 444, y2: 216 },
+          { x1: 424, y1: 73, x2: 428, y2: 86 },
+          { x1: 428, y1: 86, x2: 432, y2: 100 },
+          { x1: 432, y1: 100, x2: 438, y2: 124 },
+          { x1: 438, y1: 124, x2: 444, y2: 159 },
+          { x1: 444, y1: 159, x2: 444, y2: 216 },
           { x1: 444, y1: 216, x2: 442, y2: 250 },
           { x1: 442, y1: 250, x2: 436, y2: 335 },
           { x1: 436, y1: 335, x2: 428, y2: 420 }
         ],
-        // dump12: one solid copper sausage elbow. Outer is the NE floor/roof (always solid).
-        // Hall right wall (x=524) joins mergeOuter at (524,103) and continues to y=18.
-        // Inner is the U crown plus a LOWER lip at the mouth (Williams peel).
-        // Gap 408-472 is the mouth - weak plunge / dying RTL fall onto the field.
-        // Inner stays left of the RTL climb (x~456) so fast RTL 1120 can crest.
+        // shoe6: flat inner crown y=80; rounded NE elbow continues the crown (478,18)-(502,26)-(518,42)-(524,64).
         mergeOuter: [
           { x1: 524, y1: 103, x2: 524, y2: 88 },
           { x1: 524, y1: 88, x2: 524, y2: 64 },
@@ -630,12 +630,35 @@
           { x1: 420, y1: 18, x2: 348, y2: 18 },
           { x1: 348, y1: 18, x2: 280, y2: 18 }
         ],
+        // shoe6: flat inner crown y=80 after plunge mouth. Join (280,80).
         mergeInner: [
-          { x1: 368, y1: 112, x2: 408, y2: 80 },
-          { x1: 408, y1: 80, x2: 360, y2: 80 },
-          { x1: 360, y1: 80, x2: 320, y2: 80 },
-          { x1: 320, y1: 80, x2: 280, y2: 80 }
-        ]
+          { x1: 470, y1: 88, x2: 458, y2: 80 },
+          { x1: 458, y1: 80, x2: 390, y2: 80 },
+          { x1: 390, y1: 80, x2: 330, y2: 80 },
+          { x1: 330, y1: 80, x2: 280, y2: 80 }
+                ],
+        // dump2: short Williams exit sausage butted under the inner elbow.
+        // Crown channel stays open (outer y=18, inner y=80, join 280,80).
+        // Window is lower/later so a FAST U rider hugging the outer rail misses it.
+        // Soft plunge that entered the elbow but cannot crest peels onto play.
+        // Stays right of UR saucer (410,148). Does not fill the elbow or crown.
+        failDump: {
+          outer: [
+            { x1: 434, y1: 100, x2: 432, y2: 118 },
+            { x1: 432, y1: 118, x2: 360, y2: 128 },
+            { x1: 360, y1: 128, x2: 348, y2: 190 },
+            { x1: 348, y1: 190, x2: 348, y2: 255 }
+          ],
+          inner: [
+            { x1: 456, y1: 102, x2: 454, y2: 150 },
+            { x1: 454, y1: 150, x2: 430, y2: 185 },
+            { x1: 430, y1: 185, x2: 404, y2: 225 },
+            { x1: 404, y1: 225, x2: 380, y2: 257 }
+          ],
+          gate: [
+            { x1: 348, y1: 255, x2: 380, y2: 257 }
+          ]
+        }
       },
       leftFiller: {
         id: 'fill-l',
@@ -739,7 +762,35 @@
     pushPath(routes.leftRamp.segments, 'habitrail', { cyan: true });
     pushInner(routes.leftRamp.guides, { cyan: true });
     pushPath(routes.rightRamp.segments, 'habitrail');
-    pushInner(routes.rightRamp.guides);
+    function isElbowDumpMouthSeg(seg) {
+      var mx = (seg.x1 + seg.x2) * 0.5;
+      var my = (seg.y1 + seg.y2) * 0.5;
+      // dump5: window covers the peel. Keep (424,73)-(428,86) solid for U riders.
+      return mx > 400 && mx < 460 && my > 88 && my < 250;
+    }
+    function pushRightGuides(segs) {
+      if (!segs) return;
+      var i;
+      for (i = 0; i < segs.length; i++) {
+        var seg = segs[i];
+        var top = seg.y1 < 200 && seg.y2 < 200;
+        var pieces = top ? subdivideSeg(seg, 20) : [seg];
+        var mouth = isElbowDumpMouthSeg(seg);
+        var p;
+        for (p = 0; p < pieces.length; p++) {
+          var w = {
+            x1: pieces[p].x1,
+            y1: pieces[p].y1,
+            x2: pieces[p].x2,
+            y2: pieces[p].y2,
+            kind: top ? 'habitrail' : 'guide'
+          };
+          if (mouth) w.failMouth = true;
+          walls.push(w);
+        }
+      }
+    }
+    // Orange hook is rightRamp.segments only (thin rail). Guides were a fat mesh over the hole.
     function pushMerge(segs, kind) {
       if (!segs) return;
       var m;
@@ -765,9 +816,28 @@
     var copperOuter = (routes.rightRamp.mergeOuter || []).filter(function (seg) { return !isHallOuterDup(seg); });
     pushMerge(copperOuter, 'habitrail');
     pushMerge(routes.rightRamp.mergeInner, 'habitrail');
-    // dump11: hall left wall already starts at LAUNCH_WIRE_Y1=103 (lane).
-    // Do not extend it UP into the U - that sealed the Williams inner-wall gap.
-    // Inner lip starts at the hall join and drops toward the field so the outer floor fills.
+    function pushFailDump(segs, flags) {
+      if (!segs) return;
+      var i;
+      for (i = 0; i < segs.length; i++) {
+        var pieces = subdivideSeg(segs[i], 16);
+        var p;
+        for (p = 0; p < pieces.length; p++) {
+          var w = {
+            x1: pieces[p].x1,
+            y1: pieces[p].y1,
+            x2: pieces[p].x2,
+            y2: pieces[p].y2,
+            kind: 'habitrail',
+            dumpRamp: true
+          };
+          if (flags && flags.gate) w.dumpGate = true;
+          walls.push(w);
+        }
+      }
+    }
+    // Inner orange rail is mergeInner + hook segments (the stroke).
+    // Do not brick the hall with a launch-left strip or a join chord in the throat.
     function pushFiller(fill) {
       if (!fill) return;
       pushPath(fill.segments, 'filler');
@@ -1090,6 +1160,25 @@
     return getRestDrainBounds();
   }
 
+  function dumpCyanInnerCap(walls) {
+    var i;
+    for (i = 0; i < walls.length; i++) {
+      var w = walls[i];
+      if (!w || !w.cyan) continue;
+      if (w.kind !== 'habitrail') continue;
+      if (Math.min(w.x1, w.x2) < 96) continue;
+      if (Math.max(w.x1, w.x2) > 278) continue;
+      if (Math.min(w.y1, w.y2) < 72 || Math.max(w.y1, w.y2) > 92) continue;
+      if (Math.abs(w.y1 - w.y2) > 10) continue;
+      function capY(x) {
+        return 80 + Math.max(0, 268 - x) * 0.28;
+      }
+      w.y1 = capY(w.x1);
+      w.y2 = capY(w.x2);
+    }
+    return walls;
+  }
+
   function createWalls() {
     var bounds = getRestDrainBounds();
     var leftRest = createFlipper('left');
@@ -1117,8 +1206,7 @@
     walls.push({ x1: 36, y1: archLeftY, x2: 36, y2: TABLE_H - 80, kind: 'rail', cyan: true });
 
     // Outer right (cabinet edge past launch lane)
-    // dump12: hall outer continues UP into the NE elbow (mergeOuter starts at 524,103).
-    walls.push({ x1: TABLE_W - 36, y1: 64, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' });
+    walls.push({ x1: TABLE_W - 36, y1: LAUNCH_WIRE_Y1, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' });
 
     // Launch lane
     // orbit1: leftover wireform beak (392,103)->(360,80) deleted. Vertical shooter wall stays.
@@ -1154,6 +1242,7 @@
 
     // Real left orbit / right habitrail travel paths (replaces token diagonal kick chutes)
     walls = walls.concat(createHabitrailWalls());
+    dumpCyanInnerCap(walls);
 
     var triBody = createPulseTriangle();
     if (triBody && triBody.sides) {
@@ -1266,6 +1355,7 @@
       ballSaveFlash: 0,
       launchDashRewarded: false,
       themeId: 'void-pulse',
+      orangeElbowUp: false,
       themeFlash: 0,
       rushTimer: 0,
       rushName: null,
@@ -2143,10 +2233,8 @@
   }
 
   function horseshoeFarmPocket(state, ball) {
-    if (!ball || ball.y < 6 || ball.y > 110) return false;
-    if (ball.x >= 48 && ball.x <= 140) return true;
-    if (ball.x >= 170 && ball.x <= 310) return true;
-    return false;
+    // Two seats: cyan roof/inner cap, and orange inner wire at the join (~280).
+    return !!(ball && ball.x >= 70 && ball.x <= 360 && ball.y >= 6 && ball.y <= 112);
   }
 
   function sausageFarmPocket(state, ball) {
@@ -2301,39 +2389,20 @@
   function unstickOneHorseshoeCrown(state, ball, dt) {
     if (skipBallAssist(state, ball)) return;
     if (!ball || !ball.inPlay) return;
-    if (!horseshoeFarmPocket(state, ball)) {
-      ball._horseStuckT = 0;
-      return;
-    }
+    if (!horseshoeFarmPocket(state, ball)) return;
     var sp = vecLen(ball.vx, ball.vy);
-    if (sp < 40) {
-      ball._horseStuckT = (ball._horseStuckT || 0) + (dt || 1 / 60);
-    } else {
-      ball._horseStuckT = 0;
+    if (sp >= 110) return;
+    var cyanRoof = ball.x < 270;
+    if (cyanRoof) {
+      if (ball.vy >= 280) return;
+      ball.vx = -50;
+      ball.vy = 380;
+      ball.y += 10;
       return;
     }
-    if ((ball._horseStuckT || 0) < 0.28) return;
-    // Cyan crown (screenshot): drop onto the field. Center join keeps a light nudge.
-    if (ball.x < 140) {
-      state.activeHabitrail = null;
-      if (ball.y < 120) ball.y = Math.min(140, ball.y + 24);
-      ball.vy = Math.max(ball.vy, 140);
-      ball.vx = Math.max(ball.vx, 80);
-      ball._horseStuckT = 0;
-      return;
-    }
-    if (ball.x < 420) {
-      if (ball.vx < 28) ball.vx += 18;
-      if (ball.vy < 12) ball.vy += 8;
-    } else if (ball.vy < 24) {
-      ball.vy += 16;
-    }
-    var sp2 = vecLen(ball.vx, ball.vy);
-    if (sp2 > 55) {
-      ball.vx *= 55 / sp2;
-      ball.vy *= 55 / sp2;
-    }
-    ball._horseStuckT = 0.15;
+    if (ball.vx <= -240 && ball.vy >= 40) return;
+    ball.vx = -380;
+    ball.vy = 140;
   }
 
   function unstickHorseshoeCrown(state, dt) {
@@ -2414,7 +2483,6 @@
     // Copper lodge box: do not snap the ball into the orange inner V.
     if (ball.x >= 368 && ball.x <= 480) return;
     if (ball.vy < 20) return;
-    if (vecLen(ball.vx, ball.vy) < 180) return;
     if (nearHorseshoeSpinner(state, ball)) return;
     var left = state.sideRoutes.leftRamp;
     var right = state.sideRoutes.rightRamp;
@@ -2772,33 +2840,11 @@
   }
 
   function peelOutOfShooterLane(ball, intoU) {
+    // dump5: no x/y teleport, no vx=-200 hidden kick. Lane walls stay one-way.
     var r = ball.radius || BALL_RADIUS;
-    if (ball.x + r <= LAUNCH_LANE_LEFT) return;
-    // Hall leak (screenshot ball in the copper dashes): kick to playfield.
-    // Merge-mouth overlap stays a vx reject so U riders can crest.
-    if (intoU || ball.y < 120) {
-      if (ball.x + r > LAUNCH_LANE_LEFT && ball.x < LAUNCH_LANE_LEFT + r + 2 && ball.vx > 0) {
-        ball.vx *= -0.12;
-      }
-      return;
+    if (ball.x + r > LAUNCH_LANE_LEFT && ball.x < LAUNCH_LANE_LEFT + r + 2 && ball.vx > 0) {
+      ball.vx *= -0.12;
     }
-    if (ball.y > FLIPPER_ROW_Y - 12) {
-      ball.x = Math.min(ball.x, LAUNCH_LANE_LEFT - r - 2);
-      if (ball.vx > 0) ball.vx *= -0.25;
-      return;
-    }
-    if (ball.x < LAUNCH_LANE_LEFT + 8) {
-      if (ball.vx > 0) ball.vx *= -0.12;
-      return;
-    }
-    // Stuck in the copper dashes (screenshot). Fast travel keeps rolling.
-    if (vecLen(ball.vx, ball.vy) > 140) {
-      if (ball.vx > 0) ball.vx *= -0.12;
-      return;
-    }
-    ball.x = LAUNCH_LANE_LEFT - r - 3;
-    ball.vx = -Math.max(Math.abs(ball.vx), 170);
-    if (ball.vy < 50) ball.vy = 80;
   }
 
   function sealSausageRailJoin(state, ball) {
@@ -2894,57 +2940,22 @@
     return false;
   }
 
-
-  /** dump12: keep the ball inside the NE outer copper. Fast plunge used to
-   *  tunnel the thin roof above the hall (x high, y small) into the HUD. */
-  function containHallRoof(state) {
-    var ball = state.ball;
-    if (!ball || !ball.inPlay) return;
-    var r = ball.radius || BALL_RADIUS;
-    if (ball.y < 140 && ball.x + r > TABLE_W - 36) {
-      ball.x = TABLE_W - 36 - r;
-      if (ball.vx > 0) ball.vx = -Math.abs(ball.vx) * HABITRAIL_RESTITUTION;
-    }
-    if (ball.x < 400 || ball.x > TABLE_W) return;
-    if (ball.y > LAUNCH_WIRE_Y1 + 12 && ball.x < LAUNCH_LANE_LEFT) return;
-    if (ball.y > LAUNCH_WIRE_Y1 + 8 && ball.x >= LAUNCH_LANE_LEFT) return;
-    var right = state.sideRoutes && state.sideRoutes.rightRamp;
-    var outer = (right && right.mergeOuter) || [];
-    var near = nearestPointOnSegments(ball.x, ball.y, outer);
-    if (!near) return;
-    var gate = r + 36;
-    if (ball.y - r < 18) gate = r + 90;
-    if (near.dist > gate) return;
-    var ix = 456 - near.x;
-    var iy = 58 - near.y;
-    var il = vecLen(ix, iy);
-    if (il < 1e-6) {
-      ix = -1;
-      iy = 1;
-      il = Math.sqrt(2);
-    }
-    ix /= il;
-    iy /= il;
-    var side = (ball.x - near.x) * ix + (ball.y - near.y) * iy;
-    var need = r + 0.35;
-    // Inside the sausage: merge walls own contact. Only pull back if we
-    // tunneled to the OUTSIDE (above the roof / right of the hall).
-    if (side >= 0 && (ball.y - r) >= 16) return;
-    if (side >= need) return;
-    ball.x = near.x + ix * need;
-    ball.y = near.y + iy * need;
-    var vn = ball.vx * ix + ball.vy * iy;
-    if (vn < 0) {
-      ball.vx -= (1 + HABITRAIL_RESTITUTION) * vn * ix;
-      ball.vy -= (1 + HABITRAIL_RESTITUTION) * vn * iy;
-    }
+  function orangeElbowHoldSegs() {
+    return [
+      { x1: 470, y1: 88, x2: 488, y2: 64, kind: 'habitrail', merge: true, elbowHold: true },
+      { x1: 488, y1: 64, x2: 504, y2: 42, kind: 'habitrail', merge: true, elbowHold: true },
+      { x1: 504, y1: 42, x2: 512, y2: 30, kind: 'habitrail', merge: true, elbowHold: true },
+      { x1: 458, y1: 80, x2: 420, y2: 80, kind: 'habitrail', merge: true, elbowHold: true }
+    ];
   }
 
   function resolveWallCollisions(state) {
     var ball = state.ball;
     var r = ball.radius;
+    var wallList = state.walls;
+    if (state.orangeElbowUp) wallList = wallList.concat(orangeElbowHoldSegs());
 
-    state.walls.forEach(function (wall) {
+    wallList.forEach(function (wall) {
       if (wall.kind === 'lane') {
         var playfieldSide = ball.x + r < LAUNCH_LANE_LEFT + 1 && ball.y > LAUNCH_WIRE_Y1 + 8;
         if (!state.exitedLaunchLane && !playfieldSide) return;
@@ -2952,12 +2963,9 @@
       // Plunge still in the hall skips the short wire so it can reach the outer U.
       // RTL / copper U riders KEEP the wire and roll along it (dump4 geometry).
       if (wall.wireform || wall.kind === 'rail') {
-        var hallRight = Math.abs(wall.x1 - (TABLE_W - 36)) < 0.6 && Math.abs(wall.x2 - (TABLE_W - 36)) < 0.6;
-        if (!hallRight) {
-          var fullPlunge = !state.exitedLaunchLane && launchChargeU(state) >= RIDE_FLOOR_U;
-          var uRider = !!(state.activeHabitrail && ball.y < 92);
-          if (fullPlunge || uRider) return;
-        }
+        var fullPlunge = !state.exitedLaunchLane && launchChargeU(state) >= RIDE_FLOOR_U;
+        var uRider = !!(state.activeHabitrail && ball.y < 92);
+        if (fullPlunge || uRider) return;
       }
       if (wall.kind === 'tri-solid') return; // rubber + solid live in resolvePulseTriangle
       if (wall.kind === 'filler' && ball.y < 500 && (state.activeHabitrail ||
@@ -2978,13 +2986,42 @@
         // hang a second roof in the channel.
         return;
       }
+      if (wall.failMouth) {
+        // dump5: falling / dying copper elbow peels onto the dump sausage.
+        // Fast outer-hug and RTL/LTR climbers keep the inner rail.
+        var spM = vecLen(ball.vx, ball.vy);
+        var huggingOuter = ball.y < 50 && spM > 300;
+        var climbing = ball.vy < -80 && spM > 200;
+        var inPeel = ball.x >= 360 && ball.x <= 466 && ball.y >= 88 && ball.y <= 255 && ball.vy > -40;
+        var floorSit = ball.x >= 388 && ball.x <= 458 && ball.y >= 70 && ball.y <= 92 && spM < 200;
+        if ((inPeel || floorSit) && !climbing && !huggingOuter) return;
+      }
+      // dump5: (424,73)-(428,86) lip is a dump mouth, not an RTL backboard.
+      var elbowLip = (wall.kind === 'habitrail' || wall.kind === 'guide') &&
+        Math.min(wall.x1, wall.x2) >= 420 && Math.max(wall.x1, wall.x2) <= 432 &&
+        Math.min(wall.y1, wall.y2) >= 70 && Math.max(wall.y1, wall.y2) <= 90;
+      if (elbowLip && ball.y < 78 && ball.x <= 440 && vecLen(ball.vx, ball.vy) > 280) return;
+      if (wall.dumpRamp && !wall.dumpGate) {
+        // dump5: peel is under the elbow. U riders and climbing RTL/LTR
+        // must not hit dump scrap in the tube. Slow fail uses the walls.
+        var spD = vecLen(ball.vx, ball.vy);
+        var climbing = !!state.activeHabitrail && ball.vy < -80 && spD > 180;
+        if (climbing) return;
+        if (ball.y < 112) return;
+      }
+      if (wall.dumpGate) {
+        // One-way: peel down onto the field. Field balls cannot climb back in.
+        var peeling = ball.vy > -10 && ball.vx < 80;
+        var fromTube = !state.exitedLaunchLane;
+        if (peeling || fromTube) return;
+      }
       if (wall.merge) {
-        // dump11: plunge / hall riders MUST hit the outer floor.
-        // dump10 skipped merge for ramp-r at x>420 y>78, which is the whole elbow - trash chute.
-        // RTL climbers below the raised underside still skip so they do not bounce from under.
-        if (state.activeHabitrail === 'ramp-l' && ball.y > 90 && ball.x < 280) return;
-        var ridingPlunge = state.launchRailT != null || !state.exitedLaunchLane ||
-          isBallInLaunchLane(state) || ball.x >= LAUNCH_LANE_LEFT - 2;
+        // merge3: plunge / launchRailT riders MUST hit the floor.
+        // RTL climbers below the raised floor skip so they do not bounce from under.
+        if (state.activeHabitrail === 'ramp-l' && ball.y > 90) return;
+        // RTL in the right slide skips the raised underside. Once in the U, the floor holds.
+        if (state.activeHabitrail === 'ramp-r' && ball.x > 420 && ball.y > 78) return;
+        var ridingPlunge = state.launchRailT != null || (!state.exitedLaunchLane && isBallInLaunchLane(state));
         if (!ridingPlunge) {
           var underFloor = ball.y > 115 && state.exitedLaunchLane && !isBallInLaunchLane(state);
           if (underFloor) return;
@@ -3298,6 +3335,40 @@
    * Copper U / merge pocket: peel every live ball out of the orange V and
    * the 500 dump-mouth pinch. Nudge only - no teleport, no rail snap.
    */
+  function hookDumpExitBox(ball) {
+    return !!(ball && ball.x >= 385 && ball.x <= 530 && ball.y >= 8 && ball.y <= 220);
+  }
+
+  function orangeElbowHoodBox(ball) {
+    return !!(ball && ball.x >= 400 && ball.x <= 530 && ball.y >= 8 && ball.y <= 105);
+  }
+
+  function aimOneHookDumpExit(state, ball) {
+    if (!ball || !ball.inPlay) return;
+    if (!state || !state.exitedLaunchLane) return;
+    if (state.orangeElbowUp) return;
+    if (!hookDumpExitBox(ball)) return;
+    if (ball.x < 378) return;
+    var sp = vecLen(ball.vx, ball.vy);
+    if (ball.y < 75 && ball.vx < 0 && sp > 350) return;
+    var hood = orangeElbowHoodBox(ball);
+    if (!hood && sp > 520) return;
+    if (ball.vx <= -240 && ball.vy >= 80 && ball.x < 430) return;
+    var ux = -0.82;
+    var uy = 0.57;
+    var keep = sp;
+    if (hood && keep < 180) keep = 180;
+    else if (keep < 90) keep = 90;
+    ball.vx = ux * keep;
+    ball.vy = uy * keep;
+  }
+
+  function aimHookDumpExit(state) {
+    var balls = allLiveBalls(state);
+    var i;
+    for (i = 0; i < balls.length; i++) aimOneHookDumpExit(state, balls[i]);
+  }
+
   function unstickCopperMergePocket(state) {
     var balls = allLiveBalls(state);
     var i;
@@ -3785,8 +3856,6 @@
       var intoGap = flipper.side === 'left' ? 1 : -1;
 
       if (dist < hitDist + 3 && speed < 110) {
-        // dump10: at the hub, the pivot disc holds the catch. Do not shove through the bat.
-        if (t < FLIPPER_PIVOT_R + 4) return;
         // Tip crawl: drop into the hole rather than oscillating forever on the bat face
         if (t > segLen * 0.5 && Math.abs(ball.x - tip.x) < 28) {
           ball.x = tip.x + intoGap * (ball.radius + 4);
@@ -4040,22 +4109,6 @@
 
   /** Discrete capsule hit on either face. Parked = passive; sweeping = slap. */
   function collideBallWithFlipper(state, ball, flipper) {
-    // dump10: solid hub at the pivot so a catch cannot fall through the bat base.
-    // Swept by resolveFlipperCollisions. Raised pair still leaves the center hole.
-    var hubR = flipper.role === 'upper' ? Math.max(flipper.width * 0.7, 8) : FLIPPER_PIVOT_R;
-    var pdx = ball.x - flipper.pivotX;
-    var pdy = ball.y - flipper.pivotY;
-    var pdist = vecLen(pdx, pdy);
-    var pivotMin = ball.radius + hubR;
-    if (pdist < pivotMin && pdist > 1e-6) {
-      var pn = normalize(pdx, pdy);
-      ball.x = flipper.pivotX + pn.x * pivotMin;
-      ball.y = flipper.pivotY + pn.y * pivotMin;
-      var prv = reflectVelocity(ball.vx, ball.vy, pn.x, pn.y, FLIPPER_RESTITUTION_PASSIVE);
-      ball.vx = prv.vx;
-      ball.vy = prv.vy;
-      return true;
-    }
     var hit = closestPointOnFlipper(ball.x, ball.y, flipper);
     if (!hit) return false;
     var hitDist = ball.radius + flipper.width * 0.5;
@@ -4367,7 +4420,6 @@
     guideShooterLane(state, dt);
     blockShooterLaneIntrusion(state);
     resolveWallCollisions(state);
-    containHallRoof(state);
     ejectSausageInteriors(state);
     unstickTriangleInterior(state);
     assistHabitrails(state, dt);
@@ -4383,6 +4435,7 @@
     unstickFromCorners(state);
     unstickWallSlide(state);
     unstickCopperMergePocket(state);
+    aimHookDumpExit(state);
     unstickSausageCusp(state, dt);
     unstickHorseshoeCrown(state, dt);
     resolvePostCollisions(state);

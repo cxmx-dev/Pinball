@@ -219,28 +219,13 @@
     ctx.fillStyle = pfGrad;
     ctx.fill();
 
-    // Phase 1/4: Imagine playfield still + optional ambient under actors.
-    // Clip out the shooter column — void-pulse still has a full-height magenta
-    // bar there that reads as a fake wall next to the copper lane.
+    // Phase 1/4: Imagine playfield still + optional ambient under actors
     var Assets = getAssets();
-    var laneLeft = root.PinballSim && root.PinballSim.LAUNCH_LANE_LEFT != null
-      ? root.PinballSim.LAUNCH_LANE_LEFT
-      : tw - 88;
     if (Assets && Assets.drawPlayfieldLayer) {
       ctx.save();
       drawRoundedRect(ctx, 0, 0, tw, th, 12);
       ctx.clip();
-      ctx.save();
-      ctx.beginPath();
-      var stillRight = Math.max(8, Math.min(laneLeft - 6, 400));
-      ctx.moveTo(0, 0);
-      ctx.lineTo(stillRight, 0);
-      ctx.lineTo(stillRight, th);
-      ctx.lineTo(0, th);
-      ctx.closePath();
-      ctx.clip();
       Assets.drawPlayfieldLayer(ctx, tw, th);
-      ctx.restore();
       ctx.restore();
     }
 
@@ -296,10 +281,10 @@
     laneGrad.addColorStop(0, 'rgba(42,18,8,0.92)');
     laneGrad.addColorStop(1, 'rgba(88,36,12,0.96)');
     ctx.fillStyle = laneGrad;
-    ctx.fillRect(laneLeft, joinY, tw - laneLeft, th - 70 - joinY);
+    ctx.fillRect(laneLeft, joinY, tw - laneLeft - 4, th - 70 - joinY);
     ctx.strokeStyle = 'rgba(255,160,64,0.28)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(laneLeft + 1, joinY, Math.max(4, tw - laneLeft - 2), th - 72 - joinY);
+    ctx.strokeRect(laneLeft + 1, joinY, tw - laneLeft - 6, th - 72 - joinY);
   }
 
   /**
@@ -1122,144 +1107,67 @@
   }
 
 
-  function clipPtsBeforePeel(pts, lipX) {
-    if (!pts || pts.length < 2) return pts || [];
-    lipX = lipX == null ? 408 : lipX;
-    var out = [];
-    var i;
-    for (i = 0; i < pts.length; i++) {
-      var p = pts[i];
-      var prev = out.length ? out[out.length - 1] : null;
-      if (prev && prev.x >= lipX - 2 && p.y > 90 && p.x < lipX - 2) break;
-      if (prev && p.x > lipX + 0.51 && prev.x <= lipX + 0.51) {
-        var dxp = p.x - prev.x;
-        var tp = Math.abs(dxp) < 1e-6 ? 0 : (lipX - prev.x) / dxp;
-        out.push({ x: lipX, y: prev.y + tp * (p.y - prev.y) });
-        break;
-      }
-      out.push(p);
-    }
-    return out;
-  }
-
   function drawHorseshoeOrbit(ctx, left, right, pulse) {
     if (!left) return;
     var simple = q().tubeDetail === 'simple' || (q().tier === 'phone');
     var tubeW = 5.5;
     var JOIN_X = 280;
-    var LIP_X = 408;
-    var TABLE_W = 560;
-    var TABLE_H = 860;
     var fullOuter = horseshoeOuterPoints(left, right);
     var fullInner = horseshoeInnerPoints(left, right);
     if (!fullOuter || fullOuter.length < 2 || !fullInner || fullInner.length < 2) return;
-
-    // dump12: never Chaikin/hull-fill across the 408-472 mouth. That slash
-    // melted the NE floor into hanging strips and left a hole above the hall.
-    var cyanO = clipPtsAtJoinX(fullOuter, JOIN_X, true);
-    var cyanI = clipPtsAtJoinX(fullInner, JOIN_X, true);
-    var copO = clipPtsBeforePeel(clipPtsAtJoinX(fullOuter, JOIN_X, false), LIP_X);
-    var copI = clipPtsBeforePeel(clipPtsAtJoinX(fullInner, JOIN_X, false), LIP_X);
-    fillSausageHull(ctx, cyanO, cyanI, 'cyan', simple, tubeW);
-    fillSausageHull(ctx, copO, copI, 'copper', simple, tubeW);
-
-    ctx.save();
-    var seamInner = clipPtsBeforePeel(fullInner, LIP_X);
-    if (fullOuter.length >= 2 && seamInner.length >= 2) {
-      strokeExact(ctx, fullOuter.concat(seamInner.slice().reverse()), true);
-      ctx.clip();
+    var outer = chaikinSmooth(fullOuter, 2);
+    var inner = chaikinSmooth(fullInner, 2);
+    var cyanO = clipPtsAtJoinX(outer, JOIN_X, true);
+    var cyanI = clipPtsAtJoinX(inner, JOIN_X, true);
+    if (cyanO.length >= 2 && cyanI.length >= 2) {
+      fillSausageHull(ctx, cyanO, cyanI, 'cyan', simple, tubeW);
     }
-    var cyanFill = ctx.createLinearGradient(0, 0, 0, 140);
-    cyanFill.addColorStop(0, 'rgba(90, 224, 255, 1)');
-    cyanFill.addColorStop(0.55, 'rgba(18, 150, 200, 1)');
-    cyanFill.addColorStop(1, 'rgba(6, 70, 100, 1)');
-    ctx.fillStyle = cyanFill;
-    ctx.fillRect(0, 0, JOIN_X, TABLE_H);
-    var copperFill = ctx.createLinearGradient(JOIN_X, 0, JOIN_X, 140);
-    copperFill.addColorStop(0, 'rgba(255, 176, 64, 1)');
-    copperFill.addColorStop(0.55, 'rgba(214, 88, 20, 1)');
-    copperFill.addColorStop(1, 'rgba(120, 44, 8, 1)');
-    ctx.fillStyle = copperFill;
-    ctx.fillRect(JOIN_X, 0, TABLE_W - JOIN_X, TABLE_H);
-    var seam = ctx.createLinearGradient(JOIN_X - 5, 0, JOIN_X + 5, 0);
-    seam.addColorStop(0, 'rgba(90, 224, 255, 1)');
-    seam.addColorStop(1, 'rgba(255, 176, 64, 1)');
-    ctx.fillStyle = seam;
-    ctx.fillRect(JOIN_X - 5, 0, 10, TABLE_H);
-    ctx.restore();
-
-    // NE elbow: offset sausage along the live outer roof (continuous, so
-    // Chaikin is safe). No hall-top closer-cap (472,103) - that was a slash.
-    var neOuter = clipPtsAtJoinX(fullOuter, LIP_X, false);
-    if (neOuter && neOuter.length >= 2) {
-      var neInner = [];
-      var ni;
-      for (ni = 0; ni < neOuter.length; ni++) {
-        var p = neOuter[ni];
-        var prev = neOuter[ni === 0 ? 0 : ni - 1];
-        var next = neOuter[ni === neOuter.length - 1 ? ni : ni + 1];
-        var tx = next.x - prev.x;
-        var ty = next.y - prev.y;
-        var tl = Math.sqrt(tx * tx + ty * ty) || 1;
-        var nx = -ty / tl;
-        var ny = tx / tl;
-        if (nx * (456 - p.x) + ny * (58 - p.y) < 0) {
-          nx = -nx;
-          ny = -ny;
+    var eO = [];
+    var mo = right && right.mergeOuter;
+    if (mo) {
+      var ei;
+      for (ei = 0; ei < mo.length; ei++) {
+        var es = mo[ei];
+        if (Math.min(es.x1, es.x2) >= 408 && Math.min(es.y1, es.y2) < 110) {
+          if (!eO.length) eO.push({ x: es.x1, y: es.y1 });
+          eO.push({ x: es.x2, y: es.y2 });
         }
-        neInner.push({ x: p.x + nx * 62, y: p.y + ny * 62 });
       }
-      var neHull = neOuter.concat(neInner.slice().reverse());
+    }
+    var eI = [{ x: 470, y: 88 }, { x: 458, y: 80 }, { x: 430, y: 80 }, { x: 408, y: 80 }];
+    if (eO.length >= 2) fillSausageHull(ctx, eO, eI, 'copper', simple, tubeW);
+    var bar = segsToPoints(right && right.mergeOuter);
+    var hook = segsToPoints(right && right.segments);
+    var join = [{ x: 478, y: 18 }, { x: 474, y: 48 }, { x: 470, y: 88 }];
+    var orange = [];
+    appendOriented(orange, bar);
+    appendOriented(orange, join);
+    appendOriented(orange, hook);
+    if (orange.length >= 2) {
+      orange = chaikinSmooth(orange, 2);
       ctx.save();
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      strokeExact(ctx, neHull, true);
-      var neg = ctx.createLinearGradient(LIP_X, 18, 524, 103);
-      neg.addColorStop(0, 'rgba(255, 176, 64, 1)');
-      neg.addColorStop(0.55, 'rgba(214, 88, 20, 1)');
-      neg.addColorStop(1, 'rgba(120, 44, 8, 1)');
-      ctx.fillStyle = neg;
-      ctx.fill();
+      ctx.shadowColor = 'rgba(255, 160, 40, 0.45)';
+      ctx.shadowBlur = 8;
       ctx.strokeStyle = 'rgba(255, 168, 64, 0.95)';
       ctx.lineWidth = tubeW;
-      strokeExact(ctx, neOuter, false);
+      strokeExact(ctx, orange, false);
       ctx.stroke();
       ctx.restore();
     }
-
-    // Crown rims. Outer is one polyline so Chaikin is safe. Inner peel is
-    // stroked exact - do not Chaikin a gapped hull.
-    var outerRim = chaikinSmooth(fullOuter, 2);
-    var innerRim = clipPtsBeforePeel(fullInner, LIP_X);
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    var rim = ctx.createLinearGradient(0, 0, 560, 0);
-    rim.addColorStop(0, 'rgba(80, 220, 255, 0.95)');
-    rim.addColorStop((JOIN_X - 8) / 560, 'rgba(80, 220, 255, 0.95)');
-    rim.addColorStop((JOIN_X + 8) / 560, 'rgba(255, 168, 64, 0.95)');
-    rim.addColorStop(1, 'rgba(255, 168, 64, 0.95)');
-    ctx.strokeStyle = rim;
-    ctx.lineWidth = tubeW;
-    strokeExact(ctx, outerRim, false);
-    ctx.stroke();
-    strokeExact(ctx, innerRim, false);
-    ctx.stroke();
-    var peel = null;
-    var pi;
-    for (pi = 0; pi < fullInner.length; pi++) {
-      if (fullInner[pi].y > 90 && fullInner[pi].x < LIP_X - 2) {
-        peel = [ { x: LIP_X, y: 80 }, fullInner[pi] ];
-        break;
-      }
-    }
-    if (peel) {
+    var innerBar = segsToPoints(right && right.mergeInner);
+    if (innerBar.length >= 2) {
+      innerBar = chaikinSmooth(innerBar, 2);
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.strokeStyle = 'rgba(255, 168, 64, 0.95)';
       ctx.lineWidth = tubeW;
-      strokeExact(ctx, peel, false);
+      strokeExact(ctx, innerBar, false);
       ctx.stroke();
+      ctx.restore();
     }
-    ctx.restore();
   }
 
   function drawCopperMergeShoulder(ctx, ramp, pulse) {
@@ -2097,15 +2005,10 @@
       ctx.fillStyle = '#ff6688';
       applyShadow(ctx, 'rgba(255,80,120,0.9)', 24);
       ctx.fillText('GAME OVER', canvas.width / 2, canvas.height * 0.38);
-      ctx.font = '18px Orbitron, sans-serif';
+      ctx.font = '14px Orbitron, sans-serif';
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
       ctx.shadowBlur = 0;
-      ctx.fillText('Press here to Restart', canvas.width / 2, canvas.height * 0.38 + 44);
-      ctx.font = '14px Orbitron, sans-serif';
-      ctx.fillStyle = 'rgba(200,230,255,0.7)';
-      ctx.fillText('(or NumPad 7)', canvas.width / 2, canvas.height * 0.38 + 66);
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.fillText('Final: ' + formatScore(state.score), canvas.width / 2, canvas.height * 0.38 + 92);
+      ctx.fillText('Final: ' + formatScore(state.score), canvas.width / 2, canvas.height * 0.38 + 40);
     }
     ctx.restore();
   }
@@ -2236,7 +2139,7 @@
       }
       ctx.font = 'bold 18px Orbitron, sans-serif';
       ctx.fillStyle = '#aaffcc';
-      ctx.fillText('TOTAL  ' + formatScore(state.eobDisplay || 0), canvas.width * 0.5, canvas.height * 0.34 + steps.length * 22 + 16);
+      ctx.fillText('BONUS  ' + formatScore(state.eobDisplay || 0), canvas.width * 0.5, canvas.height * 0.34 + steps.length * 22 + 16);
       ctx.restore();
     }
 
