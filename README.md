@@ -75,14 +75,3 @@ node verify-browser.js
 ```
 
 Optional: set env `SCRATCH` to a writable folder for dual-run logs (defaults to OS temp).
-
-
-## Changelog
-
-**2026-09-03** - VOID PULSE dump16: thin copper elbow (bar joins hook, hole open), solid elbow fill default DOWN to a flippable ball, cyan inner cap cannot rest, crown unstick per-ball, just-crest dump aims left of the UR lock, GAME OVER overlay one stack. Cache `?v=dump16`.
-**2026-09-02** - VOID PULSE dump12: seal orange hall roof; browser harness width 600. Cache `?v=dump12`.
-**2026-09-02** - VOID PULSE dump10: solid copper elbow, inner-wall peel, seal left flipper pivot. Cache `?v=dump10`.
-
-**2026-08-26** — VOID PULSE table pass (t139): cyan boingers in/up (C 125,708 / B 352,707), right 300 at 343,295, mid 500 at 340,520, horseshoe crown y=18 joining at x=280, rails follow the traces. Cache `?v=opt1`.
-**2026-08-26** — VOID PULSE opt1: unlatch L Flip on pointerup/leave/blur, clip so no magenta rect outside the rail, game-over restart hits the visible label/card. Cache `?v=opt1`.
-**2026-08-26** - VOID PULSE opt2: unstick horseshoe crown shelf (wider channel, join 280,80), keep opt1 sausage peel / flipper unlatch / magenta clip / restart hit. Cache `?v=opt2`.
