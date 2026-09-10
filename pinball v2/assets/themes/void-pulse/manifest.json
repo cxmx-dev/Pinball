@@ -1,0 +1,30 @@
+{
+  "id": "void-pulse",
+  "name": "Void Pulse",
+  "tagline": "Cyan-magenta cyber rail",
+  "tableTitle": "VOID PULSE",
+  "hudAccent": "#00f0ff",
+  "playfield": {
+    "still": "playfield/base.png",
+    "ambientFrames": [
+      "playfield/ambient-0.png",
+      "playfield/ambient-1.png",
+      "playfield/ambient-2.png",
+      "playfield/ambient-3.png"
+    ],
+    "ambientFps": 6,
+    "ambientVideo": null
+  },
+  "bumpers": {
+    "idle": "bumpers/idle.png",
+    "hit": "bumpers/hit.png"
+  },
+  "sparks": {
+    "sheet": "vfx/spark-sheet.png",
+    "frames": 6,
+    "frameWidth": 96,
+    "frameHeight": 96,
+    "fps": 18,
+    "scale": 1.15
+  }
+}

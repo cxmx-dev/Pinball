@@ -1,0 +1,778 @@
+/**
+ * Main game loop, input wiring, browser bootstrap.
+ * Device-aware fit + touch dock + legend drawer (L / swipe).
+ */
+(function () {
+  'use strict';
+
+  var Sim = window.PinballSim;
+  var Render = window.PinballRender;
+  var Audio = window.PinballAudio;
+  var Assets = window.PinballAssets;
+  var Device = window.DeviceProfile;
+  var HS = window.PinballHighScores;
+
+  var canvas = document.getElementById('pinball-canvas');
+  var legendDrawer = document.getElementById('legend-drawer');
+  var legendBackdrop = document.getElementById('legend-backdrop');
+  var legendClose = document.getElementById('legend-close');
+  var gameOverUi = document.getElementById('gameover-restart');
+  var btnRestartBall = document.getElementById('btn-restart-ball');
+  var touchUi = document.getElementById('touch-ui');
+  var highScoreListEl = document.getElementById('highscore-list');
+  var btnCopyScore = document.getElementById('btn-copy-score');
+  var btnMute = document.getElementById('btn-mute');
+  var state = Sim.createInitialState();
+  var lastTime = 0;
+  var keys = { left: false, right: false, launch: false };
+  var padHeld = { left: false, right: false, launch: false };
+  var dockHeld = { left: false, right: false };
+  var padPrev = { theme: false, menu: false, tilt: false, legend: false, flip: false };
+  var paused = false;
+  var soundPrev = Audio.createPrev();
+  var activePointers = Object.create(null);
+  var legendOpen = false;
+  var swipeTrack = null;
+  var lastPhase = state.phase;
+  var hintEl = document.getElementById('swipe-legend-hint');
+  var hintHidden = false;
+  var hintTimer = null;
+  var lastHighScoreRecorded = -1;
+  var lastShareLine = '';
+
+  if (Assets && Assets.preloadTheme) {
+    Assets.preloadTheme();
+  }
+  if (Assets && Assets.getThemeId && Sim.setThemeId) {
+    Sim.setThemeId(state, Assets.getThemeId());
+  }
+
+  function hideSwipeHint() {
+    if (hintHidden) return;
+    hintHidden = true;
+    if (hintTimer) {
+      clearTimeout(hintTimer);
+      hintTimer = null;
+    }
+    if (hintEl) {
+      hintEl.classList.add('hint-hidden');
+      hintEl.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function scheduleHintAutoHide() {
+    if (hintHidden || hintTimer) return;
+    hintTimer = setTimeout(function () {
+      hintTimer = null;
+      hideSwipeHint();
+    }, 8000);
+  }
+
+  function unlockAudio() {
+    Audio.unlock();
+  }
+
+  function isTouchProfile() {
+    var p = Device && Device.get ? Device.get() : null;
+    return !!(p && (p.isTouch || p.isPhone || p.isTablet));
+  }
+
+  function setLegendOpen(open) {
+    legendOpen = !!open;
+    if (legendDrawer) {
+      legendDrawer.classList.toggle('open', legendOpen);
+      legendDrawer.setAttribute('aria-hidden', legendOpen ? 'false' : 'true');
+    }
+    if (legendBackdrop) {
+      legendBackdrop.classList.toggle('open', legendOpen);
+      legendBackdrop.setAttribute('aria-hidden', legendOpen ? 'false' : 'true');
+    }
+  }
+
+  function toggleLegend() {
+    setLegendOpen(!legendOpen);
+  }
+
+  function isItchEmbed() {
+    try {
+      if (/itch\.io$/i.test(location.hostname)) return true;
+      if (window.parent && window.parent !== window && /itch\.io/i.test(document.referrer || '')) return true;
+    } catch (e) {}
+    return false;
+  }
+
+  function resizeCanvas() {
+    var targetW = 600;
+    var targetH = 980;
+    canvas.width = targetW;
+    canvas.height = targetH;
+    // Reserve space for bottom dock (all devices) + Theme|Legend + swipe/PC hint
+    // (fitCanvas must honor this on PC too — see device.js touchChrome, not touch-only)
+    var chrome = 150;
+    if (Device && Device.fitCanvas) {
+      // Desktop: allow CSS grow past native 600x980 to fill the viewport.
+      // Phone/tablet: modest CSS upscale cap (maxScale ~1.25) so Android GPUs
+      // are not asked to composite huge CSS-scaled bitmaps every frame.
+      var fitOpts = { touchChrome: chrome, pad: 8 };
+      if (isItchEmbed()) {
+        document.documentElement.classList.add('embed-itch');
+        fitOpts.maxW = 1280;
+        fitOpts.maxH = 720;
+        fitOpts.allowUpscale = true;
+      } else {
+        document.documentElement.classList.remove('embed-itch');
+      }
+      var q = Device.quality ? Device.quality() : null;
+      if (q && q.tier === 'phone') {
+        fitOpts.maxScale = q.maxScale != null ? q.maxScale : 1.25;
+      } else {
+        fitOpts.allowUpscale = true;
+      }
+      Device.fitCanvas(canvas, fitOpts);
+    } else {
+      canvas.style.width = targetW + 'px';
+      canvas.style.height = targetH + 'px';
+    }
+    // Keep bottom dock the same CSS width as the upscaled canvas
+    if (touchUi) {
+      touchUi.style.width = canvas.style.width || (targetW + 'px');
+    }
+  }
+
+  function setLeftFlipper(active) {
+    if (active) hideSwipeHint();
+    if (active && !keys.left) Audio.flipperFire('left');
+    keys.left = active;
+    Sim.activateFlipper(state, 'left', active);
+    var btn = document.getElementById('btn-left');
+    if (btn) btn.classList.toggle('held', !!active);
+  }
+
+  function setRightFlipper(active) {
+    if (active) hideSwipeHint();
+    if (active && !keys.right) Audio.flipperFire('right');
+    keys.right = active;
+    Sim.activateFlipper(state, 'right', active);
+    var btn = document.getElementById('btn-right');
+    if (btn) btn.classList.toggle('held', !!active);
+  }
+
+  function beginLaunchCharge() {
+    hideSwipeHint();
+    if (Sim.canChargePlunger(state)) {
+      if (!state.ball.inPlay && state.phase === 'playing') {
+        state.phase = 'ready';
+      }
+      Sim.setLaunchCharging(state, true);
+    }
+  }
+
+  function endLaunchCharge() {
+    if (state.launchCharging) {
+      Sim.launchBall(state, null);
+      Sim.setLaunchCharging(state, false);
+    }
+  }
+
+  function restartGame() {
+    releasePointerHolds();
+    state = Sim.createInitialState();
+    if (Assets && Assets.getThemeId && Sim.setThemeId) {
+      Sim.setThemeId(state, Assets.getThemeId());
+    }
+    soundPrev = Audio.createPrev();
+    lastPhase = state.phase;
+    lastHighScoreRecorded = -1;
+    setLeftFlipper(false);
+    setRightFlipper(false);
+    updateGameOverUi();
+    updateDockContext();
+  }
+
+  function doTiltOrRestart() {
+    if (state.phase === 'game_over') {
+      restartGame();
+    } else if (state.ball.inPlay) {
+      Sim.tilt(state);
+    }
+  }
+
+  function loadHighScores() {
+    if (!HS) return [];
+    try {
+      var raw = localStorage.getItem(HS.STORAGE_KEY);
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveHighScores(list) {
+    if (!HS) return;
+    try {
+      localStorage.setItem(HS.STORAGE_KEY, JSON.stringify(list));
+    } catch (e) { /* private mode */ }
+  }
+
+  function renderHighScoreList(list, highlightScore) {
+    if (!highScoreListEl || !HS) return;
+    highScoreListEl.innerHTML = '';
+    var rows = list || [];
+    if (!rows.length) {
+      var empty = document.createElement('li');
+      empty.textContent = 'No scores yet';
+      highScoreListEl.appendChild(empty);
+      return;
+    }
+    rows.forEach(function (entry, idx) {
+      var e = HS.normalizeEntry(entry);
+      if (!e) return;
+      var li = document.createElement('li');
+      if (highlightScore != null && e.score === highlightScore) li.className = 'hi';
+      var rank = document.createElement('span');
+      rank.textContent = '#' + (idx + 1);
+      var pts = document.createElement('span');
+      pts.textContent = e.score.toLocaleString('en-US');
+      li.appendChild(rank);
+      li.appendChild(pts);
+      highScoreListEl.appendChild(li);
+    });
+  }
+
+  function recordGameOverScore() {
+    if (!HS || state.phase !== 'game_over') return;
+    if (lastHighScoreRecorded === state.score) return;
+    lastHighScoreRecorded = state.score;
+    var list = loadHighScores();
+    var next = HS.updateHighScores(list, state.score, HS.DEFAULT_MAX);
+    saveHighScores(next);
+    renderHighScoreList(next, state.score);
+    var rank = HS.rankOfScore(next, state.score);
+    lastShareLine = HS.formatShareLine(state.score, rank);
+  }
+
+  function updateDockContext() {
+    if (!touchUi) return;
+    var inPlay = !!(state.ball && state.ball.inPlay && state.phase === 'playing');
+    touchUi.classList.toggle('ball-in-play', inPlay);
+  }
+
+  function updateMuteButton() {
+    if (!btnMute || !Audio.isMuted) return;
+    var m = Audio.isMuted();
+    btnMute.classList.toggle('muted', m);
+    btnMute.setAttribute('aria-pressed', m ? 'true' : 'false');
+    btnMute.textContent = m ? 'Muted' : 'Sound';
+  }
+
+  function updateGameOverUi() {
+    if (!gameOverUi) return;
+    // Desktop + mobile: spinning pinball restart (PC can also press NumPad 7)
+    var show = state.phase === 'game_over';
+    gameOverUi.classList.toggle('show', show);
+    gameOverUi.setAttribute('aria-hidden', show ? 'false' : 'true');
+    if (show) recordGameOverScore();
+    updateDockContext();
+  }
+
+  function cycleTheme() {
+    if (Assets && Assets.listThemes && Assets.setTheme) {
+      var list = Assets.listThemes();
+      var cur = Assets.getThemeId();
+      var next = list[(list.indexOf(cur) + 1) % list.length];
+      Assets.setTheme(next);
+      if (Sim.setThemeId) Sim.setThemeId(state, next);
+      state.themeFlash = 0.4;
+      if (Audio.play) {
+        unlockAudio();
+        Audio.play('rushstart');
+      }
+    }
+  }
+
+  // Multi-key flippers: any bound key holds; release only when all left/right keys up.
+  var leftKeyHeld = Object.create(null);
+  var rightKeyHeld = Object.create(null);
+
+  function isLeftFlipperKey(code) {
+    return code === 'ArrowLeft' || code === 'KeyA' || code === 'Numpad1';
+  }
+
+  function isRightFlipperKey(code) {
+    return code === 'ArrowRight' || code === 'KeyD' || code === 'Numpad3';
+  }
+
+  function pointerHolds(side) {
+    for (var id in activePointers) {
+      if (activePointers[id] === side) return true;
+    }
+    return false;
+  }
+
+  function syncFlippersAndLaunch() {
+    var left = anyHeld(leftKeyHeld) || padHeld.left || dockHeld.left || pointerHolds('left');
+    var right = anyHeld(rightKeyHeld) || padHeld.right || dockHeld.right || pointerHolds('right');
+    setLeftFlipper(left);
+    setRightFlipper(right);
+    var launch = keys.launch || keys.launchSpace || padHeld.launch;
+    if (launch) beginLaunchCharge();
+    else endLaunchCharge();
+  }
+
+  function releasePointerHolds() {
+    var id;
+    for (id in activePointers) delete activePointers[id];
+    dockHeld.left = false;
+    dockHeld.right = false;
+    syncFlippersAndLaunch();
+  }
+
+  function canvasPointFromEvent(e) {
+    var rect = canvas.getBoundingClientRect();
+    var rw = rect.width || canvas.width;
+    var rh = rect.height || canvas.height;
+    return {
+      x: (e.clientX - rect.left) * (canvas.width / rw),
+      y: (e.clientY - rect.top) * (canvas.height / rh)
+    };
+  }
+
+  function isGameOverRestartHit(x, y) {
+    if (y >= 72 && y <= canvas.height - 28) return true;
+    var ty = canvas.height * 0.38 + 44;
+    return Math.abs(y - ty) < 40 && Math.abs(x - canvas.width * 0.5) < 220;
+  }
+
+  function setPaused(on) {
+    paused = !!on;
+    var el = document.getElementById('pause-overlay');
+    if (el) {
+      el.classList.toggle('open', paused);
+      el.setAttribute('aria-hidden', paused ? 'false' : 'true');
+    }
+  }
+
+  function pollGamepad() {
+    var Pad = window.PinballPad;
+    if (!Pad || !Pad.poll) return;
+    var p = Pad.poll();
+    padHeld.left = p.left;
+    padHeld.right = p.right;
+    padHeld.launch = p.launch;
+    if (p.theme && !padPrev.theme) cycleTheme();
+    if (p.menu && !padPrev.menu) setPaused(!paused);
+    if (p.tilt && !padPrev.tilt) doTiltOrRestart();
+    if (p.legend && !padPrev.legend && !paused) toggleLegend();
+    if (state.phase === 'game_over' && (p.left || p.right) && !padPrev.flip) {
+      restartGame();
+    }
+    padPrev.theme = p.theme;
+    padPrev.menu = p.menu;
+    padPrev.tilt = p.tilt;
+    padPrev.legend = !!p.legend;
+    padPrev.flip = !!(p.left || p.right);
+    // D-pad reserved for pause/main menu items when those screens exist.
+    // Left analog stick toggles the legend (same as L) during play.
+    syncFlippersAndLaunch();
+  }
+  function anyHeld(map) {
+    for (var k in map) {
+      if (map[k]) return true;
+    }
+    return false;
+  }
+
+  function handleKeyDown(e) {
+    unlockAudio();
+    if (e.code === 'KeyL') {
+      e.preventDefault();
+      toggleLegend();
+      return;
+    }
+    if (legendOpen && e.code === 'Escape') {
+      setLegendOpen(false);
+      return;
+    }
+    if (isLeftFlipperKey(e.code)) {
+      e.preventDefault();
+      leftKeyHeld[e.code] = true;
+      syncFlippersAndLaunch();
+    }
+    if (isRightFlipperKey(e.code)) {
+      e.preventDefault();
+      rightKeyHeld[e.code] = true;
+      syncFlippersAndLaunch();
+    }
+    if (e.code === 'Space') {
+      e.preventDefault();
+      keys.launchSpace = true;
+      syncFlippersAndLaunch();
+    }
+    // Tilt is intentionally awkward (NumPad 7 only) — not letter R
+    if (e.code === 'Numpad7') {
+      e.preventDefault();
+      doTiltOrRestart();
+    }
+    if (e.code === 'KeyT') cycleTheme();
+  }
+
+  function handleKeyUp(e) {
+    unlockAudio();
+    if (isLeftFlipperKey(e.code)) {
+      leftKeyHeld[e.code] = false;
+      syncFlippersAndLaunch();
+    }
+    if (isRightFlipperKey(e.code)) {
+      rightKeyHeld[e.code] = false;
+      syncFlippersAndLaunch();
+    }
+    if (e.code === 'Space') { keys.launchSpace = false; syncFlippersAndLaunch(); }
+  }
+
+  function sideFromEvent(e) {
+    var rect = canvas.getBoundingClientRect();
+    var x = e.clientX;
+    if (x < rect.left || x > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
+      return e.clientX < window.innerWidth * 0.5 ? 'left' : 'right';
+    }
+    var mid = rect.left + rect.width * 0.5;
+    return x < mid ? 'left' : 'right';
+  }
+
+  function isUiChrome(e) {
+    return !!(e.target && e.target.closest && (
+      e.target.closest('#touch-ui') ||
+      e.target.closest('#btn-tilt') ||
+      e.target.closest('#legend-drawer') ||
+      e.target.closest('#legend-backdrop') ||
+      e.target.closest('#gameover-restart')
+    ));
+  }
+
+  function handlePointerDown(e) {
+    unlockAudio();
+    if (state.phase === 'game_over') {
+      if (e.target && e.target.closest && e.target.closest('#btn-copy-score')) return;
+      if (isUiChrome(e) && e.target && e.target.closest && e.target.closest('#gameover-restart')) {
+        return;
+      }
+      var gpt = canvasPointFromEvent(e);
+      if (isGameOverRestartHit(gpt.x, gpt.y)) {
+        e.preventDefault();
+        restartGame();
+        return;
+      }
+    }
+    if (isUiChrome(e)) return;
+    if (legendOpen) return;    if (isUiChrome(e)) return;
+    if (legendOpen) return;
+
+    if (e.pointerType === 'mouse' || e.pointerType === 'pen') {
+      if (e.button === 0) {
+        e.preventDefault();
+        activePointers[e.pointerId] = 'left';
+        syncFlippersAndLaunch();
+      } else if (e.button === 2) {
+        e.preventDefault();
+        activePointers[e.pointerId] = 'right';
+        syncFlippersAndLaunch();
+      }
+    } else {
+      e.preventDefault();
+      var side = sideFromEvent(e);
+      activePointers[e.pointerId] = side;
+      if (side === 'left') syncFlippersAndLaunch();
+      else syncFlippersAndLaunch();
+    }
+    try {
+      canvas.setPointerCapture(e.pointerId);
+    } catch (err) { /* ignore */ }
+  }
+
+  function handlePointerUp(e) {
+    var side = activePointers[e.pointerId];
+    delete activePointers[e.pointerId];
+    if (side === 'left') {
+      var stillLeft = false;
+      for (var id in activePointers) {
+        if (activePointers[id] === 'left') stillLeft = true;
+      }
+      syncFlippersAndLaunch();
+    } else if (side === 'right') {
+      var stillRight = false;
+      for (var id2 in activePointers) {
+        if (activePointers[id2] === 'right') stillRight = true;
+      }
+      syncFlippersAndLaunch();
+    } else if (e.pointerType === 'mouse') {
+      syncFlippersAndLaunch();
+      syncFlippersAndLaunch();
+    }
+    try {
+      if (canvas.hasPointerCapture && canvas.hasPointerCapture(e.pointerId)) {
+        canvas.releasePointerCapture(e.pointerId);
+      }
+    } catch (err) { /* ignore */ }
+  }
+
+  function bindHoldButton(el, onDown, onUp) {
+    if (!el) return;
+    function down(ev) {
+      unlockAudio();
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (el.setPointerCapture) {
+        try { el.setPointerCapture(ev.pointerId); } catch (err) { /* ignore */ }
+      }
+      onDown();
+    }
+    function up(ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      onUp();
+    }
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+    el.addEventListener('pointerleave', up);
+    el.addEventListener('lostpointercapture', up);
+  }
+
+  function bindTapButton(el, fn) {
+    if (!el) return;
+    el.addEventListener('pointerdown', function (ev) {
+      unlockAudio();
+      ev.preventDefault();
+      ev.stopPropagation();
+      fn();
+    });
+  }
+
+  function wireTouchUi() {
+    bindHoldButton(document.getElementById('btn-left'), function () {
+      dockHeld.left = true;
+      syncFlippersAndLaunch();
+    }, function () {
+      dockHeld.left = false;
+      syncFlippersAndLaunch();
+    });
+    bindHoldButton(document.getElementById('btn-right'), function () {
+      dockHeld.right = true;
+      syncFlippersAndLaunch();
+    }, function () {
+      dockHeld.right = false;
+      syncFlippersAndLaunch();
+    });
+    bindHoldButton(document.getElementById('btn-launch'), function () {
+      keys.launch = true;
+      beginLaunchCharge();
+    }, function () {
+      keys.launch = false;
+      endLaunchCharge();
+    });
+    bindTapButton(document.getElementById('btn-tilt'), doTiltOrRestart);
+    bindTapButton(document.getElementById('btn-theme'), cycleTheme);
+    bindTapButton(document.getElementById('btn-legend'), toggleLegend);
+
+    function pressRestart(ev) {
+      if (ev.target && ev.target.closest && ev.target.closest('#btn-copy-score')) return;
+      unlockAudio();
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (state.phase === 'game_over') restartGame();
+    }
+    if (gameOverUi) {
+      gameOverUi.addEventListener('pointerdown', pressRestart);
+      gameOverUi.addEventListener('click', pressRestart);
+    }
+    if (btnRestartBall) {
+      btnRestartBall.addEventListener('pointerdown', pressRestart);
+      btnRestartBall.addEventListener('click', pressRestart);
+    }
+  }
+
+  function wireLegend() {
+    if (legendClose) {
+      legendClose.addEventListener('click', function (e) {
+        e.preventDefault();
+        setLegendOpen(false);
+      });
+      legendClose.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        setLegendOpen(false);
+      });
+    }
+    if (legendBackdrop) {
+      legendBackdrop.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        setLegendOpen(false);
+      });
+    }
+
+    // Fast swipe right-to-left (finger moves left) opens legend
+    document.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (isUiChrome(e) && !e.target.closest('#stage')) return;
+      if (legendOpen) return;
+      swipeTrack = {
+        id: e.pointerId,
+        x: e.clientX,
+        y: e.clientY,
+        t: Date.now()
+      };
+    }, { capture: true, passive: true });
+
+    document.addEventListener('pointerup', function (e) {
+      if (!swipeTrack || swipeTrack.id !== e.pointerId) return;
+      var dx = e.clientX - swipeTrack.x;
+      var dy = e.clientY - swipeTrack.y;
+      var dt = Date.now() - swipeTrack.t;
+      swipeTrack = null;
+      // right-to-left: negative dx, fast, mostly horizontal
+      if (dt > 0 && dt < 420 && dx < -72 && Math.abs(dx) > Math.abs(dy) * 1.25) {
+        unlockAudio();
+        setLegendOpen(true);
+      }
+    }, { capture: true, passive: true });
+
+    document.addEventListener('pointercancel', function () {
+      swipeTrack = null;
+    }, { capture: true, passive: true });
+  }
+
+  function blockContextMenu(e) {
+    e.preventDefault();
+  }
+
+  function gameLoop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    var dt = Math.min((timestamp - lastTime) / 1000, 0.033);
+    lastTime = timestamp;
+
+    pollGamepad();
+    if (paused) {
+      Render.render(canvas, state, 0);
+      requestAnimationFrame(gameLoop);
+      return;
+    }
+
+    if (keys.left) Sim.activateFlipper(state, 'left', true);
+    if (keys.right) Sim.activateFlipper(state, 'right', true);
+
+    Sim.tick(state, dt);
+    if (state.themeFlash > 0) {
+      state.themeFlash = Math.max(0, state.themeFlash - dt);
+    }
+    soundPrev = Audio.processState(state, soundPrev);
+    Render.render(canvas, state, dt);
+    updateDockContext();
+
+    if (state.phase !== lastPhase) {
+      if (state.phase === 'game_over' || lastPhase === 'game_over') {
+        releasePointerHolds();
+      }
+      lastPhase = state.phase;
+      updateGameOverUi();
+    }
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  function wireMuteAndShare() {
+    if (btnMute) {
+      bindTapButton(btnMute, function () {
+        unlockAudio();
+        if (Audio.toggleMute) Audio.toggleMute();
+        updateMuteButton();
+      });
+      updateMuteButton();
+    }
+    if (btnCopyScore) {
+      bindTapButton(btnCopyScore, function () {
+        var line = lastShareLine || (HS ? HS.formatShareLine(state.score, null) : String(state.score));
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(line).then(function () {
+            btnCopyScore.textContent = 'Copied!';
+            setTimeout(function () { btnCopyScore.textContent = 'Copy score line'; }, 1200);
+          }).catch(function () {
+            btnCopyScore.textContent = 'Copy failed';
+            setTimeout(function () { btnCopyScore.textContent = 'Copy score line'; }, 1200);
+          });
+        } else {
+          btnCopyScore.textContent = line.slice(0, 18) + '…';
+        }
+      });
+    }
+  }
+
+  resizeCanvas();
+  wireTouchUi();
+  wireLegend();
+  wireMuteAndShare();
+  updateGameOverUi();
+  updateDockContext();
+  scheduleHintAutoHide();
+  if (Device && Device.onChange) {
+    Device.onChange(function () {
+      resizeCanvas();
+      updateGameOverUi();
+    });
+  }
+
+  window.addEventListener('keydown', function (e) {
+    hideSwipeHint();
+    handleKeyDown(e);
+  });
+  window.addEventListener('keyup', handleKeyUp);
+  document.addEventListener('contextmenu', blockContextMenu);
+  window.addEventListener('contextmenu', blockContextMenu);
+  document.addEventListener('pointerdown', function (e) {
+    hideSwipeHint();
+    handlePointerDown(e);
+  }, true);
+  document.addEventListener('pointerup', handlePointerUp, true);
+  document.addEventListener('pointercancel', handlePointerUp, true);
+  document.addEventListener('pointerleave', handlePointerUp, true);
+  window.addEventListener('blur', releasePointerHolds);
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) releasePointerHolds();
+  });
+  document.body.addEventListener('auxclick', function (e) {
+    if (e.button === 2) e.preventDefault();
+  });
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', function () {
+    setTimeout(resizeCanvas, 80);
+  });
+
+  window.PinballGame = {
+    canvas: canvas,
+    getState: function () { return state; },
+    reset: function () {
+      state = Sim.createInitialState();
+      soundPrev = Audio.createPrev();
+    },
+    gameLoop: gameLoop,
+    setTheme: function (id) {
+      if (Assets && Assets.setTheme) {
+        var ok = Assets.setTheme(id);
+        if (ok && Sim.setThemeId) Sim.setThemeId(state, id);
+        return ok;
+      }
+      return false;
+    },
+    getThemeId: function () {
+      return Assets && Assets.getThemeId ? Assets.getThemeId() : null;
+    },
+    toggleLegend: toggleLegend,
+    setLegendOpen: setLegendOpen,
+    releasePointerHolds: releasePointerHolds,
+    isGameOverRestartHit: isGameOverRestartHit,
+    pointerHolds: pointerHolds
+  };
+
+  requestAnimationFrame(gameLoop);
+})();

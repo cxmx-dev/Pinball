@@ -1,0 +1,30 @@
+{
+  "id": "ember-rail",
+  "name": "Ember Rail",
+  "tagline": "Molten copper night table",
+  "tableTitle": "EMBER RAIL",
+  "hudAccent": "#ff8c28",
+  "playfield": {
+    "still": "playfield/base.png",
+    "ambientFrames": [
+      "playfield/ambient-0.png",
+      "playfield/ambient-1.png",
+      "playfield/ambient-2.png",
+      "playfield/ambient-3.png"
+    ],
+    "ambientFps": 6,
+    "ambientVideo": null
+  },
+  "bumpers": {
+    "idle": "bumpers/idle.png",
+    "hit": "bumpers/hit.png"
+  },
+  "sparks": {
+    "sheet": "vfx/spark-sheet.png",
+    "frames": 6,
+    "frameWidth": 96,
+    "frameHeight": 96,
+    "fps": 18,
+    "scale": 1.15
+  }
+}

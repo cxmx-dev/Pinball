@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Without a trailing slash, browsers resolve simulation.js etc. to the parent folder (404). -->
+  <script>
+  (function () {
+    var p = location.pathname || '';
+    if (!/\/$/i.test(p) && !/index\.html$/i.test(p)) {
+      location.replace(p + '/' + (location.search || '') + (location.hash || ''));
+    }
+  })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Void Pulse Pinball</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 30% 20%, rgba(0, 240, 255, 0.12) 0%, transparent 45%),
+        radial-gradient(ellipse at 70% 80%, rgba(255, 40, 180, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at center, #12102a 0%, #050208 70%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Orbitron', monospace;
+      touch-action: none;
+      cursor: default;
+      user-select: none;
+      -webkit-user-select: none;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    #stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      max-width: 100%;
+      max-height: 100%;
+      z-index: 2;
+    }
+    html.device-desktop:not(.embed-itch) #stage {
+      max-height: 96vh;
+      height: min(96vh, 1400px);
+      width: min(calc(min(96vh, 1400px) * 560 / 860), 96vw);
+    }
+    html.device-desktop:not(.embed-itch) #pinball-canvas {
+      max-height: min(96vh, 1320px);
+      width: auto;
+      height: auto;
+      aspect-ratio: 600 / 980;
+    }
+    html.embed-itch #stage,
+    html.embed-itch #pinball-canvas {
+      max-width: 1280px;
+      max-height: 720px;
+    }
+    #game-wrap {
+      position: relative;
+      filter: drop-shadow(0 0 48px rgba(0, 220, 255, 0.22))
+              drop-shadow(0 0 80px rgba(255, 40, 180, 0.12))
+              drop-shadow(0 20px 60px rgba(0, 0, 0, 0.85));
+      line-height: 0;
+    }
+    /* Floating HUD Tilt — slightly below mid-HUD so score / 4X stay clear */
+    #btn-tilt {
+      position: absolute;
+      left: 50%;
+      /* ~lower HUD strip on 980-tall canvas (scales with table on mobile) */
+      top: 6.9%;
+      transform: translate(-50%, -50%);
+      z-index: 4;
+      font-family: inherit;
+      font-size: clamp(7px, 1.4vw, 9px);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #ffd0e8;
+      background: rgba(20, 6, 18, 0.72);
+      border: 1px solid rgba(255, 80, 160, 0.5);
+      border-radius: 999px;
+      min-height: 0;
+      height: clamp(16px, 2%, 22px);
+      min-width: clamp(48px, 11%, 64px);
+      padding: 0 10px;
+      line-height: 1;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 0 8px rgba(255, 40, 160, 0.2);
+      pointer-events: auto;
+    }
+    #btn-tilt:active {
+      background: rgba(255, 40, 160, 0.4);
+      color: #fff;
+      border-color: #ff8ad0;
+    }
+    #pinball-canvas {
+      display: block;
+      border-radius: 10px;
+      background: #070612;
+      box-shadow: inset 0 0 0 1px rgba(0, 240, 255, 0.15);
+      max-width: 100%;
+      height: auto;
+    }
+    .vignette {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 38%, rgba(0,0,0,0.62) 100%);
+      z-index: 1;
+    }
+
+    /* ---- Control dock (desktop + mobile) ---- */
+    #touch-ui {
+      display: grid;
+      width: min(960px, 96vw); /* JS syncs to canvas CSS width on resize */
+      gap: 8px;
+      z-index: 5;
+      padding: 0 4px 4px;
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    #touch-ui button {
+      font-family: inherit;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #d8f7ff;
+      background: rgba(10, 14, 28, 0.88);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      border-radius: 10px;
+      min-height: 48px;
+      padding: 8px 4px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #touch-ui button:active,
+    #touch-ui button.held {
+      background: rgba(0, 180, 220, 0.35);
+      border-color: #5ee7ff;
+      color: #fff;
+    }
+    /* Theme | Legend split — centered under Launch, clear of L/R Flip */
+    #dock-meta {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+    #dock-meta .split-pair {
+      display: flex;
+      width: min(220px, 52vw);
+      max-width: 240px;
+      min-height: 48px;
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(10, 14, 28, 0.88);
+    }
+    #dock-meta .split-pair button {
+      flex: 1 1 50%;
+      border: none;
+      border-radius: 0;
+      min-height: 48px;
+      min-width: 0;
+      margin: 0;
+      background: transparent;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      padding: 8px 4px;
+    }
+    #dock-meta .split-pair button + button {
+      border-left: 1px solid rgba(0, 240, 255, 0.35);
+    }
+    #dock-meta .split-pair button:active {
+      background: rgba(0, 180, 220, 0.35);
+      border-color: transparent;
+      color: #fff;
+    }
+    #swipe-legend-hint {
+      display: block;
+      grid-column: 1 / -1;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #00ff00;
+      text-shadow: 0 0 8px rgba(0, 255, 0, 0.45);
+      padding: 6px 4px 2px;
+      line-height: 1.35;
+      transition: opacity 0.45s ease, max-height 0.45s ease, padding 0.45s ease, margin 0.45s ease;
+      max-height: 4rem;
+      overflow: hidden;
+    }
+    #swipe-legend-hint.hint-hidden {
+      opacity: 0;
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      margin: 0;
+      pointer-events: none;
+    }
+    html.input-fine #swipe-legend-hint::before {
+      content: "PC: T = theme · L = legend · ";
+      color: #7dffb0;
+    }
+
+    #pause-overlay {
+      position: fixed; inset: 0; z-index: 35;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(2, 4, 12, 0.62);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    #pause-overlay.open { opacity: 1; pointer-events: auto; }
+    #pause-overlay .pause-card {
+      min-width: min(280px, 80vw);
+      padding: 22px 26px;
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      background: rgba(8, 10, 24, 0.95);
+      color: #e8f6ff;
+      text-align: center;
+      box-shadow: 0 0 28px rgba(0, 220, 255, 0.18);
+    }
+    #pause-overlay h2 { margin: 0 0 8px; letter-spacing: 0.12em; color: #00f0ff; }
+    #pause-overlay p { margin: 6px 0; font-size: 14px; }
+    #pause-overlay .pause-hint { font-size: 12px; color: #9ab; }
+    /* ---- Legend slide-drawer (from right) ---- */
+    #legend-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(2, 4, 12, 0.55);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.28s ease;
+    }
+    #legend-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #legend-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      z-index: 50;
+      /* Wider on desktop so 3 cols + airy rows; still full-ish on phone */
+      width: min(420px, 92vw);
+      height: 100%;
+      max-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background:
+        linear-gradient(165deg, rgba(12, 18, 40, 0.98) 0%, rgba(6, 4, 18, 0.98) 55%, rgba(18, 6, 28, 0.98) 100%);
+      border-left: 1px solid rgba(0, 240, 255, 0.4);
+      box-shadow:
+        -12px 0 40px rgba(0, 0, 0, 0.65),
+        inset 1px 0 0 rgba(255, 40, 180, 0.12),
+        0 0 24px rgba(0, 220, 255, 0.12);
+      transform: translateX(105%);
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+      padding:
+        max(16px, env(safe-area-inset-top))
+        max(18px, env(safe-area-inset-right))
+        max(16px, env(safe-area-inset-bottom))
+        18px;
+    }
+    #legend-drawer.open {
+      transform: translateX(0);
+    }
+    #legend-drawer h2 {
+      font-size: 1.05rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #5ee7ff;
+      text-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
+      margin: 0 0 6px;
+      flex-shrink: 0;
+    }
+    #legend-drawer .legend-sub {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255, 80, 180, 0.85);
+      margin-bottom: 18px;
+      flex-shrink: 0;
+      line-height: 1.4;
+    }
+    #legend-drawer .legend-sub .sub-touch { display: none; }
+    #legend-drawer .legend-scroll {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      padding-right: 6px;
+      padding-bottom: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+    #legend-drawer table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+    #legend-drawer th {
+      text-align: left;
+      color: rgba(0, 240, 255, 0.75);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      padding: 6px 8px 12px 0;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.22);
+      vertical-align: bottom;
+    }
+    #legend-drawer .pad-map { display: block; font-size: 11px; color: #8fd; margin-top: 3px; font-weight: 600; }
+    #legend-drawer .pad-eq { color: #9ab; font-weight: 500; }
+    #legend-drawer td {
+      padding: 14px 10px 14px 0;
+      vertical-align: middle;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      color: #c8e8ff;
+      font-size: 0.8rem;
+      line-height: 1.55;
+    }
+    #legend-drawer td:first-child {
+      color: #7df0ff;
+      font-weight: 700;
+      width: 26%;
+      padding-right: 10px;
+      white-space: nowrap;
+    }
+    #legend-drawer th.legend-col-pc,
+    #legend-drawer td.legend-col-pc {
+      width: 37%;
+    }
+    #legend-drawer th.legend-col-mobile,
+    #legend-drawer td.legend-col-mobile {
+      width: 37%;
+    }
+    #legend-drawer .legend-col-mobile .label-touch { display: none; }
+    #legend-drawer .legend-note {
+      margin-top: 20px;
+      font-size: 0.74rem;
+      color: rgba(180, 210, 255, 0.55);
+      letter-spacing: 0.04em;
+      line-height: 1.55;
+    }
+    #legend-drawer .legend-foot {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 12px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(0, 240, 255, 0.18);
+    }
+    /* Phone / tablet: only Action + dock controls (no PC hotkeys) */
+    html.device-phone #legend-drawer,
+    html.device-tablet #legend-drawer {
+      width: min(360px, 94vw);
+    }
+    html.device-phone #legend-drawer .legend-col-pc,
+    html.device-tablet #legend-drawer .legend-col-pc {
+      display: none;
+    }
+    html.device-phone #legend-drawer td:first-child,
+    html.device-tablet #legend-drawer td:first-child {
+      width: 36%;
+      white-space: normal;
+    }
+    html.device-phone #legend-drawer th.legend-col-mobile,
+    html.device-phone #legend-drawer td.legend-col-mobile,
+    html.device-tablet #legend-drawer th.legend-col-mobile,
+    html.device-tablet #legend-drawer td.legend-col-mobile {
+      width: 64%;
+    }
+    html.device-phone #legend-drawer .legend-col-mobile .label-full,
+    html.device-tablet #legend-drawer .legend-col-mobile .label-full {
+      display: none;
+    }
+    html.device-phone #legend-drawer .legend-col-mobile .label-touch,
+    html.device-tablet #legend-drawer .legend-col-mobile .label-touch {
+      display: inline;
+    }
+    html.device-phone #legend-drawer .legend-sub .sub-pc,
+    html.device-tablet #legend-drawer .legend-sub .sub-pc {
+      display: none;
+    }
+    html.device-phone #legend-drawer .legend-sub .sub-touch,
+    html.device-tablet #legend-drawer .legend-sub .sub-touch {
+      display: inline;
+    }
+    html.device-phone #legend-drawer .legend-l,
+    html.device-tablet #legend-drawer .legend-l {
+      display: none;
+    }
+    html.device-phone #legend-drawer td,
+    html.device-tablet #legend-drawer td {
+      padding: 12px 8px 12px 0;
+      font-size: 0.78rem;
+    }
+    /* Desktop: use vertical room — taller rows */
+    html.device-desktop #legend-drawer td {
+      padding: 16px 12px 16px 0;
+      font-size: 0.84rem;
+    }
+    html.device-desktop #legend-drawer {
+      width: min(460px, 38vw);
+      min-width: 360px;
+    }
+    #legend-close {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #ff9ad4;
+      background: rgba(40, 10, 30, 0.9);
+      border: 1px solid rgba(255, 60, 160, 0.45);
+      border-radius: 8px;
+      min-height: 44px;
+      min-width: 88px;
+      padding: 8px 14px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #legend-close:active {
+      background: rgba(255, 40, 160, 0.25);
+      color: #fff;
+    }
+    #legend-drawer .legend-l {
+      font-size: 0.62rem;
+      color: rgba(180, 210, 255, 0.55);
+      letter-spacing: 0.06em;
+    }
+    /* ---- Mobile game-over restart (spinning pinball) ---- */
+    #gameover-restart {
+      display: none;
+      position: fixed;
+      left: 50%;
+      top: 46%;
+      transform: translate(-50%, 0);
+      z-index: 30;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      pointer-events: none;
+    }
+    #gameover-restart.show {
+      display: flex;
+      pointer-events: auto;
+    }
+    #gameover-restart .restart-label {
+      cursor: pointer;
+      pointer-events: auto;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #e8fbff;
+      text-shadow:
+        0 0 10px rgba(0, 240, 255, 0.55),
+        0 0 22px rgba(255, 40, 180, 0.35);
+      text-align: center;
+      max-width: 16rem;
+      line-height: 1.4;
+    }
+    #gameover-extras {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 12rem;
+      max-width: 18rem;
+    }
+    #highscore-panel {
+      width: 100%;
+      background: rgba(8, 12, 28, 0.88);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #c8e8ff;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+    }
+    #highscore-panel h3 {
+      margin: 0 0 8px;
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #5ee7ff;
+      text-align: center;
+    }
+    #highscore-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    #highscore-list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-variant-numeric: tabular-nums;
+    }
+    #highscore-list li.hi {
+      color: #ffe066;
+    }
+    #btn-copy-score, #btn-mute {
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #d8f7ff;
+      background: rgba(10, 14, 28, 0.9);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      border-radius: 8px;
+      min-height: 40px;
+      padding: 8px 12px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #btn-copy-score:active, #btn-mute:active {
+      background: rgba(0, 180, 220, 0.35);
+    }
+    #btn-mute {
+      position: fixed;
+      top: max(10px, env(safe-area-inset-top));
+      right: max(10px, env(safe-area-inset-right));
+      z-index: 25;
+      min-width: 72px;
+    }
+    #btn-mute.muted {
+      border-color: rgba(255, 120, 80, 0.55);
+      color: #ffc8a8;
+    }
+    #touch-ui.ball-in-play #btn-launch {
+      opacity: 0.28;
+      pointer-events: none;
+      filter: grayscale(0.35);
+    }
+    #btn-restart-ball {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      border: none;
+      padding: 0;
+      border-radius: 50%;
+      background: transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      filter: drop-shadow(0 0 18px rgba(0, 240, 255, 0.45));
+    }
+    #btn-restart-ball:active {
+      transform: scale(0.94);
+    }
+    #btn-restart-ball .pinball-orb {
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 32% 28%, #ffffff 0%, #e8f7ff 12%, #7de8ff 28%, #3a6cff 52%, #1a2870 72%, #060a18 100%);
+      box-shadow:
+        inset -10px -12px 22px rgba(0, 0, 0, 0.45),
+        inset 6px 8px 14px rgba(255, 255, 255, 0.25),
+        0 0 20px rgba(0, 240, 255, 0.5),
+        0 0 40px rgba(255, 40, 180, 0.2);
+      animation: pinball-spin 2.2s linear infinite;
+    }
+    #btn-restart-ball .pinball-shine {
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        rgba(255, 255, 255, 0.55) 28deg,
+        transparent 70deg,
+        transparent 180deg,
+        rgba(0, 240, 255, 0.35) 210deg,
+        transparent 260deg
+      );
+      mix-blend-mode: screen;
+      animation: pinball-spin 2.2s linear infinite, pinball-pulse 1.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    #btn-restart-ball .pinball-rim {
+      position: absolute;
+      inset: 2px;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 240, 255, 0.55);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+      animation: pinball-pulse 1.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes pinball-spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes pinball-pulse {
+      0%, 100% { opacity: 0.75; filter: brightness(1); }
+      50% { opacity: 1; filter: brightness(1.25); }
+    }
+  </style>
+</head>
+<body oncontextmenu="return false">
+  <button type="button" id="btn-mute" aria-pressed="false" title="Mute audio">Sound</button>
+  <div id="gameover-restart" aria-hidden="true">
+    <div class="restart-label">Press here to Restart</div>
+    <div id="gameover-extras">
+      <div id="highscore-panel">
+        <h3>Local High Scores</h3>
+        <ol id="highscore-list"></ol>
+      </div>
+      <button type="button" id="btn-copy-score">Copy score line</button>
+    </div>
+    <button type="button" id="btn-restart-ball" aria-label="Press here to Restart">
+      <span class="pinball-rim" aria-hidden="true"></span>
+      <span class="pinball-orb" aria-hidden="true"></span>
+      <span class="pinball-shine" aria-hidden="true"></span>
+    </button>
+  </div>
+  <div id="stage">
+    <div id="game-wrap">
+      <canvas id="pinball-canvas" width="600" height="980"></canvas>
+      <button type="button" id="btn-tilt" data-action="tilt" title="Tilt (NumPad 7)">Tilt</button>
+    </div>
+    <div id="touch-ui" aria-label="Touch controls">
+      <button type="button" id="btn-left" data-flip="left">L Flip</button>
+      <button type="button" id="btn-launch" data-action="launch">Launch</button>
+      <button type="button" id="btn-right" data-flip="right">R Flip</button>
+      <div id="dock-meta">
+        <div class="split-pair" role="group" aria-label="Theme and Legend">
+          <button type="button" id="btn-theme" data-action="theme">Theme</button>
+          <button type="button" id="btn-legend" data-action="legend">Legend</button>
+        </div>
+      </div>
+      <div id="swipe-legend-hint">swipe right to left fast to see the legend</div>
+    </div>
+  </div>
+  <div class="vignette"></div>
+
+  
+  <div id="pause-overlay" aria-hidden="true">
+    <div class="pause-card">
+      <h2>PAUSED</h2>
+      <p>Start · Options · Plus to resume</p>
+      <p class="pause-hint">D-pad and analog will move menu items when settings land.</p>
+    </div>
+  </div>
+  <div id="legend-backdrop" aria-hidden="true"></div>
+  <aside id="legend-drawer" aria-label="Controls legend" aria-hidden="true">
+    <h2>Controls</h2>
+    <div class="legend-sub">
+      <span class="sub-pc">VOID PULSE · legend · PC + mobile</span>
+      <span class="sub-touch">VOID PULSE · mobile controls</span>
+    </div>
+    <div class="legend-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th class="legend-col-pc">PC</th>
+            <th class="legend-col-mobile">
+              <span class="label-full">Mobile / dock</span>
+              <span class="label-touch">Dock / touch</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Left flipper</td>
+            <td class="legend-col-pc">← · <strong>A</strong> · NumPad <strong>1</strong> · LMB<br><span class="pad-map">Pad: LT · LB · A <span class="pad-eq">(L2 · L1 · ✕ / ZL · L · B)</span></span></td>
+            <td class="legend-col-mobile">L Flip · left half · pad LT/LB/A</td>
+          </tr>
+          <tr>
+            <td>Right flipper</td>
+            <td class="legend-col-pc">→ · <strong>D</strong> · NumPad <strong>3</strong> · RMB<br><span class="pad-map">Pad: RT · RB · B <span class="pad-eq">(R2 · R1 · ○ / ZR · R · A)</span></span></td>
+            <td class="legend-col-mobile">R Flip · right half · pad RT/RB/B</td>
+          </tr>
+          <tr>
+            <td>Double-tap charge (2×)</td>
+            <td class="legend-col-pc">Double-tap any flipper key / mouse / pad<br><span class="pad-map">Ignored while that bat is already glowing</span></td>
+            <td class="legend-col-mobile">Double-tap L/R · ignored if already glowing</td>
+          </tr>
+          <tr>
+            <td>Charge / launch</td>
+            <td class="legend-col-pc">Space hold / release<br><span class="pad-map">Pad: X · Select/View · R3 · right stick down <span class="pad-eq">(□ · Create · R3 / Y · Minus · R-stick in · R-stick ↓ hold/release)</span></span></td>
+            <td class="legend-col-mobile">Launch hold / release · pad X / Select / R3 / R-stick ↓</td>
+          </tr>
+          <tr>
+            <td>Tilt</td>
+            <td class="legend-col-pc">NumPad <strong>7</strong> only (×3 drain)<br><span class="pad-map">Pad: LT+RT+LB+RB together <span class="pad-eq">(L2+R2+L1+R1 / ZL+ZR+L+R)</span></span></td>
+            <td class="legend-col-mobile">HUD Tilt · pad all four shoulders</td>
+          </tr>
+          <tr>
+            <td>Theme (art only)</td>
+            <td class="legend-col-pc"><strong>T</strong> · split left half<br><span class="pad-map">Pad: Y <span class="pad-eq">(△ / X)</span></span></td>
+            <td class="legend-col-mobile">Theme | Legend (left) · pad Y</td>
+          </tr>
+          <tr>
+            <td>Open legend</td>
+            <td class="legend-col-pc"><strong>L</strong> · split right half<br><span class="pad-map">Pad: left analog stick (flick any way) <span class="pad-eq">(same as L)</span></span></td>
+            <td class="legend-col-mobile">Theme | Legend (right) · swipe ← · pad L-stick</td>
+          </tr>
+          <tr>
+            <td>Close legend</td>
+            <td class="legend-col-pc">L · Esc · [X] Close<br><span class="pad-map">Pad: left analog stick again</span></td>
+            <td class="legend-col-mobile">[X] Close · Esc · pad L-stick</td>
+          </tr>
+          <tr>
+            <td>Pause / menu</td>
+            <td class="legend-col-pc">Start <span class="pad-eq">(Options / Plus)</span></td>
+            <td class="legend-col-mobile">Start · Options · Plus</td>
+          </tr>
+          <tr>
+            <td>Menu navigate</td>
+            <td class="legend-col-pc">D-pad <span class="pad-eq">(left analog toggles legend in play; menu nav later)</span></td>
+            <td class="legend-col-mobile">D-pad (menu later)</td>
+          </tr>
+          <tr>
+            <td>Game over restart</td>
+            <td class="legend-col-pc">NumPad 7 · spinning pinball<br><span class="pad-map">Pad: any flipper button (LT/LB/A · RT/RB/B)</span></td>
+            <td class="legend-col-mobile">Press here to Restart · pad any flipper</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="legend-note">
+        Theme cycles Void Pulse ↔ Ember Rail (look only — physics unchanged). Double-tap a flipper to charge 2× hits for 15s (glow green→yellow→cyan→orange→blue→white; starts at 4×/sec and slows). A double-tap on a bat that is already glowing does not re-charge. Pads use the Xbox layout in the browser; PlayStation and Switch equivalents are in the rows above. Audio unlocks on first input.
+      </p>
+    </div>
+    <div class="legend-foot">
+      <button type="button" id="legend-close">[X] Close</button>
+      <span class="legend-l">PC: T = theme · L = legend</span>
+    </div>
+  </aside>
+
+  <script src="device.js?v=dump16"></script>
+  <script src="simulation.js?v=dump16"></script>
+  <script src="highscores.js?v=dump16"></script>
+  <script src="assets.js?v=dump16"></script>
+  <script src="renderer.js?v=dump16"></script>
+  <script src="audio.js?v=dump16"></script>
+  <script src="gamepad.js?v=dump16"></script>
+  <script src="game.js?v=dump16"></script>
+</body>
+</html>
