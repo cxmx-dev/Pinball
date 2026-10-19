@@ -1,0 +1,7 @@
+{
+  "defaultTheme": "void-pulse",
+  "themes": {
+    "void-pulse": "themes/void-pulse/manifest.json",
+    "ember-rail": "themes/ember-rail/manifest.json"
+  }
+}

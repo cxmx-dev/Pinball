@@ -1,0 +1,44 @@
+docs/
+mcps/
+pics/
+notes/playtest-frames/
+
+# OS / tooling
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*~
+
+# Local env / secrets
+.env
+.env.*
+
+# Scratch / logs under repo (if ever written)
+**/implementer/
+
+pinball v2/notes/
+
+# local scratch
+_tmp*
+_probe*
+_fix*
+_apply_dump*
+_dump*
+_chk*
+_curl*
+_patch*
+_playtest*
+_readlog*
+_run*
+notes/
+*.diff
+*.b64
+
+apply_dump*
+tmp-*
+tmp_*
+_*
+*_ren*.txt
+pinball v2/_trace*
+
