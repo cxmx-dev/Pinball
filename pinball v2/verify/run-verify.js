@@ -118,6 +118,8 @@ var nat = { games: 0, plunges: 0, ticks: 0, crossings: 0, crossAt: {}, stuck: 0,
         oobFlag = true; nat.oob++; var ok = bucket(b.x, b.y); nat.oobAt[ok] = (nat.oobAt[ok] || 0) + 1;
       }
       // S4: stationary > 1 s outside saucers
+      // dump29: saucer hold (1.2 s) is not a stuck ball; restart the timer there.
+      if (inSaucer(s, b)) { anchor = null; held = 0; }
       if (anchor && Math.abs(b.x - anchor[0]) < 10 && Math.abs(b.y - anchor[1]) < 10) held += dt;
       else { anchor = [b.x, b.y]; held = 0; }
       if (held > 1 && !stuckFlag && !inSaucer(s, b) && s.phase !== 'eob_bonus') {
@@ -242,7 +244,8 @@ record('S4', 'no ball stationary >1s outside saucers', nat.stuck === 0,
       // Arch arc pieces are skipped in resolveWallCollisions for any ball in
       // the top band (y<88, 40<x<LL-4); points a ball can only touch from
       // there are inactive, not invisible.
-      var off = w.arc && y < 76 && x > 52 && x < LL - 16;
+      // dump26: the sim also skips arc pieces for balls inside the top tubes (to x=524).
+      var off = w.arc && y < 76 && x > 52 && x < W - 36 - R;
       if (off) inactive++;
       var ok = off || drawnNear(x, y, 5);
       if (!ok) { if (!run) run = { a: [x, y], b: [x, y] }; run.b = [x, y]; }

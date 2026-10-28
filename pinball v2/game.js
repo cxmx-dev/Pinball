@@ -101,9 +101,14 @@
     return false;
   }
 
+  // dump24: logical table units stay 600x980 for input, hit-tests and physics;
+  // only the backing store is scaled by devicePixelRatio (capped at 3).
+  var LOGICAL_W = 600;
+  var LOGICAL_H = 980;
+
   function resizeCanvas() {
-    var targetW = 600;
-    var targetH = 980;
+    var targetW = LOGICAL_W;
+    var targetH = LOGICAL_H;
     canvas.width = targetW;
     canvas.height = targetH;
     // Reserve space for bottom dock (all devices) + Theme|Legend + swipe/PC hint
@@ -136,6 +141,15 @@
     // Keep bottom dock the same CSS width as the upscaled canvas
     if (touchUi) {
       touchUi.style.width = canvas.style.width || (targetW + 'px');
+    }
+    // dump24: sharp backing store (CSS size above is unchanged).
+    var dpr = Math.min(window.devicePixelRatio || 1, 3);
+    canvas._logicalW = targetW;
+    canvas._logicalH = targetH;
+    canvas._dpr = dpr;
+    if (dpr !== 1) {
+      canvas.width = Math.round(targetW * dpr);
+      canvas.height = Math.round(targetH * dpr);
     }
   }
 
@@ -331,18 +345,18 @@
 
   function canvasPointFromEvent(e) {
     var rect = canvas.getBoundingClientRect();
-    var rw = rect.width || canvas.width;
-    var rh = rect.height || canvas.height;
+    var rw = rect.width || LOGICAL_W;
+    var rh = rect.height || LOGICAL_H;
     return {
-      x: (e.clientX - rect.left) * (canvas.width / rw),
-      y: (e.clientY - rect.top) * (canvas.height / rh)
+      x: (e.clientX - rect.left) * (LOGICAL_W / rw),
+      y: (e.clientY - rect.top) * (LOGICAL_H / rh)
     };
   }
 
   function isGameOverRestartHit(x, y) {
-    if (y >= 72 && y <= canvas.height - 28) return true;
-    var ty = canvas.height * 0.38 + 44;
-    return Math.abs(y - ty) < 40 && Math.abs(x - canvas.width * 0.5) < 220;
+    if (y >= 72 && y <= LOGICAL_H - 28) return true;
+    var ty = LOGICAL_H * 0.38 + 44;
+    return Math.abs(y - ty) < 40 && Math.abs(x - LOGICAL_W * 0.5) < 220;
   }
 
   function setPaused(on) {

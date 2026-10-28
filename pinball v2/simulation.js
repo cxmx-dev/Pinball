@@ -140,8 +140,10 @@
   // and the other boingers.
   var BOINGER_X = 366;
   var BOINGER_Y = 648;
-  var BOINGER_B_X = 352;
-  var BOINGER_B_Y = 707;
+  // dump22: cyan B moved well off the right flipper (was 352,707, ~56 px from the
+  // pivot). Now 308,600: ~115 px up/in, >= 48 px from walls/bumpers, ~118 px from the sweep.
+  var BOINGER_B_X = 308;
+  var BOINGER_B_Y = 600;
   // dump21: cyan C moved out of the left sling filler corner (was 125,708: sunk 7 px
   // into the filler and 11.1 px over the chrome cage). Now >= 36 px clear.
   var BOINGER_C_X = 156;
@@ -231,8 +233,13 @@
       // Skill / apex - 180 below the horseshoe join, out of the channel
       { x: 280, y: 275, radius: 16, score: 180, color: '#cc66ff', kind: 'bumper', hitCooldown: 0, hit: false },
       // Wings - mid-field under the lifted U, clear of slide mouths
-      { x: 155, y: 308, radius: 22, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0, hit: false },
-      { x: 328, y: 365, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0, hit: false },
+      // dump29: was 155,308; left a 25.7 px slot to the left guide (116,340-92,276)
+      // that wedged a 24 px ball (S4 stuck ~117,302). 166,308 opens it to ~36 px.
+      { x: 166, y: 308, radius: 22, score: 300, color: '#33ccff', kind: 'bumper', hitCooldown: 0, hit: false },
+      // dump28: moved off the upper-right mini flipper (was 328,365, on top of its
+      // pivot 358,372). 362,230 is open upper-right: >=55 px from every wall/object,
+      // 107 px from any flipper sweep; probes: 3.6 hits/game vs 1.1.
+      { x: 362, y: 230, radius: 22, score: 300, color: '#ffcc00', kind: 'bumper', hitCooldown: 0, hit: false },
       {
         // Weaker / smaller saver - outlane tension
         x: 210,
@@ -1255,7 +1262,9 @@
 
     // Real left orbit / right habitrail travel paths (replaces token diagonal kick chutes)
     walls = walls.concat(createHabitrailWalls());
-    dumpCyanInnerCap(walls);
+    // dump26: cyan inner floor stays flat at y=80 = the drawn inner rail (the old
+    // sloped cap was an invisible floor 2-47 px below the drawing; balls fell through
+    // at its x~250 step). dumpCyanInnerCap(walls);
 
     var triBody = createPulseTriangle();
     if (triBody && triBody.sides) {
@@ -1649,6 +1658,8 @@
     return true;
   }
 
+  var COPPER_SLIDE_FOOT_Y = 345;
+
   function ejectFromShooterLaneApron(state) {
     var ball = state.ball;
     if (skipBallAssist(state, state.ball)) return;
@@ -1656,6 +1667,13 @@
     var r = ball.radius;
     ball.x = LAUNCH_LANE_LEFT - r - 2;
     ball.vx = -Math.max(Math.abs(ball.vx), 220);
+    // dump23: under the copper slide foot (habitrail 468,286 -> 444,345) a loft
+    // drives the ball up into the slide underside, which bounces it back into the
+    // lane edge every frame (S4 stuck at ~458,341). Drop it down the divider instead.
+    if (ball.y < COPPER_SLIDE_FOOT_Y + r * 2) {
+      if (ball.vy < 60) ball.vy = 60;
+      return;
+    }
     // Never loft when already at/below flipper line or draining
     if (ball.y >= FLIPPER_ROW_Y - 8 || apronAssistsBlocked(state)) {
       if (ball.vy < 0) ball.vy = Math.abs(ball.vy) * 0.25;
@@ -2399,12 +2417,31 @@
     for (i = 0; i < balls.length; i++) unstickOneSausageCusp(state, balls[i], dt);
   }
 
+  var TOP_TUBE_INNER_Y = 80;
+
+  /** dump26: inside the top tubes (straight above y=80, or the cyan left leg). */
+  function ballInTopTube(ball) {
+    if (!ball) return false;
+    if (ball.y < TOP_TUBE_INNER_Y && ball.x > 36 && ball.x < 524) return true;
+    return ball.x > 36 && ball.x < 92 && ball.y < 340;
+  }
+
   function unstickOneHorseshoeCrown(state, ball, dt) {
     if (skipBallAssist(state, ball)) return;
     if (!ball || !ball.inPlay) return;
     if (!horseshoeFarmPocket(state, ball)) return;
     var sp = vecLen(ball.vx, ball.vy);
     if (sp >= 110) return;
+    // dump26: a slow ball INSIDE the top tube (center above the y=80 inner rail)
+    // rolls along the tube to an exit (left: down the cyan leg; right: orange
+    // elbow -> corner exit). It is never kicked down through the drawn floor.
+    if (ball.y < TOP_TUBE_INNER_Y - 2) {
+      var dir = ball.x < 280 ? -1 : 1;
+      if (Math.abs(ball.vx) > 20) dir = ball.vx < 0 ? -1 : 1;
+      ball.vx = dir * 260;
+      if (ball.vy > 0) ball.vy = 0;
+      return;
+    }
     var cyanRoof = ball.x < 270;
     if (cyanRoof) {
       if (ball.vy >= 280) return;
@@ -2479,6 +2516,9 @@
     var nearInner = nearestPointOnSegments(ball.x, ball.y, topHorseshoeInnerSegs(left, right));
     if (!nearInner || nearInner.dist > 28) return;
     if (ball.y >= nearInner.y) return;
+    // dump26: only a ball that crossed the inner rail from below this step is a
+    // tunnel-in. A ball already riding above the rail (in the tube) stays in.
+    if (ball._prevY != null && ball._prevY < nearInner.y) return;
     ball.y = nearInner.y + ball.radius + 3;
     if (ball.vy < 0) ball.vy = Math.abs(ball.vy) * 0.72;
   }
@@ -3025,6 +3065,7 @@
     var sweepOk = sweepX0 != null && sweepY0 != null && ball._intX != null &&
       Math.abs(ball.x - ball._intX) < 0.5 && Math.abs(ball.y - ball._intY) < 0.5;
 
+    var laneSealed = false;
     wallList.forEach(function (wall) {
       if (wall.kind === 'lane') {
         var playfieldSide = ball.x + r < LAUNCH_LANE_LEFT + 1 && ball.y > LAUNCH_WIRE_Y1 + 8;
@@ -3033,7 +3074,7 @@
         // step on the playfield side cannot end it in the shooter lane, even
         // when one step carries the center past the zero-thickness divider
         // (segmentCollision would then push it out on the lane side).
-        if (sealLaneDividerSwept(state, ball, wall)) return;
+        if (sealLaneDividerSwept(state, ball, wall)) { laneSealed = true; return; }
       }
       // dump18: corner exit is a one-way flap. A ball that has left the lane
       // and comes from the lane/corner side (right) passes LEFT into the copper
@@ -3060,7 +3101,9 @@
       }
       // Raised merge sits over the right-orbit corner in 2D.
       // Plunge / merge riders must hit the floor; RTL climbers in the right slide must not.
-      if (wall.arc && ball.y < 88 && ball.x > 40 && ball.x < LAUNCH_LANE_LEFT - 4) {
+      // dump26: also skip inside the orange elbow (x 468-524): the old arch piece
+      // 467,44 -> 491,51 crossed the middle of the drawn tube as an invisible snag.
+      if (wall.arc && ((ball.y < 88 && ball.x > 40 && ball.x < LAUNCH_LANE_LEFT - 4) || (ballInTopTube(ball) && ball.y < 76))) {
         // Horseshoe tubes are the orbit ceiling; the leftover ellipse must not
         // hang a second roof in the channel.
         return;
@@ -3122,6 +3165,13 @@
       if (sweepOk) sweptWallGuard(ball, sweepX0, sweepY0, wall.x1, wall.y1, wall.x2, wall.y2);
       segmentCollision(ball, wall.x1, wall.y1, wall.x2, wall.y2, rest, null);
     });
+    // dump29: a later wall (copper-slide habitrail 468,286-444,345) could push a
+    // just-sealed field ball back across the divider (S1 in-game fallback).
+    // The one-way seal wins.
+    if (laneSealed && ball.x + r > LAUNCH_LANE_LEFT) {
+      ball.x = LAUNCH_LANE_LEFT - r;
+      if (ball.vx > 0) ball.vx = -ball.vx * WALL_RESTITUTION;
+    }
 
     if (ball.x - r < 36) {
       ball.x = 36 + r;
@@ -3463,6 +3513,8 @@
     var upper = ball.y < 300;
     if (!upper) return;
     if (state.activeHabitrail) return;
+    // dump26: never teleport a ball out of the top cyan/orange tubes.
+    if (ballInTopTube(ball)) return;
     if (nearHabitrailMouthOrWall(state)) return;
     if (ball.y < 160 && (
       inHabitrailChannel(state, state.sideRoutes && state.sideRoutes.leftRamp) ||

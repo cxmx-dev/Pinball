@@ -245,6 +245,7 @@
     drawApron(ctx, state);
     drawSideRoutes(ctx, state, glowPulse);
     drawWalls(ctx, state);
+    drawChuteDividers(ctx, state);
     drawLaunchLaneRail(ctx, state);
     drawRollovers(ctx, state);
     drawDropTargets(ctx, state);
@@ -1128,13 +1129,13 @@
       var ei;
       for (ei = 0; ei < mo.length; ei++) {
         var es = mo[ei];
-        if (Math.min(es.x1, es.x2) >= 408 && Math.min(es.y1, es.y2) < 110) {
-          if (!eO.length) eO.push({ x: es.x1, y: es.y1 });
-          eO.push({ x: es.x2, y: es.y2 });
-        }
+        // dump26: fill the WHOLE orange tube (elbow + top straight to the join),
+        // not just the elbow - the straight was drawn as two bare rails.
+        if (!eO.length) eO.push({ x: es.x1, y: es.y1 });
+        eO.push({ x: es.x2, y: es.y2 });
       }
     }
-    var eI = [{ x: 470, y: 88 }, { x: 458, y: 80 }, { x: 430, y: 80 }, { x: 408, y: 80 }];
+    var eI = segsToPoints(right && right.mergeInner);
     if (eO.length >= 2) fillSausageHull(ctx, eO, eI, 'copper', simple, tubeW);
     var bar = segsToPoints(right && right.mergeOuter);
     // dump18: the hook is split at the one-way corner exit (cornerExit seg) so
@@ -1147,11 +1148,22 @@
     }
     var hook = segsToPoints(hookCut >= 0 ? hookSegs.slice(0, hookCut) : hookSegs);
     var hookTail = hookCut >= 0 ? segsToPoints(hookSegs.slice(hookCut + 1)) : [];
-    var join = [{ x: 478, y: 18 }, { x: 474, y: 48 }, { x: 470, y: 88 }];
-    var orange = [];
-    appendOriented(orange, bar);
-    appendOriented(orange, join);
-    appendOriented(orange, hook);
+    // dump26: outer bar and inner hook are separate strokes. The old fake
+    // 'join' (478,18 -> 474,48 -> 470,88) drew a rail with no collision across the
+    // elbow, and joining bar+hook into one path made chaikin cut the bar's
+    // turn-around, leaving the top rail short of the cyan join (x 280-305).
+    var orange = bar;
+    if (hook.length >= 2) {
+      var hk = chaikinSmooth(hook, 2);
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'rgba(255, 168, 64, 0.95)';
+      ctx.lineWidth = tubeW;
+      strokeExact(ctx, hk, false);
+      ctx.stroke();
+      ctx.restore();
+    }
     if (hookTail.length >= 2) {
       var tail = chaikinSmooth(hookTail, 2);
       ctx.save();
@@ -1830,6 +1842,30 @@
     ctx.restore();
   }
 
+  function drawChuteDividers(ctx, state) {
+    ctx.save();
+    // dump27: drain-chute dividers are real collision walls (kind 'chute');
+    // draw them at the exact wall coordinates as thin steel posts so draw = collision.
+    ctx.shadowBlur = 0;
+    (state.walls || []).forEach(function (wall) {
+      if (wall.kind !== 'chute') return;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#5c646e';
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(wall.x1, wall.y1);
+      ctx.lineTo(wall.x2, wall.y2);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(230,235,245,0.6)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(wall.x1, wall.y1);
+      ctx.lineTo(wall.x2, wall.y2);
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
   function drawDrainSlots(ctx, state, pulse) {
     var zones = root.PinballSim.getDrainBounds(state);
     var y = root.PinballSim.DRAIN_SLOT_TOP;
@@ -2069,8 +2105,33 @@
     state.lastHitType = null;
   }
 
-  function render(canvas, state, dt) {
-    var ctx = canvas.getContext('2d');
+  /**
+   * dump24: canvas shadows ignore the transform, so scale shadowBlur and
+   * offsets by dpr on this context; draw code keeps logical values.
+   */
+  function scaleShadowsForDpr(ctx, dpr) {
+    if (!ctx || ctx.__dprShadow === dpr) return;
+    var P = Object.getPrototypeOf(ctx);
+    ['shadowBlur', 'shadowOffsetX', 'shadowOffsetY'].forEach(function (k) {
+      var d = P && Object.getOwnPropertyDescriptor(P, k);
+      if (!d || !d.set || !d.get) return;
+      Object.defineProperty(ctx, k, {
+        configurable: true,
+        get: function () { return d.get.call(this) / dpr; },
+        set: function (v) { d.set.call(this, v * dpr); }
+      });
+    });
+    ctx.__dprShadow = dpr;
+  }
+
+  function render(target, state, dt) {
+    var dpr = (target && target._dpr) || 1;
+    // Logical 600x980 view; the backing store may be 600*dpr x 980*dpr.
+    var canvas = target && target._logicalW ? { width: target._logicalW, height: target._logicalH } : target;
+    var ctx = target.getContext('2d');
+    if (ctx.setTransform) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if ('imageSmoothingEnabled' in ctx) ctx.imageSmoothingEnabled = true;
+    if (dpr !== 1) scaleShadowsForDpr(ctx, dpr);
     var Assets = getAssets();
     frameQuality = getQuality();
     glowPulse += dt * 2;
