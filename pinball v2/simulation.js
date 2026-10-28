@@ -148,6 +148,9 @@
   // into the filler and 11.1 px over the chrome cage). Now >= 36 px clear.
   var BOINGER_C_X = 156;
   var BOINGER_C_Y = 678;
+  // dump30: cyan D above the right-flipper / drain gap, opposite phase to copper A.
+  var BOINGER_D_X = 350;
+  var BOINGER_D_Y = 706;
   var BOINGER_R = 12;
   var BOINGER_UP_SEC = 3;
   var BOINGER_DOWN_SEC = 1.5;
@@ -1001,7 +1004,8 @@
     return [
       createBoinger({ x: BOINGER_X, y: BOINGER_Y, phase: 'a', theme: 'copper' }),
       createBoinger({ x: BOINGER_B_X, y: BOINGER_B_Y, phase: 'b', theme: 'cyan' }),
-      createBoinger({ x: BOINGER_C_X, y: BOINGER_C_Y, phase: 'b', theme: 'cyan' })
+      createBoinger({ x: BOINGER_C_X, y: BOINGER_C_Y, phase: 'b', theme: 'cyan' }),
+      createBoinger({ x: BOINGER_D_X, y: BOINGER_D_Y, phase: 'b', theme: 'cyan' })
     ];
   }
 
@@ -4995,6 +4999,8 @@
     BOINGER_B_Y: BOINGER_B_Y,
     BOINGER_C_X: BOINGER_C_X,
     BOINGER_C_Y: BOINGER_C_Y,
+    BOINGER_D_X: BOINGER_D_X,
+    BOINGER_D_Y: BOINGER_D_Y,
     BOINGER_R: BOINGER_R,
     BOINGER_UP_SEC: BOINGER_UP_SEC,
     BOINGER_DOWN_SEC: BOINGER_DOWN_SEC,
