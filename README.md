@@ -47,6 +47,7 @@ Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / d
 ## Quick play
 
 - **Live:** https://cxmx-dev.github.io/Pinball/ → **Pxnbxll (v2)**
+- **Current build:** dump31, cache tag `?v=dump31` (2026-10-29). Table rules S1-S9 all pass (`node verify/run-verify.js`).
 - **v2:** `pinball v2/index.html` or `/pinball%20v2/`
 - **v1:** `pinball v1/index.html` or `/pinball%20v1/`
 
@@ -73,5 +74,7 @@ Each version folder has its own `README.md` (controls at top).
 node run-tests.js
 node verify-browser.js
 ```
+
+Table rule check (v2): `node verify/run-verify.js` (300 seeded games; `--quick` for 50). Rules in `pinball v2/spec/TABLE-SPEC.md`.
 
 Optional: set env `SCRATCH` to a writable folder for dual-run logs (defaults to OS temp).

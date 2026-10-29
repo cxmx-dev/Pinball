@@ -17,7 +17,7 @@ In-game **legend** slides from the **right** (**L**, **Legend** button, or swipe
 | Close legend | **L** · **Esc** · **[X]** | **[X]** · **Esc** |
 | Game over | Spinning pinball · NumPad **7** | **Press here to Restart** · spin pinball |
 
-**Double-tap charge:** double-tap a flipper to charge **2×** hits for 15s. That bat glows through green / yellow / cyan / orange / blue / white; the pulse starts at 4×/sec and slows as the charge fades. A double-tap on a bat that is already glowing does not re-charge. A double-tap on a bat that is already glowing does not re-charge.
+**Double-tap charge:** double-tap a flipper to charge **2×** hits for 15s. That bat glows through green / yellow / cyan / orange / blue / white; the pulse starts at 4×/sec and slows as the charge fades. A double-tap on a bat that is already glowing does not re-charge.
 
 **PC theme:** press **`T`** (or left half of dock split). Cycles Pxnbxll ↔ Ember Rail — art only.
 
@@ -85,9 +85,22 @@ The rules are in `spec/TABLE-SPEC.md` and the cases in `verify/CASES.md`. These 
 5. Flippers, ball, plunger
 6. HUD / power meter
 
+## Table layout (dump31)
+
+Table units: ball radius 12, shooter lane x 472-524. Main flipper pivots (124,752) and (318,752); upper-right mini flipper pivot (358,372).
+
+- **Pop bumpers:** (280,275) r16; cyan 300 at (166,308) r22; yellow 300 at (362,230) r22, clear of the mini flipper; rubber 500 at (340,520); outlane saver 120 at (210,455).
+- **Boingers (r12):** copper A (366,648) phase a; cyan B (308,600), cyan C (156,678) and cyan D (350,706) phase b. Phase a is up 3 s, then phase b is up 1.5 s, so the cyan ones rise while copper drops.
+- **Saucers:** (95,520), (410,148), (138,168).
+- **Top tubes:** cyan and orange tubes are drawn as full hulls matching their collision; a ball inside a tube keeps rolling instead of falling through.
+- **Copper slide:** foot at y 345.
+- **Drain chute dividers** below the flipper row are drawn where they collide.
+- **Lane divider:** one-way for field balls; no wall can push a field ball back into the shooter lane.
+- **Canvas:** backing store scales with device pixel ratio, so phones render sharp.
+
 ## Theme packs
 
-- `assets/themes/void-pulse/` — default
+- `assets/themes/void-pulse/` (Pxnbxll pack; folder id kept so saved theme choice and paths still work) — default
 - `assets/themes/ember-rail/` — alternate
 - `assets/themes.json` — pack index
 
@@ -97,6 +110,15 @@ Gravity, flippers, charge launch, wireform, bumpers, slings, targets, rollovers,
 
 ## Changelog
 
+**2026-10-29** - Pxnbxll dump31: visible branding renamed from VOID PULSE to Pxnbxll (titles, HUD, legend, share line, docs). Internal theme id `void-pulse` unchanged. Cache `?v=dump31`.
+**2026-10-28** - dump30: cyan boinger D at (350,706), phase b, rises while the copper boinger drops to close the lower-right gap. Cache `?v=dump30`.
+**2026-10-28** - dump29: cyan bumper moved (155,308) to (166,308) so a ball cannot wedge against the left guide; lane-divider seal now wins over later walls; verify S4 no longer counts the saucer hold. Cache `?v=dump29`.
+**2026-10-28** - dump28: yellow 300 bumper moved off the upper-right mini flipper, (328,365) to (362,230). Cache `?v=dump28`.
+**2026-10-28** - dump27: drain chute dividers drawn where they collide. Cache `?v=dump27`.
+**2026-10-28** - dump26: top cyan/orange tubes: full drawn hull, no fall-through, matching collision. Cache `?v=dump26`.
+**2026-10-28** - dump24: canvas backing store scaled by device pixel ratio (sharp on phones). Cache `?v=dump24`.
+**2026-10-28** - dump23: ball no longer drops out of the shooter lane apron; copper slide foot at y 345. Cache `?v=dump23`.
+**2026-10-28** - dump22: cyan boinger B moved off the right flipper, (352,707) to (308,600). Cache `?v=dump22`.
 **2026-10-17** - Pxnbxll dump21: posts and boingers moved clear of the flippers and walls so balls can't pinch. Cache `?v=dump21`.
 **2026-10-17** - Pxnbxll dump20: hard plunges and fast balls can no longer escape out the top of the table. Cache `?v=dump20`.
 **2026-10-17** - Pxnbxll dump19: page declares an icon, no favicon 404; table verify checker added. Cache `?v=dump19`.

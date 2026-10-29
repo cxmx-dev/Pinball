@@ -9,12 +9,28 @@
 | S1 | New table. 300 plunges (60 quick) at a seeded 20 to 40% power, step 1/60 or 1/30. | Tick up to 8 seconds per plunge. | 0 lane fallbacks, here and in natural play. | Fallback means the ball left the lane, then was back in it (x > 474) below y 300. Each plunge is also counted as reaching the field (x < 442 and y > 140) or returning to the plunger. |
 | S2 | New table. Power 100% and 95%, each at step 1/60 and 1/30. | Tick up to 240 steps. | All 4 reach the U. | U means left the lane with y < 90 and x between 160 and 400. |
 | S3 | 6,000 balls (1,000 quick) at x 300 to 460, y 110 to 750. Speed 200 to 1,600, random direction, marked left lane. Step 1/120, 1/60 or 1/30. | 90 physics steps each. | 0 crossings, here and in natural play. | A crossing is a ball whose previous center was left of x 472 and whose new center is right of x 474, below y 103. |
-| S4 | Natural play. | Every tick. | 0 events. | An event is a ball that stays inside a 10 by 10 box for more than 1 second, not in a saucer and not during end-of-ball. One event per ball. |
+| S4 | Natural play. | Every tick. | 0 events. | An event is a ball that stays inside a 10 by 10 box for more than 1 second, not in a saucer and not during end-of-ball. The timer restarts while the ball is in a saucer (dump29). One event per ball. |
 | S5 | `renderer.js` draws the initial table into a recording canvas (transforms tracked, table offset 20,80 removed). | Sample every collision wall every 4 pixels, and every solid-colour stroke 4 pixels or wider every 4 pixels. | No invisible wall run and no drawn-without-collision run of 10 or more pixels, except known regions. | Drawn means within half the line width plus 5 of a stroke, a fill edge or a circle. A drawn rail has collision if it is within half its width plus 7 of a wall, route segment, sling, flipper, post, bumper, boinger, saucer or spinner. |
 | S6 | 4,000 balls (1,000 quick) at x 60 to 452, y 40 to 720, speed 300 to 1,600, random direction. Plus natural play. | 120 steps each. | 0 out-of-bounds, here and in natural play. | Out means the center is at x < 35, x > 525 or y < 18 (above the U outer rail), before a drain. |
 | S7 | 2,000 shots (400 quick), alternating left and right, bats at rest or held up 0.5 seconds. | Start 40 pixels above a point 15 to 85% along the bat. Speed 600 to 1,600, within 23 degrees of straight down. Up to 20 steps. | 0 pass-throughs. | A pass-through is a step whose path crosses the bat between 10% and 90% of its length, and ends on the other side (dump21 fix). |
 | S8 | Root `index.html`, `pinball v1/index.html` and `pinball v2/index.html`. | Read each file. | Each has a `<link rel="icon">`. | Regex. |
 | S9 | Initial table, posts (sling pins skipped) and boingers. | Measure the gap from each object to every other collidable and to each flipper's sweep from rest to up. | No gap between 1 and 24 pixels. | Circle-to-circle and circle-to-segment distance minus radii. A sweep is sampled in 24 angle steps. |
+
+## 2026-10-29 full run, dump31
+
+`node verify/run-verify.js` exited 0.
+
+| Rule | Result | Numbers |
+|------|--------|---------|
+| S1 | PASS | 300 soft plunges reached the field. Natural play: 0 fallbacks in 1,154 plunges. |
+| S2 | PASS | 4 of 4 ride the U. |
+| S3 | PASS | 6,000 targeted, 0 crossings. Natural play: 0. |
+| S4 | PASS | 0 events. |
+| S5 | PASS | 131 walls, 0 invisible runs, 0 drawn without collision, 0 known runs. |
+| S6 | PASS | 4,000 targeted, 0 out. Natural play: 0. |
+| S7 | PASS | 2,000 shots, 0 pass-throughs. |
+| S8 | PASS | 3 pages, 0 missing icons. |
+| S9 | PASS | 4 boingers checked, 0 pinches. |
 
 ## 2026-10-17 full run, dump18
 
