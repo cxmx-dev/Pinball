@@ -59,7 +59,7 @@
 
   function formatShareLine(score, rank) {
     var s = Math.floor(Number(score)) || 0;
-    var line = 'Void Pulse Pinball — score ' + s.toLocaleString('en-US');
+    var line = 'Pxnbxll — score ' + s.toLocaleString('en-US');
     if (rank != null && rank > 0) line += ' (#' + rank + ' local)';
     return line;
   }

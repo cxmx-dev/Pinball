@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 /**
- * VOID PULSE table verify: runs every rule in spec/TABLE-SPEC.md headless.
+ * Pxnbxll table verify: runs every rule in spec/TABLE-SPEC.md headless.
  *   node verify/run-verify.js            full run (300 seeded games)
  *   node verify/run-verify.js --quick    50 games, smaller targeted sets
  *   options: --games N  --seed S  --no-json
@@ -524,7 +524,7 @@ var order = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9'];
 results.sort(function (a, b) { return order.indexOf(a.id) - order.indexOf(b.id); });
 results.forEach(function (r) { if (r.id === 'S5' && EXPECTED_FAIL.S5 && !r.pass) { r.status = 'XFAIL'; r.expectedFail = EXPECTED_FAIL.S5; } });
 var secs = ((Date.now() - t0) / 1000).toFixed(1);
-console.log('VOID PULSE table verify  games=' + GAMES + ' seed=' + SEED + (QUICK ? ' (quick)' : '') + '  ' + secs + 's');
+console.log('Pxnbxll table verify  games=' + GAMES + ' seed=' + SEED + (QUICK ? ' (quick)' : '') + '  ' + secs + 's');
 console.log('');
 console.log('ID   Status  Rule');
 results.forEach(function (r) {

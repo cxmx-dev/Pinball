@@ -1,4 +1,4 @@
-# VOID PULSE table spec
+# Pxnbxll table spec
 
 Rules the table must obey. Each rule has an ID. `verify/CASES.md` has one case per rule, and `node verify/run-verify.js` checks them all headless.
 

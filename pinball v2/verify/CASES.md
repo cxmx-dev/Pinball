@@ -1,4 +1,4 @@
-# VOID PULSE table verification
+# Pxnbxll table verification
 
 `node verify/run-verify.js` runs every case below headless against `simulation.js` and `renderer.js`, reading them only. A full run plays 300 seeded games (`--quick` plays 50). Options are `--games N`, `--seed S` and `--no-json`. Each run writes `verify/last-run.json`, which stays local. The exit code is 1 if any rule that is not expected-fail fails.
 

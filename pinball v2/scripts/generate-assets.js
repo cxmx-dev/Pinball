@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Procedural PNG art generator for Void Pulse table themes.
+ * Procedural PNG art generator for Pxnbxll table themes.
  * No external deps beyond Node zlib — produces real image files under assets/.
  */
 var fs = require('fs');
@@ -335,9 +335,9 @@ var generated = [];
   var meta =
     id === 'void-pulse'
       ? {
-          name: 'Void Pulse',
+          name: 'Pxnbxll',
           tagline: 'Cyan-magenta cyber rail',
-          tableTitle: 'VOID PULSE',
+          tableTitle: 'Pxnbxll',
           hudAccent: '#00f0ff',
           ambientVideo: null
         }

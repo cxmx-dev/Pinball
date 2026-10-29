@@ -1288,7 +1288,7 @@
     }
 
     // Chrome safety-cage bars â€” short steel outlane rails just above the
-    // flipper row, framing the timed cyan boingers (VOID PULSE annotation).
+    // flipper row, framing the timed cyan boingers (Pxnbxll annotation).
     // orbit1: cages still guard the lower boingers, but no longer form a V
     // with the sausage tips (gap >=28 or flush).
     // opt1: frame C / sausage nose, do not bar the left outlane slot.

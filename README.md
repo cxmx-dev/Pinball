@@ -23,7 +23,7 @@ Legend slides from the **right** on **v1** and **v2**. Same features on PC and m
 
 **Double-tap charge (v2):** double-tap a flipper to charge **2×** hits for 15s. That bat glows through green / yellow / cyan / orange / blue / white; the pulse starts at 4×/sec and slows as the charge fades. A double-tap on a bat that is already glowing does not re-charge.
 
-**PC theme change:** press **`T`** (or left half of the dock split). Cycles Void Pulse ↔ Ember Rail — art only, same physics. HUD shows the current pack name.
+**PC theme change:** press **`T`** (or left half of the dock split). Cycles Pxnbxll ↔ Ember Rail — art only, same physics. HUD shows the current pack name.
 
 **Tilt is intentionally awkward** (NumPad 7 / HUD pill only — not letter **R**), so it is harder to spam like a real cabinet.
 
@@ -40,13 +40,13 @@ Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / d
 
 | Folder | What |
 |--------|------|
-| `index.html` | Pages root → redirects to **v2** (VOID PULSE) |
+| `index.html` | Pages root → redirects to **v2** (Pxnbxll) |
 | `pinball v1/` | **NEON NEXUS** — solid physics, audio, tests (no theme packs) |
-| `pinball v2/` | **VOID PULSE** — v1-class play + layered theme art + cabinet-style flipper/plunger feel |
+| `pinball v2/` | **Pxnbxll** — v1-class play + layered theme art + cabinet-style flipper/plunger feel |
 
 ## Quick play
 
-- **Live:** https://cxmx-dev.github.io/Pinball/ → **VOID PULSE (v2)**
+- **Live:** https://cxmx-dev.github.io/Pinball/ → **Pxnbxll (v2)**
 - **v2:** `pinball v2/index.html` or `/pinball%20v2/`
 - **v1:** `pinball v1/index.html` or `/pinball%20v1/`
 

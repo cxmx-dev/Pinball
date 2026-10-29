@@ -10,9 +10,9 @@
     themes: {
       'void-pulse': {
         id: 'void-pulse',
-        name: 'Void Pulse',
+        name: 'Pxnbxll',
         tagline: 'Cyan-magenta cyber rail',
-        tableTitle: 'VOID PULSE',
+        tableTitle: 'Pxnbxll',
         hudAccent: '#00f0ff',
         basePath: 'assets/themes/void-pulse/',
         playfield: {

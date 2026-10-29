@@ -27,7 +27,7 @@ console.log('============================');
 
 (function testShareLineAnonymous() {
   var line = HS.formatShareLine(12345, 2);
-  assert(/Void Pulse Pinball/.test(line));
+  assert(/Pxnbxll — score/.test(line));
   assert(/12,345|12345/.test(line));
   assert(/#2/.test(line));
   // share line must not embed profile or drive paths
@@ -76,7 +76,7 @@ console.log('============================');
   assert(src.indexOf('function isGameOverRestartHit') !== -1, 'restart hit helper');
   assert(src.indexOf('gameOverUi.addEventListener') !== -1, 'whole game-over card clickable');
   assert(html.indexOf('cursor: pointer;') !== -1, 'restart label is a hit target');
-  assert(html.indexOf('?v=dump30') !== -1 && html.indexOf('?v=dump29') === -1 && html.indexOf('?v=dump28') === -1 && html.indexOf('?v=dump27') === -1 && html.indexOf('?v=dump26') === -1 && html.indexOf('?v=dump24') === -1 && html.indexOf('?v=dump23') === -1 && html.indexOf('?v=dump22') === -1 && html.indexOf('?v=dump21') === -1 && html.indexOf('?v=dump20') === -1 && html.indexOf('?v=dump19') === -1 && html.indexOf('?v=dump18') === -1 && html.indexOf('?v=dump17') === -1 && html.indexOf('?v=dump16') === -1 && html.indexOf('?v=dump15') === -1 && html.indexOf('?v=dump14') === -1 && html.indexOf('?v=dump13') === -1 && html.indexOf('?v=dump12') === -1 && html.indexOf('?v=dump10') === -1 && html.indexOf('?v=dump8') === -1 && html.indexOf('?v=dump5') === -1 && html.indexOf('?v=dump3"') === -1 && html.indexOf('?v=shoe6') === -1 && html.indexOf('?v=opt1') === -1 && html.indexOf('?v=shoe2') === -1 && html.indexOf('?v=shoe5') === -1, 'cache bust dump30');
+  assert(html.indexOf('?v=dump31') !== -1 && html.indexOf('?v=dump30') === -1 && html.indexOf('?v=dump29') === -1 && html.indexOf('?v=dump28') === -1 && html.indexOf('?v=dump27') === -1 && html.indexOf('?v=dump26') === -1 && html.indexOf('?v=dump24') === -1 && html.indexOf('?v=dump23') === -1 && html.indexOf('?v=dump22') === -1 && html.indexOf('?v=dump21') === -1 && html.indexOf('?v=dump20') === -1 && html.indexOf('?v=dump19') === -1 && html.indexOf('?v=dump18') === -1 && html.indexOf('?v=dump17') === -1 && html.indexOf('?v=dump16') === -1 && html.indexOf('?v=dump15') === -1 && html.indexOf('?v=dump14') === -1 && html.indexOf('?v=dump13') === -1 && html.indexOf('?v=dump12') === -1 && html.indexOf('?v=dump10') === -1 && html.indexOf('?v=dump8') === -1 && html.indexOf('?v=dump5') === -1 && html.indexOf('?v=dump3"') === -1 && html.indexOf('?v=shoe6') === -1 && html.indexOf('?v=opt1') === -1 && html.indexOf('?v=shoe2') === -1 && html.indexOf('?v=shoe5') === -1, 'cache bust dump31');
   function isGameOverRestartHit(x, y, w, h) {
     if (y >= 72 && y <= h - 28) return true;
     var ty = h * 0.38 + 44;

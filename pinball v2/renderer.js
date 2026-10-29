@@ -158,7 +158,7 @@
       var m = A.getThemeMeta();
       if (m && m.tableTitle) return m.tableTitle;
     }
-    return 'VOID PULSE';
+    return 'Pxnbxll';
   }
 
   function themeAccent() {

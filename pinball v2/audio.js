@@ -156,7 +156,7 @@
     var t = now();
     noiseBurst(t, 0.05, 0.32, { filter: 'bandpass', filterFreq: 800 });
     tone(90, 'sine', t, 0.08, 0.28, { filterFreq: 400 });
-    // Void Pulse spark sizzle pairing (bright electric edge)
+    // Pxnbxll spark sizzle pairing (bright electric edge)
     noiseBurst(t + 0.01, 0.04, 0.16, { filter: 'highpass', filterFreq: 2200, q: 1.4 });
     tone(1400, 'triangle', t + 0.005, 0.035, 0.08, { filterFreq: 4000 });
   }
