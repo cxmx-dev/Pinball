@@ -85,7 +85,7 @@ The rules are in `spec/TABLE-SPEC.md` and the cases in `verify/CASES.md`. These 
 5. Flippers, ball, plunger
 6. HUD / power meter
 
-## Table layout (dump31)
+## Table layout (dump32)
 
 Table units: ball radius 12, shooter lane x 472-524. Main flipper pivots (124,752) and (318,752); upper-right mini flipper pivot (358,372).
 
@@ -95,6 +95,7 @@ Table units: ball radius 12, shooter lane x 472-524. Main flipper pivots (124,75
 - **Top tubes:** cyan and orange tubes are drawn as full hulls matching their collision; a ball inside a tube keeps rolling instead of falling through.
 - **Copper slide:** foot at y 345.
 - **Drain chute dividers** below the flipper row are drawn where they collide.
+- **Left wall:** a sloped seal (36,372)-(60,345) closes the wedge between the cyan tube's outer rail and the x=36 cabinet wall, drawn as solid tube; the cabinet wall draws full length with no seam.
 - **Lane divider:** one-way for field balls; no wall can push a field ball back into the shooter lane.
 - **Canvas:** backing store scales with device pixel ratio, so phones render sharp.
 
@@ -110,6 +111,7 @@ Gravity, flippers, charge launch, wireform, bumpers, slings, targets, rollovers,
 
 ## Changelog
 
+**2026-11-02** - dump32: sealed the one-ball-wide channel behind the cyan tube's outer rail with a sloped wall (36,372)-(60,345), filled as solid tube; left cabinet wall drawn full length (old y 568 seam gone). New `verify/left-channel.js`: 0 of 4,000 balls enter (was 1,308). Cache `?v=dump32`.
 **2026-10-29** - Pxnbxll dump31: visible branding renamed from VOID PULSE to Pxnbxll (titles, HUD, legend, share line, docs). Internal theme id `void-pulse` unchanged. Cache `?v=dump31`.
 **2026-10-28** - dump30: cyan boinger D at (350,706), phase b, rises while the copper boinger drops to close the lower-right gap. Cache `?v=dump30`.
 **2026-10-28** - dump29: cyan bumper moved (155,308) to (166,308) so a ball cannot wedge against the left guide; lane-divider seal now wins over later walls; verify S4 no longer counts the saucer hold. Cache `?v=dump29`.

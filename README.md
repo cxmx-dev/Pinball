@@ -47,7 +47,7 @@ Audio unlocks on first key, click, or touch. Layout auto-fits phone / tablet / d
 ## Quick play
 
 - **Live:** https://cxmx-dev.github.io/Pinball/ → **Pxnbxll (v2)**
-- **Current build:** dump31, cache tag `?v=dump31` (2026-10-29). Table rules S1-S9 all pass (`node verify/run-verify.js`).
+- **Current build:** dump32, cache tag `?v=dump32` (2026-11-02). Table rules S1-S9 all pass (`node verify/run-verify.js`).
 - **v2:** `pinball v2/index.html` or `/pinball%20v2/`
 - **v1:** `pinball v1/index.html` or `/pinball%20v1/`
 

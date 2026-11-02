@@ -44,6 +44,8 @@ Former expected-fail `cyan-ramp-gap` is closed; the checker reports no known run
 
 From the 2026-10-16 clip at 0:29, where the ball fell out of the top-right corner of the rail.
 
+dump32: the cyan tube's outer rail (36,200)-(46,278)-(60,345) stopped short of the x=36 cabinet wall, leaving a one-ball-wide wedge a ball could ride up behind the tube. A sloped seal wall (36,372)-(60,345) closes it, and the renderer fills the wedge as solid tube, so draw still equals collision (S5). The x=36 cabinet wall now draws full length. `node verify/left-channel.js` checks it standalone: 0 of 4,000 seeded balls enter (1,308 before).
+
 ## S7 No tunneling through flippers
 
 From flip-thru, the earlier pass that stopped ball tunneling through the flippers. Shots come from above at 600 to 1600 pixels a second, aimed between 15% and 85% of the bat length. Fixed in the dump21 checker: a pass-through must be a step whose path crosses the bat itself. Before that, a ball that bounced away and later fell past the tip, far from the bat, was counted. The 2 or 3 pass-throughs reported for dump18 to dump20 were all of that kind. With the fixed check, dump20 and dump21 both have 0.

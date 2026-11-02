@@ -16,6 +16,10 @@
 | S8 | Root `index.html`, `pinball v1/index.html` and `pinball v2/index.html`. | Read each file. | Each has a `<link rel="icon">`. | Regex. |
 | S9 | Initial table, posts (sling pins skipped) and boingers. | Measure the gap from each object to every other collidable and to each flipper's sweep from rest to up. | No gap between 1 and 24 pixels. | Circle-to-circle and circle-to-segment distance minus radii. A sweep is sampled in 24 angle steps. |
 
+## 2026-11-02 left channel, dump32
+
+`node verify/left-channel.js` runs standalone (not part of `run-verify.js`). It fires 4,000 seeded balls at the wedge between the cyan tube's outer rail and the x=36 cabinet wall. Pass is 0 balls entering the channel behind the tube. Before the dump32 seal (36,372)-(60,345): 1,308 of 4,000. After: 0. S1 to S9 also pass on dump32.
+
 ## 2026-10-29 full run, dump31
 
 `node verify/run-verify.js` exited 0.
