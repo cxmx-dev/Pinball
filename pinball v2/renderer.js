@@ -535,6 +535,26 @@
 
   function drawWalls(ctx, state) {
     ctx.save();
+    // dump32: the left wedge behind the cyan tube is solid now; paint it as tube.
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(36, 196);
+    ctx.lineTo(46, 278);
+    ctx.lineTo(60, 345);
+    ctx.lineTo(36, 372);
+    ctx.closePath();
+    var wg = ctx.createLinearGradient(36, 200, 60, 372);
+    wg.addColorStop(0, 'rgba(18, 150, 200, 1)');
+    wg.addColorStop(1, 'rgba(6, 70, 100, 1)');
+    ctx.fillStyle = wg;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(80, 220, 255, 0.95)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(60, 345);
+    ctx.lineTo(36, 372);
+    ctx.stroke();
+    ctx.restore();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     // Glow pass for rounded top arch / habitrail segments (desktop only — shadowBlur overdraw)
@@ -542,6 +562,7 @@
       state.walls.forEach(function (wall) {
         var kind = wall.kind || 'rail';
         if (kind === 'lane' || kind === 'chute' || kind === 'filler' || kind === 'cage' || kind === 'tri-solid') return;
+        if (wall.leftSeal) return; // dump32: drawn as the solid wedge fill
         if (kind === 'rail' && !wall.arc && Math.min(wall.x1, wall.x2) >= 390) return;
         if (kind === 'rail' && wall.cyan && Math.min(wall.y1, wall.y2) >= 568) return;
         if (kind === 'rail' && wall.arc) {
@@ -567,6 +588,7 @@
     state.walls.forEach(function (wall) {
       var kind = wall.kind || 'rail';
       if (kind === 'chute' || kind === 'filler' || kind === 'tri-solid') return;
+      if (wall.leftSeal) return; // dump32: drawn as the solid wedge fill
       if (kind === 'lane' && !wall.wireform) return;
       if (wall.wireform) {
         // Leftover white launch-wire stroke sat on the copper inner wall. Physics stays.
@@ -583,10 +605,8 @@
       }
       if (kind === 'rail' && wall.cyan && !wall.arc) {
         var rx1 = wall.x1, ry1 = wall.y1, rx2 = wall.x2, ry2 = wall.y2;
-        var sausageTop = 568;
-        if (ry1 >= sausageTop && ry2 >= sausageTop) return;
-        if (ry1 < sausageTop && ry2 > sausageTop) ry2 = sausageTop;
-        if (ry2 < sausageTop && ry1 > sausageTop) ry1 = sausageTop;
+        // dump32: full length (was clipped at y=568 while its glow + collision ran
+        // to the outlane), which left a dim teal strip and a seam at the clip.
         strokeTubeSegment(ctx, rx1, ry1, rx2, ry2, {
           core: 'rgba(80, 230, 255, 0.95)',
           glow: 'rgba(40, 180, 255, 0.45)',

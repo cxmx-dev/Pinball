@@ -18,6 +18,7 @@
   var ARCH_RY = 50;
   var FLIPPER_INLANE_X = 88;
   var LEFT_INLANE_POST_TOP = 430;
+var LEFT_WEDGE_SEAL_Y = 372; // dump32: cabinet-side foot of the left wedge seal
   var FLIPPER_ROW_Y = TABLE_H - 108;
   var FLIPPER_LEFT_PIVOT_X = 124;
   var FLIPPER_RIGHT_PIVOT_X = 318;
@@ -1226,6 +1227,10 @@
     var archLeftY = archCy;
     // orbit1: leftover (40,76)->(36,76) L-corner deleted. Cabinet vertical remains.
     walls.push({ x1: 36, y1: archLeftY, x2: 36, y2: TABLE_H - 80, kind: 'rail', cyan: true });
+    // dump32: seal the hidden wedge between the cabinet wall (x=36) and the cyan
+    // tube's outer rail (36,200)->(46,278)->(60,345). Its 24 px mouth let balls
+    // ride up behind the drawn tube. Sloped so a rising ball kicks right into play.
+    walls.push({ x1: 36, y1: LEFT_WEDGE_SEAL_Y, x2: 60, y2: 345, kind: 'rail', leftSeal: true });
 
     // Outer right (cabinet edge past launch lane)
     walls.push({ x1: TABLE_W - 36, y1: LAUNCH_WIRE_Y1, x2: TABLE_W - 36, y2: TABLE_H - 80, kind: 'rail' });
